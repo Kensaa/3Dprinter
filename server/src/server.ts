@@ -46,7 +46,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
         ws.on('message', data => {
             const msg = JSON.parse(data.toString())
-            console.log(msg)
+            //console.log(msg)
             if (msg.type == 'log') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
@@ -62,7 +62,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
                     id: msg.id
                 })
                 console.log(
-                    `registered printer with id "${msg.id}" and label "${msg.label}"`
+                    `registered printer with id "${msg.id}" and label "${msg.label}" (${printers.length} printer available)`
                 )
             }
         })
@@ -126,12 +126,16 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
             yDivide = Math.ceil(depth / Math.ceil(printerCount / 2))
         }
 
+        xDivide = Math.max(3, xDivide) // set the minimal divide to 3, to avoid bugs where a turtle places a single block
+        yDivide = Math.max(3, xDivide)
+
         console.log('xDivide', xDivide)
         console.log('yDivide', yDivide)
 
         const divided = divide3D(shape, xDivide, yDivide, height).flat()
+        console.log('parts : ', divided.length * divided[0].length)
 
-        fs.writeFileSync('output.json', JSON.stringify(divided))
+        //fs.writeFileSync('output.json', JSON.stringify(divided))
 
         if (divided.length * divided[0].length > printerCount)
             return res
@@ -140,10 +144,11 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
                     'problem with the division of the build, more part than printer'
                 )
 
+        let printerIndex = 0
         for (let partRow = 0; partRow < divided.length; partRow++) {
             for (let partCol = 0; partCol < divided[0].length; partCol++) {
                 const part = divided[partRow][partCol]
-                const printer = printers[partRow * divided.length + partCol]
+                const printer = printers[printerIndex]
 
                 const partHeight = part.length
                 const partDepth = part[0].length
@@ -155,7 +160,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
                 ): number {
                     if (index === 0) return 0
                     return (
-                        arr[index - 1][0].length +
+                        arr[index - 1][0][0].length +
                         calcDepthOffset(arr, index - 1)
                     )
                 }
@@ -169,6 +174,9 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
                         calcWidthOffset(arr, index - 1)
                     )
                 }
+                const heightOffset = 0 // always 0 because there is no division verically (one printer does the all height of the build)
+                const depthOffset = calcDepthOffset(divided, partRow)
+                const widthOffset = calcWidthOffset(divided, partCol)
 
                 const msg = {
                     pos,
@@ -178,13 +186,20 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
                     depth: partDepth,
                     width: partWidth,
 
-                    heightOffset: 0, // always 0 because there is no division verically (one printer does the all height of the build)
-                    depthOffset: calcDepthOffset(divided, partRow),
-                    widthOffset: calcWidthOffset(divided, partCol)
+                    heightOffset,
+                    depthOffset,
+                    widthOffset
                 }
-                console.log(msg)
+                console.log('printer : ', printer.label)
+                console.log('\tpart height', partHeight)
+                console.log('\tpart depth', partDepth)
+                console.log('\tpart width', partWidth)
+                console.log('\theight offset', heightOffset)
+                console.log('\tdepth offset', depthOffset)
+                console.log('\twidth offset', widthOffset)
 
                 printer.ws.send(JSON.stringify(msg))
+                printerIndex++
             }
         }
 

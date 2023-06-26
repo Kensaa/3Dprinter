@@ -197,58 +197,45 @@ end
 
 function goTo(x,y,z)
     local target = {x,y,z}
-    print('target:')
-    print(target[1], target[2], target[3])
-    print('current:')
-    print(currentPosition[1], currentPosition[2], currentPosition[3])
-    print('heading:')
     print(currentHeading)
     if heading == -1 then
         print('error')
         return
     end
     while currentPosition[1] ~= target[1] or currentPosition[2] ~= target[2] or currentPosition[3] ~= target[3] do
-        -- print('target:')
-        -- print(target[1], target[2], target[3])
-        -- print('current:')
-        -- print(currentPosition[1], currentPosition[2], currentPosition[3])
         if currentPosition[1] < target[1] then
-            --print('x+')
+            -- x+
             while currentHeading % 4 ~= 1 do
-                --print("turning, heading: " .. currentHeading, "target: " .. 1)
                 turtle.turnRight()
                 currentHeading = currentHeading + 1
             end
             forward()
         elseif currentPosition[1] > target[1] then
-            --print('x-')
+            -- x-
             while currentHeading % 4 ~= 3 do
-                --print("turning, heading: " .. currentHeading, "target: " .. 3)
                 turtle.turnRight()
                 currentHeading = currentHeading + 1
             end
             forward()
         elseif currentPosition[3] < target[3] then
-            --print('z+')
+            -- z+
             while currentHeading % 4 ~= 2 do
-                --print("turning, heading: " .. currentHeading, "target: " .. 2)
                 turtle.turnRight()
                 currentHeading = currentHeading + 1
             end
             forward()
         elseif currentPosition[3] > target[3] then
-            --print('z-')
+            -- z-
             while currentHeading % 4 ~= 0 do
-                --print("turning, heading: " .. currentHeading, "target: " .. 4)
                 turtle.turnRight()
                 currentHeading = currentHeading + 1
             end
             forward()
         elseif currentPosition[2] < target[2] then
-            --print('y+')
+            -- y+
             up()
         elseif currentPosition[2] > target[2] then
-            --print('y-')
+            -- y-
             down()
         end
     end     
@@ -261,15 +248,7 @@ function headTo(heading)
     end
 end
 
-function reverse(arr)
-    newArray = {}
-    for i = #arr,1,-1 do
-        table.insert(arr[i])
-    end
-    return newArray
-end
-
-function build(data, height, depth, width) --TODO: make sure that turtle don't leave the square
+function build(data, height, depth, width)
     for y = 1,height do
         print("layer n°"..y)
         local layer = data[y]
@@ -295,7 +274,8 @@ function build(data, height, depth, width) --TODO: make sure that turtle don't l
             local row = layer[z]
             print('row n°' .. z..', Xdir: '..Xdir)
 
-            if startIndexes[z] == nil then
+            if startIndexes[z] == nil and z ~= depth then
+                --last row --> don't have to take shortcut --> break everything
                 print('line is empty')
                 if Xdir == 0 then
                     turnRight()
@@ -308,6 +288,7 @@ function build(data, height, depth, width) --TODO: make sure that turtle don't l
                 end
             else
                 print('line is not empty')
+                --don't forward on first pass because at the start of each row, the turtle is 1 bloc further from where it should be
                 firstPass = true
                 for x = startX, width do
                     index = x
@@ -327,54 +308,49 @@ function build(data, height, depth, width) --TODO: make sure that turtle don't l
                     -- end of line
                     if x == width then
                         print("end of line")
-                        startX = 1
-                        if Xdir == 0 then
-                            Xdir = 1
-                            --backward()
-                            turnRight()
-                            forward()
-                            turnRight()
-                        else
-                            Xdir = 0
-                            --backward()
-                            turnLeft()
-                            forward()
-                            turnLeft()
+                        if z ~= depth then
+                            -- last row ---> dont turn --> makes the turtle go 1 block down while it shouldn't
+                            startX = 1
+                            if Xdir == 0 then
+                                Xdir = 1
+                                turnRight()
+                                forward()
+                                turnRight()
+                            else
+                                Xdir = 0
+                                turnLeft()
+                                forward()
+                                turnLeft()
+                            end
                         end
                     else
                         -- shortcut
                         if Xdir == 0 then
-                            if x >= endIndexes[z] then -- if further than last on current line
-                                if endIndexes[z+1] ~= nil then -- if current line is not the last
-                                    if x >= endIndexes[z+1] then -- if further than last on next line
-                                        -- shortcut available
-                                        startX = width-x+1 -- set next start to where the shortcut places us
-                                        Xdir = 1 -- we change direction (obviously)
-                                        print("turning earlier to the right")
-                                        turnRight()
-                                        forward()
-                                        turnRight()
-                                        --backward()
-                                        break
-                                    end
+                            if endIndexes[z] ~= nil and x >= endIndexes[z] then -- if further than last on current line
+                                if endIndexes[z+1] ~= nil and x >= endIndexes[z+1] then -- if further than last on next line
+                                    -- shortcut available
+                                    startX = width-x+1 -- set next start to where the shortcut places us
+                                    Xdir = 1 -- we change direction (obviously)
+                                    print("turning earlier to the right")
+                                    turnRight()
+                                    forward()
+                                    turnRight()
+                                    break
                                 end
                             end
                         else
                             i = width-x+1
-                            if i <= startIndexes[z] then -- if further than first on current line
-                                if startIndexes[z+1] ~= nil then -- if current line is not the last
-                                    if i <= startIndexes[z+1] then -- if further than first on next line
-                                        -- shortcut available
-                                        startX = i -- set next start to where the shortcut places us
-                                        Xdir = 0 -- we change direction (obviously)
-                                        print("turning earlier to the left")
-                                        --backward()
-                                        turnLeft()
-                                        forward()
-                                        turnLeft()
-                                        --backward()
-                                        break
-                                    end
+                            if startIndexes[z] ~= nil and i <= startIndexes[z] then -- if further than first on current line
+                                if startIndexes[z+1] ~= nil and i <= startIndexes[z+1] then -- if further than first on next line
+                                    -- shortcut available
+                                    startX = i -- set next start to where the shortcut places us
+                                    Xdir = 0 -- we change direction (obviously)
+                                    print("turning earlier to the left")
+                                    --backward()
+                                    turnLeft()
+                                    forward()
+                                    turnLeft()
+                                    break
                                 end
                             end
                         end
@@ -383,20 +359,19 @@ function build(data, height, depth, width) --TODO: make sure that turtle don't l
                 end
             end
         end
-        -- TURTLE LEAVING THE SQUARE SOMEWHERE HERE
         -- end of layer
         if Xdir == 0 then
-            --same side as start
-            turnLeft()
-            forward()
-        else
             --oposite side as start
-            --turnRight()
+            turnRight()
+            turnRight()
+
             for i = 1,width-1 do
                 forward()
             end
             turnRight()
-            forward()
+        else
+            --same side as start
+            turnRight()
         end
         for i = 1,depth-1 do
             forward()
@@ -445,6 +420,7 @@ function handleData(JSONData)
     fs.delete('data')
     ws.send(textutils.serialiseJSON({type = 'log', label = os.getComputerLabel(), message = "finished building, going back to base"}))
     goTo(homePosition[1],homePosition[2],homePosition[3])
+    headTo(homeHeading)
     ws.send(textutils.serialiseJSON({type = 'log', label = os.getComputerLabel(), message = "back to base, powering down"}))
 end
 
@@ -454,6 +430,7 @@ homePosition = {currentPosition[1],currentPosition[2],currentPosition[3]}
 print(currentPosition[1],currentPosition[2],currentPosition[3])
 ws.send(textutils.serialiseJSON({type = 'setHomePos', pos={currentPosition[1],currentPosition[2],currentPosition[3]}, id = os.getComputerLabel()}))
 currentHeading = getHeading()
+homeHeading = currentHeading
 print(currentHeading)
 
 if turtle.getFuelLevel() < 100 then
