@@ -46,9 +46,10 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
         ws.on('message', data => {
             const msg = JSON.parse(data.toString())
-            const printer = printers.find(p => p.ws === ws)
-            if (!printer) return
+            console.log(msg)
             if (msg.type == 'log') {
+                const printer = printers.find(p => p.ws === ws)
+                if (!printer) return
                 console.log(`[${getTime()}]: (${printer.label}) ${msg.message}`)
             } else if (msg.type === 'register') {
                 const current = printers.find(p => p.ws === ws)
@@ -60,6 +61,9 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
                     label: msg.label,
                     id: msg.id
                 })
+                console.log(
+                    `registered printer with id "${msg.id}" and label "${msg.label}"`
+                )
             }
         })
     })
@@ -79,8 +83,8 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         }
 
         const { file, pos, heading } = req.body as Params
-        const printerCount: number = 9
-        //const printerCount = printers.length
+        //const printerCount: number = 9
+        const printerCount = printers.length
         if (!file) return res.status(500).send('missing field "file"')
         if (!pos) return res.status(500).send('missing field "pos"')
         if (!Array.isArray(pos))
@@ -108,19 +112,25 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         console.log('build height : ', height)
         console.log('build depth : ', depth)
         console.log('build width : ', width)
+        console.log('available printers', printerCount)
         //each turtle build the entier height of the build
         //divided by 2 in the smallest side
         //divided by printerCount / 2 in the biggest side (/2 because of the previous line)
         let xDivide = 0,
             yDivide = 0
         if (width >= depth) {
-            yDivide = Math.ceil(depth / 2)
-            xDivide = Math.ceil(width / (printerCount / 2))
+            yDivide = printerCount == 1 ? depth : Math.ceil(depth / 2)
+            xDivide = Math.ceil(width / Math.ceil(printerCount / 2))
         } else {
-            xDivide = Math.ceil(width / 2)
-            yDivide = Math.ceil(depth / (printerCount / 2))
+            xDivide = printerCount == 1 ? width : Math.ceil(width / 2)
+            yDivide = Math.ceil(depth / Math.ceil(printerCount / 2))
         }
+
+        console.log('xDivide', xDivide)
+        console.log('yDivide', yDivide)
+
         const divided = divide3D(shape, xDivide, yDivide, height).flat()
+
         fs.writeFileSync('output.json', JSON.stringify(divided))
 
         if (divided.length * divided[0].length > printerCount)
