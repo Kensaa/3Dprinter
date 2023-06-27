@@ -53,8 +53,16 @@ if not err == nil then
     return
 end
 
+function send(data)
+    ws.send(textutils.serialiseJSON(data))
+end
+
+function log(message)
+    send({type = 'log', message = message})
+end
+
 -- register the client (to associate a websocket with a label and an id on the server)
-ws.send(textutils.serialiseJSON({type = 'register', label = os.getComputerLabel(), id = os.getComputerID()}))
+send({type = 'register', label = os.getComputerLabel(), id = os.getComputerID()})
 
 function countA(a)
     c = {}
@@ -238,6 +246,7 @@ function goTo(x,y,z)
             -- y-
             down()
         end
+        send({type = 'setPos', pos=currentPosition})
     end     
 end
 
@@ -273,6 +282,8 @@ function build(data, height, depth, width)
         for z = 1,depth do
             local row = layer[z]
             print('row n°' .. z..', Xdir: '..Xdir)
+            send({type = 'setPos', pos=currentPosition})
+            
 
             if startIndexes[z] == nil and z ~= depth then
                 --last row --> don't have to take shortcut --> break everything
@@ -358,26 +369,31 @@ function build(data, height, depth, width)
 
                 end
             end
+            progress = (y - 1  + (z - 1) / depth) / height * 100
+            send({type = 'setProgress', progress=progress})
+            log("progress : "..progress..'%')
         end
         -- end of layer
-        if Xdir == 0 then
-            --oposite side as start
-            turnRight()
-            turnRight()
-
-            for i = 1,width-1 do
+        if y ~= height then -- if it's the last layer, no need to go back to the start
+            if Xdir == 0 then
+                --oposite side as start
+                turnRight()
+                turnRight()
+    
+                for i = 1,width-1 do
+                    forward()
+                end
+                turnRight()
+            else
+                --same side as start
+                turnRight()
+            end
+            for i = 1,depth-1 do
                 forward()
             end
             turnRight()
-        else
-            --same side as start
-            turnRight()
+            up()
         end
-        for i = 1,depth-1 do
-            forward()
-        end
-        turnRight()
-        up()
     end
 end
 
@@ -413,45 +429,50 @@ function handleData(JSONData)
         x = x + depthOffset
         z = z - widthOffset
     end
-    print('building a '..width..'x'..depth..'x'..height..' shape at '..x..','..y..','..z)
+
+    log('building a '..width..'x'..depth..'x'..height..' shape at '..x..','..y..','..z)
+    send({type = 'setState', state='building'})
     goTo(x,y+1,z)
     headTo(heading)
     build(data,height,depth,width)
     fs.delete('data')
-    ws.send(textutils.serialiseJSON({type = 'log', label = os.getComputerLabel(), message = "finished building, going back to base"}))
+    log("finished building, going back to home position")
+    send({type = 'setState', state='moving'})
     goTo(homePosition[1],homePosition[2],homePosition[3])
     headTo(homeHeading)
-    ws.send(textutils.serialiseJSON({type = 'log', label = os.getComputerLabel(), message = "back to base, powering down"}))
+    log("back to home position, waiting for order")
+    send({type = 'setState', state='idle'})
+
 end
 
 
 currentPosition = {locate()}
 homePosition = {currentPosition[1],currentPosition[2],currentPosition[3]}
-print(currentPosition[1],currentPosition[2],currentPosition[3])
-ws.send(textutils.serialiseJSON({type = 'setHomePos', pos={currentPosition[1],currentPosition[2],currentPosition[3]}, id = os.getComputerLabel()}))
+send({type = 'setPos', pos=currentPosition})
+
 currentHeading = getHeading()
 homeHeading = currentHeading
-print(currentHeading)
 
 if turtle.getFuelLevel() < 100 then
     print('turtle is out of fuel')
     return
 end
 
-if fs.exists('data') then
-    print('data exists')
-    local data = textutils.unserialiseJSON(fs.open("data","r").readAll())
-    handleData(data)
-else
-    print('waiting for message')
-    local _, url, response, isBinary = os.pullEvent("websocket_message")
-    if isBinary then
-        print('received binary message')
-        return
+while true do
+    if fs.exists('data') then
+        print('data exists')
+        local data = textutils.unserialiseJSON(fs.open("data","r").readAll())
+        handleData(data)
+    else
+        print('waiting for message')
+        local _, url, response, isBinary = os.pullEvent("websocket_message")
+        if isBinary then
+            print('received binary message')
+            return
+        end
+        print('received message')
+        local JSONResponse = textutils.unserialiseJSON(response)
+        io.open("data","w"):write(textutils.serialiseJSON(JSONResponse))
+        handleData(JSONResponse)
     end
-    print('received message')
-    local JSONResponse = textutils.unserialiseJSON(response)
-    io.open("data","w"):write(textutils.serialiseJSON(JSONResponse))
-    handleData(JSONResponse)
 end
-

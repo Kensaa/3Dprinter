@@ -20,56 +20,106 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         console.log(`server started on port ${WEB_SERVER_PORT}`)
     )
 
+    type PrinterState = 'idle' | 'building' | 'moving'
     interface Printer {
         ws: ws.WebSocket
         id: number
         label: string
+        state: PrinterState
+        connected: boolean
+        pos?: [number, number, number]
+        progress?: number
     }
     const printers: Printer[] = []
 
     wsServer.on('connection', ws => {
-        const current = printers.find(p => p.ws === ws)
-        if (current) {
-            printers.splice(printers.indexOf(current))
-        }
-
         ws.on('close', () => {
             const current = printers.find(p => p.ws === ws)
             if (current) {
-                printers.splice(printers.indexOf(current))
+                current.connected = false
+                console.log(
+                    `"${
+                        current.label
+                    }" disconnected, total connected printers: ${
+                        printers.filter(p => p.connected).length
+                    }`
+                )
             }
-            console.log(
-                'printer disconnected, total printers: ',
-                printers.length
-            )
         })
 
         ws.on('message', data => {
             const msg = JSON.parse(data.toString())
-            //console.log(msg)
             if (msg.type == 'log') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
-                console.log(`[${getTime()}]: (${printer.label}) ${msg.message}`)
+                console.log(`[${getTime()}] (${printer.label}): ${msg.message}`)
             } else if (msg.type === 'register') {
-                const current = printers.find(p => p.ws === ws)
-                if (current) {
-                    printers.splice(printers.indexOf(current))
-                }
-                printers.push({
-                    ws,
-                    label: msg.label,
-                    id: msg.id
-                })
-                console.log(
-                    `registered printer with id "${msg.id}" and label "${msg.label}" (${printers.length} printer available)`
+                const printer = printers.find(
+                    p => p.id === msg.id && p.label === msg.label
                 )
+                if (printer) {
+                    printer.ws = ws
+                    printer.connected = true
+                    printer.state = 'idle'
+                } else {
+                    printers.push({
+                        ws,
+                        label: msg.label,
+                        id: msg.id,
+                        state: 'idle',
+                        connected: true
+                    })
+                }
+                console.log(
+                    `registered "${msg.label}" (${msg.id}) (${
+                        printers.filter(p => p.connected).length
+                    } printer available)`
+                )
+            } else if (msg.type === 'setState') {
+                const printer = printers.find(p => p.ws === ws)
+                if (!printer) return
+                printer.state = msg.state
+            } else if (msg.type === 'setPos') {
+                const printer = printers.find(p => p.ws === ws)
+                if (!printer) return
+                printer.pos = msg.pos
+            } else if (msg.type === 'setProgress') {
+                const printer = printers.find(p => p.ws === ws)
+                if (!printer) return
+                printer.progress = msg.progress
             }
         })
     })
-
+    interface Model {
+        shape: number[][][]
+    }
     expressApp.get('/', (req, res) => {
         res.sendStatus(200)
+    })
+
+    expressApp.get('/models', (req, res) => {
+        const modelsNames = fs.readdirSync(BUILDS_FOLDER)
+        const models: Record<string, Model> = {}
+        for (const name of modelsNames) {
+            const strData = fs.readFileSync(
+                path.join(BUILDS_FOLDER, name),
+                'utf-8'
+            )
+            try {
+                models[path.parse(name).name] = JSON.parse(strData)
+            } catch {}
+        }
+
+        res.status(200).json(models)
+    })
+
+    expressApp.get('/printers', (req, res) => {
+        const out: Omit<Printer, 'ws'>[] = []
+        for (const printer of printers) {
+            const { ws, ...printerWithoutWS } = printer
+            out.push(printerWithoutWS)
+        }
+        res.status(200).json(out)
     })
 
     expressApp.post('/build', (req, res) => {
@@ -78,13 +128,11 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
             pos: [number, number, number]
             heading: number
         }
-        interface Build {
-            shape: number[][][]
-        }
 
         const { file, pos, heading } = req.body as Params
         //const printerCount: number = 9
-        const printerCount = printers.length
+        const connectedPrinters = printers.filter(p => p.connected)
+        const printerCount = connectedPrinters.length
         if (!file) return res.status(500).send('missing field "file"')
         if (!pos) return res.status(500).send('missing field "pos"')
         if (!Array.isArray(pos))
@@ -98,7 +146,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         if (printerCount === 0) return res.status(404).send('no printer found')
         let build
         try {
-            build = JSON.parse(fs.readFileSync(filepath, 'utf-8')) as Build
+            build = JSON.parse(fs.readFileSync(filepath, 'utf-8')) as Model
         } catch {
             return res.status(400).send('file is not json')
         }
@@ -127,7 +175,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         }
 
         xDivide = Math.max(3, xDivide) // set the minimal divide to 3, to avoid bugs where a turtle places a single block
-        yDivide = Math.max(3, xDivide)
+        yDivide = Math.max(3, yDivide)
 
         console.log('xDivide', xDivide)
         console.log('yDivide', yDivide)
@@ -148,7 +196,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         for (let partRow = 0; partRow < divided.length; partRow++) {
             for (let partCol = 0; partCol < divided[0].length; partCol++) {
                 const part = divided[partRow][partCol]
-                const printer = printers[printerIndex]
+                const printer = connectedPrinters[printerIndex]
 
                 const partHeight = part.length
                 const partDepth = part[0].length

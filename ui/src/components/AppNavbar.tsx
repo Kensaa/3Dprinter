@@ -10,6 +10,11 @@ export default function AppNavbar() {
                 </Navbar.Brand>
                 <Navbar.Toggle aria-controls='basic-navbar-nav' />
                 <Nav>
+                    <Nav.Link as={Link} to='/printers'>
+                        Printers
+                    </Nav.Link>
+                </Nav>
+                <Nav>
                     <Nav.Link as={Link} to='/models'>
                         Models
                     </Nav.Link>
