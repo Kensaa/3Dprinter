@@ -4,6 +4,7 @@ import * as http from 'http'
 import * as ws from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
+import { z } from 'zod'
 
 const WEB_SERVER_PORT = 9513
 const BUILDS_FOLDER = path.join('__dirname', '..', 'builds')
@@ -111,6 +112,27 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         }
 
         res.status(200).json(models)
+    })
+    expressApp.post('/model', (req, res) => {
+        const schema = z.record(
+            z.string(),
+            z.object({
+                shape: z.number().array().array().array()
+            })
+        )
+        const body = schema.parse(req.body)
+        for (const key of Object.keys(body)) {
+            const model = body[key]
+            fs.writeFileSync(
+                path.join(
+                    BUILDS_FOLDER,
+                    key.endsWith('.json') ? key : key + '.json'
+                ),
+                JSON.stringify(model, null, 4)
+            )
+        }
+
+        res.status(200)
     })
 
     expressApp.get('/printers', (req, res) => {

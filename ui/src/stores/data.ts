@@ -6,10 +6,11 @@ interface dataStore {
     models: Record<string, Model>
     printers: Printer[]
     fetchModels: () => void
+    updateModel: (name: string, model: Model) => void
     fetchPrinters: () => void
 }
 
-export default create<dataStore>(set => {
+export default create<dataStore>((set, get) => {
     const fetchModels = () => {
         const { address } = config.getState()
         fetch(`${address}/models`, { method: 'GET' })
@@ -25,6 +26,18 @@ export default create<dataStore>(set => {
             .then(printers => set({ printers }))
     }
 
+    const updateModel = (name: string, model: Model) => {
+        const { address } = config.getState()
+        const models = get().models
+        models[name] = model
+        set({ models })
+        fetch(`${address}/model`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...models })
+        })
+    }
+
     fetchModels()
     fetchPrinters()
 
@@ -32,6 +45,7 @@ export default create<dataStore>(set => {
         models: {},
         printers: [],
         fetchModels,
+        updateModel,
         fetchPrinters
     }
 })

@@ -42,11 +42,13 @@ export default function Homepage() {
                         <ModelViewer
                             width='100%'
                             height='100%'
+                            modelName={selectedModel ?? ''}
                             model={
                                 selectedModel
                                     ? models[selectedModel]
                                     : undefined
                             }
+                            editable
                         />
                     </div>
                 </div>

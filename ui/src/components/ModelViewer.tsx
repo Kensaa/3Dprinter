@@ -1,24 +1,34 @@
-import { useRef, useState } from 'react'
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { useRef, useState, useEffect } from 'react'
 import { Canvas, ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stage, Edges, Html } from '@react-three/drei'
 import { Model } from '../types'
 import chevronLeft from '../assets/chevron-left.svg'
 import chevronRight from '../assets/chevron-right.svg'
-import { Spinner } from 'react-bootstrap'
+import { edit3DArray, trim3DArray } from '../arrayUtils'
+import { Button } from 'react-bootstrap'
+import dataStore from '../stores/data'
 
 interface ModelViewerProps {
+    modelName: string
     model: Model | undefined
     width?: string
     height?: string
+    editable?: boolean
 }
 
 export default function ModelViewer({
-    model,
+    modelName,
+    model: defaultModel,
     width = '25%',
-    height = '50%'
+    height = '50%',
+    editable = false
 }: ModelViewerProps) {
     const [selectedLayer, setSelectedLayer] = useState(0)
+    const [model, setModel] = useState(defaultModel)
+    const updateModel = dataStore(store => store.updateModel)
 
+    useEffect(() => setModel(defaultModel), [defaultModel])
     const constructLayer = (y: number, model: Model) => {
         return model.shape[y].map((row, z) =>
             row.map(
@@ -35,6 +45,27 @@ export default function ModelViewer({
                             hoveredColor={
                                 y === 0 && z === 0 && x === 0
                                     ? 0x004900
+                                    : undefined
+                            }
+                            addBlock={
+                                editable
+                                    ? (x: number, y: number, z: number) => {
+                                          const shape = model.shape
+                                          edit3DArray(shape, x, y, z, 1)
+                                          console.log(shape)
+                                          setModel({ ...model, shape })
+                                      }
+                                    : undefined
+                            }
+                            deleteBlock={
+                                editable
+                                    ? (x: number, y: number, z: number) => {
+                                          const shape = model.shape
+                                          edit3DArray(shape, x, y, z, 0)
+                                          trim3DArray(shape)
+                                          console.log(shape)
+                                          setModel({ ...model, shape })
+                                      }
                                     : undefined
                             }
                         />
@@ -72,8 +103,14 @@ export default function ModelViewer({
                         />
                     </div>
                 </Panel>
-                <OrbitControls makeDefault minDistance={5} maxDistance={20} />
+                <OrbitControls makeDefault minDistance={1} maxDistance={20} />
             </Canvas>
+            {editable && (
+                //@ts-ignore
+                <Button onClick={() => updateModel(modelName, model)}>
+                    Save Model
+                </Button>
+            )}
         </div>
     )
 }
@@ -146,17 +183,56 @@ interface BoxProps {
     position: [number, number, number]
     color?: number
     hoveredColor?: number
+    addBlock?: (x: number, y: number, z: number) => void
+    deleteBlock?: (x: number, y: number, z: number) => void
 }
 function Box({
     position,
     color = 0x515151,
-    hoveredColor = 0x454545
+    hoveredColor = 0x454545,
+    addBlock,
+    deleteBlock
 }: BoxProps) {
     const meshRef = useRef(null)
     const [hover, setHover] = useState(false)
 
     const clicked = (event: ThreeEvent<MouseEvent>) => {
         event.stopPropagation()
+        if (!addBlock) return
+        if (!deleteBlock) return
+        const position = event.eventObject.position
+        if (event.ctrlKey || event.shiftKey) {
+            // remove
+            deleteBlock(position.x, position.y - 1, position.z)
+            console.log('deleted block', position)
+        } else {
+            const newPos = { ...position }
+            const index = event.face?.materialIndex
+            switch (index) {
+                case 0:
+                    newPos.x += 1 // west
+                    break
+                case 1:
+                    newPos.x -= 1 // east
+                    break
+                case 2:
+                    newPos.y += 1 // up
+                    break
+                case 3:
+                    newPos.y -= 1 // down
+                    break
+                case 4:
+                    newPos.z += 1 // south
+                    break
+                case 5:
+                    newPos.z -= 1 // north
+                    break
+                default:
+                    return
+            }
+            addBlock(newPos.x, newPos.y - 1, newPos.z)
+            console.log('added block', newPos)
+        }
     }
 
     return (
@@ -173,8 +249,14 @@ function Box({
             }}
             ref={meshRef}
         >
+            {[...Array(6)].map((_, index) => (
+                <meshStandardMaterial
+                    key={index}
+                    color={hover ? hoveredColor : color}
+                    attach={`material-${index}`}
+                />
+            ))}
             <boxGeometry args={[1, 1, 1]} />
-            <meshStandardMaterial color={hover ? hoveredColor : color} />
             <Edges />
         </mesh>
     )
