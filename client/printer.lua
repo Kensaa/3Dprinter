@@ -431,9 +431,10 @@ function handleData(JSONData)
     end
 
     log('building a '..width..'x'..depth..'x'..height..' shape at '..x..','..y..','..z)
-    send({type = 'setState', state='building'})
+    send({type = 'setState', state='moving'})
     goTo(x,y+1,z)
     headTo(heading)
+    send({type = 'setState', state='building'})
     build(data,height,depth,width)
     fs.delete('data')
     log("finished building, going back to home position")
