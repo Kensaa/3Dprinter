@@ -102,13 +102,15 @@ export function trim3DArray(arr: number[][][], nullE = 0) {
 
     const firstNonEmptyLayer = startIndex(emptyLayers, nullE)
     const lastNonEmptyLayer = endIndex(emptyLayers, nullE)
-    let layerRemoved = 0
+
+    let layersRemoved = 0
     for (let y = 0; y < firstNonEmptyLayer; y++) {
-        arr.splice(y - layerRemoved, 1)
-        layerRemoved++
+        arr.shift()
+        layersRemoved++
     }
-    for (let y = lastNonEmptyLayer - layerRemoved; y < arr.length; y++) {
-        arr.splice(lastNonEmptyLayer - layerRemoved + 1, 1)
+    const end = arr.length + layersRemoved
+    for (let y = lastNonEmptyLayer; y < end - 1; y++) {
+        arr.pop()
     }
 
     // LEFT AND RIGHT TRIM
@@ -125,25 +127,21 @@ export function trim3DArray(arr: number[][][], nullE = 0) {
     const maxEnd = Math.max(...endIndexes)
 
     let spliced = 0
-    //if (minStart !== 0) {
     for (let x = 0; x < minStart; x++) {
         for (let y = 0; y < arr.length; y++) {
             for (let z = 0; z < arr[0].length; z++) {
-                arr[y][z].splice(0, 1)
+                arr[y][z].shift()
             }
         }
         spliced++
     }
-    /*} else {
-  console.log("skip 1");
-}*/
-    const end = arr[0][0].length + spliced
-    for (let x = maxEnd; x < end - 1; x++) {
+
+    const end2 = arr[0][0].length + spliced
+    for (let x = maxEnd; x < end2 - 1; x++) {
         for (let y = 0; y < arr.length; y++) {
             for (let z = 0; z < arr[0].length; z++) {
-                arr[y][z].splice(arr[y][z].length - 1, 1)
+                arr[y][z].pop()
             }
-            spliced++
         }
     }
 
@@ -165,17 +163,23 @@ export function trim3DArray(arr: number[][][], nullE = 0) {
     const minStart2 = Math.min(...startIndexes2)
     const maxEnd2 = Math.max(...endIndexes2)
 
+    console.log(arr)
+    console.log(minStart2)
+    console.log(maxEnd2)
+
     let spliced2 = 0
-    for (let y = 0; y < arr.length; y++) {
-        for (let z = 0; z < minStart2; z++) {
-            arr[y].splice(0, 1)
-            spliced2++
+    for (let z = 0; z < minStart2; z++) {
+        for (let y = 0; y < arr.length; y++) {
+            arr[y].shift()
         }
+        spliced2++
     }
+    console.log(arr)
+    console.log(spliced2)
     for (let y = 0; y < arr.length; y++) {
         const end = arr[y].length + spliced2
         for (let z = maxEnd2; z < end - 1; z++) {
-            arr[y].splice(arr[y].length - 1, 1)
+            arr[y].pop()
         }
     }
 }
