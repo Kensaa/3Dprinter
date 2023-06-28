@@ -3,7 +3,7 @@ export const edit3DArray = (
     x: number,
     y: number,
     z: number,
-    element: any
+    element: number
 ) => {
     if (y < 0) {
         console.log('extend down')
@@ -63,11 +63,12 @@ export const edit3DArray = (
     return arr
 }
 
-function generate1DArray(width: number, element: any = 0) {
+function generate1DArray(width: number, element = 0) {
     return new Array(width).fill(element)
 }
 
-function generate2DArray(width: number, height: number, element: any = 0) {
+function generate2DArray(width: number, height: number, element = 0) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return new Array(height).fill(0).map(_ => generate1DArray(width, element))
 }
 
