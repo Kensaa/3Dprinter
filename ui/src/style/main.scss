@@ -58,3 +58,6 @@ body,
 .modal {
     z-index: 99999999 !important;
 }
+.form-label {
+    user-select: none;
+}

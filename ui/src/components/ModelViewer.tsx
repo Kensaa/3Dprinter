@@ -260,7 +260,7 @@ function Box({
             {[...Array(6)].map((_, index) => (
                 <meshStandardMaterial
                     key={index}
-                    color={hover ? hoveredColor : color}
+                    color={hover && addBlock ? hoveredColor : color}
                     attach={`material-${index}`}
                 />
             ))}
