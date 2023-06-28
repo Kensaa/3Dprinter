@@ -220,6 +220,8 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
                 const part = divided[partRow][partCol]
                 const printer = connectedPrinters[printerIndex]
 
+                //TODO: Trim empty layer from the build to optimise build
+
                 const partHeight = part.length
                 const partDepth = part[0].length
                 const partWidth = part[0][0].length
@@ -319,5 +321,8 @@ function divide3D(
  */
 function getTime() {
     const date = new Date()
-    return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    const seconds = date.getSeconds().toString().padStart(2, '0')
+    return `${hours}:${minutes}:${seconds}`
 }
