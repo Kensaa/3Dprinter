@@ -6,10 +6,12 @@ import dataStore from '../stores/data'
 import configStore from '../stores/config'
 import Selector from '../components/Selector'
 import { Button, Modal, Form, Row, Col, Alert } from 'react-bootstrap'
+import { Model } from '../types'
 
 export default function Homepage() {
     const { models, fetchModels } = dataStore(state => ({ ...state }))
     const [buildModalShown, setBuildModalShown] = useState(false)
+    const [createModalShown, setCreateModalShown] = useState(false)
     const [selectedModel, setSelectedModel] = useState<string>()
 
     useEffect(() => fetchModels, [fetchModels])
@@ -26,15 +28,27 @@ export default function Homepage() {
                             elements={Object.keys(models)}
                             onChange={setSelectedModel}
                         />
-                        {
-                            //@ts-ignore
-                            <Button
-                                disabled={!selectedModel}
-                                onClick={() => setBuildModalShown(true)}
-                            >
-                                Build
-                            </Button>
-                        }
+                        <div className='w-100 d-flex justify-content-between'>
+                            {
+                                //@ts-ignore
+                                <Button
+                                    disabled={!selectedModel}
+                                    variant='outline-success'
+                                    onClick={() => setBuildModalShown(true)}
+                                >
+                                    Build
+                                </Button>
+                            }
+                            {
+                                //@ts-ignore
+                                <Button
+                                    variant='outline-primary'
+                                    onClick={() => setCreateModalShown(true)}
+                                >
+                                    Create new Model
+                                </Button>
+                            }
+                        </div>
                     </div>
 
                     <div className='w-50 unselectable'>
@@ -56,7 +70,12 @@ export default function Homepage() {
             <BuildModal
                 show={buildModalShown}
                 hide={() => setBuildModalShown(false)}
+                model={selectedModel ? models[selectedModel] : undefined}
                 modelName={selectedModel ?? ''}
+            />
+            <CreateModal
+                show={createModalShown}
+                hide={() => setCreateModalShown(false)}
             />
         </div>
     )
@@ -64,10 +83,11 @@ export default function Homepage() {
 
 interface BuildModalProps {
     modelName: string
+    model?: Model
     show: boolean
     hide: () => void
 }
-function BuildModal({ modelName, show, hide }: BuildModalProps) {
+function BuildModal({ modelName, model, show, hide }: BuildModalProps) {
     const [x, setX] = useState('0')
     const [y, setY] = useState('0')
     const [z, setZ] = useState('0')
@@ -106,8 +126,12 @@ function BuildModal({ modelName, show, hide }: BuildModalProps) {
         }
     }
 
+    if (!model) {
+        return
+    }
+
     return (
-        <Modal show={show} dialogClassName='' onHide={hide}>
+        <Modal show={show} onHide={hide}>
             <Modal.Header closeButton>
                 <Modal.Title>Building model "{modelName}"</Modal.Title>
             </Modal.Header>
@@ -182,9 +206,74 @@ function BuildModal({ modelName, show, hide }: BuildModalProps) {
                                 ))}
                             </Form.Select>
                         </Form.Group>
+                        <ModelViewer
+                            width='100%'
+                            height='100%'
+                            modelName={modelName}
+                            model={model}
+                        />
                         <Form.Group className='d-flex justify-content-center mt-2'>
                             <Button type='submit'>Build</Button>
                         </Form.Group>
+                    </Form>
+                </div>
+            </Modal.Body>
+        </Modal>
+    )
+}
+
+interface CreateModalProps {
+    show: boolean
+    hide: () => void
+}
+
+function CreateModal({ show, hide }: CreateModalProps) {
+    const [error, setError] = useState('')
+    const [name, setName] = useState('')
+    const { models, updateModel } = dataStore(state => ({
+        models: state.models,
+        updateModel: state.updateModel
+    }))
+
+    const create = () => {
+        const modelNames = Object.keys(models)
+        if (modelNames.includes(name) || modelNames.includes(name + '.json')) {
+            setError('model already exists')
+            setName('')
+        } else {
+            const newModel = {
+                shape: [[[1]]]
+            }
+            updateModel(name, newModel)
+            hide()
+        }
+    }
+
+    return (
+        <Modal show={show} onHide={hide}>
+            <Modal.Header closeButton>
+                <Modal.Title>Creating a new model</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                {error && (
+                    <Alert
+                        dismissible
+                        variant='danger'
+                        onClose={() => setError('')}
+                    >
+                        {error}
+                    </Alert>
+                )}
+                <div className='d-flex flex-column align-items-center'>
+                    <Form onSubmit={create}>
+                        <Form.Control
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder='Name of the model'
+                        ></Form.Control>
+                        <div className='w-100 d-flex justify-content-center mt-2'>
+                            <Button type='submit'>Create</Button>
+                        </div>
                     </Form>
                 </div>
             </Modal.Body>

@@ -14,11 +14,6 @@ export default function AppNavbar() {
                         Printers
                     </Nav.Link>
                 </Nav>
-                <Nav>
-                    <Nav.Link as={Link} to='/models'>
-                        Models
-                    </Nav.Link>
-                </Nav>
                 <Nav className='me-auto' />
             </Container>
         </Navbar>

@@ -60,6 +60,7 @@ export default function ModelViewer({
                             deleteBlock={
                                 editable
                                     ? (x: number, y: number, z: number) => {
+                                          //TODO: At least 1 block left at all times
                                           const shape = model.shape
                                           edit3DArray(shape, x, y, z, 0)
                                           trim3DArray(shape)
@@ -106,10 +107,17 @@ export default function ModelViewer({
                 <OrbitControls makeDefault minDistance={1} maxDistance={20} />
             </Canvas>
             {editable && (
-                //@ts-ignore
-                <Button onClick={() => updateModel(modelName, model)}>
-                    Save Model
-                </Button>
+                <div className='w-100 d-flex justify-content-center mt-3'>
+                    {
+                        //@ts-ignore
+                        <Button
+                            onClick={() => updateModel(modelName, model)}
+                            variant='outline-primary'
+                        >
+                            Save Model
+                        </Button>
+                    }
+                </div>
             )}
         </div>
     )
