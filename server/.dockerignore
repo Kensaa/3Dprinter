@@ -1,0 +1,8 @@
+node_modules
+yarn.lock
+homePos.json
+.gitignore
+preview/
+img/
+dist/
+tests/
