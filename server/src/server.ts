@@ -277,6 +277,20 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
         res.sendStatus(200)
     })
+
+    const PUBLIC_FOLDER = 'public/'
+    let publicPath = ''
+    if (process.env.NODE_ENV === 'production') {
+        publicPath = PUBLIC_FOLDER
+    } else {
+        publicPath = path.join(__dirname, '..', PUBLIC_FOLDER)
+    }
+    if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath)
+    console.log('public folder :', publicPath)
+    expressApp.use('/', express.static(publicPath))
+    expressApp.get('*', (req: express.Request, res: express.Response) => {
+        res.sendFile(path.join(publicPath, 'index.html'))
+    })
 })()
 
 /**
