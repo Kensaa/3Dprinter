@@ -94,9 +94,6 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
     interface Model {
         shape: number[][][]
     }
-    expressApp.get('/', (req, res) => {
-        res.sendStatus(200)
-    })
 
     expressApp.get('/models', (req, res) => {
         const modelsNames = fs.readdirSync(BUILDS_FOLDER)
