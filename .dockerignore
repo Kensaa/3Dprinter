@@ -6,3 +6,4 @@ preview/
 img/
 dist/
 tests/
+.env

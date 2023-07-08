@@ -5,9 +5,11 @@ import * as ws from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
 import { z } from 'zod'
+import 'dotenv/config'
 
 const WEB_SERVER_PORT = 9513
-const BUILDS_FOLDER = path.join('__dirname', '..', 'builds')
+const BUILDS_FOLDER =
+    process.env.buildsFolder ?? path.join(__dirname, '..', 'builds')
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 ;(async () => {
     const expressApp = express()
