@@ -13,7 +13,7 @@ interface dataStore {
 export default create<dataStore>((set, get) => {
     const fetchModels = () => {
         const { address } = config.getState()
-        fetch(`${address}/models`, { method: 'GET' })
+        fetch(`${address}/3D/models`, { method: 'GET' })
             .then(res => res.json())
             .then(data => data as Record<string, Model>)
             .then(models => set({ models }))
@@ -31,7 +31,7 @@ export default create<dataStore>((set, get) => {
         const models = get().models
         models[name] = model
         set({ models })
-        fetch(`${address}/model`, {
+        fetch(`${address}/3D/model`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...models })

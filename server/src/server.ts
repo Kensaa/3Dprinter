@@ -97,7 +97,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         shape: number[][][]
     }
 
-    expressApp.get('/models', (req, res) => {
+    expressApp.get('/3D/models', (req, res) => {
         const modelsNames = fs.readdirSync(BUILDS_FOLDER)
         const models: Record<string, Model> = {}
         for (const name of modelsNames) {
@@ -112,7 +112,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
         res.status(200).json(models)
     })
-    expressApp.post('/model', (req, res) => {
+    expressApp.post('/3D/model', (req, res) => {
         const schema = z.record(
             z.string(),
             z.object({
@@ -143,7 +143,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         res.status(200).json(out)
     })
 
-    expressApp.post('/build', (req, res) => {
+    expressApp.post('/3D/build', (req, res) => {
         interface Params {
             file: string
             pos: [number, number, number]
