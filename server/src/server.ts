@@ -5,6 +5,7 @@ import * as ws from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
 import { z } from 'zod'
+import * as jimp from 'jimp'
 import 'dotenv/config'
 
 const WEB_SERVER_PORT = 9513
@@ -97,7 +98,15 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         shape: number[][][]
     }
 
-    expressApp.get('/3D/models', (req, res) => {
+    expressApp.get('/printers', (req, res) => {
+        const out: Omit<Printer, 'ws'>[] = []
+        for (const printer of printers) {
+            const { ws, ...printerWithoutWS } = printer
+            out.push(printerWithoutWS)
+        }
+        res.status(200).json(out)
+    })
+    expressApp.get('/model', (req, res) => {
         const modelsNames = fs.readdirSync(BUILDS_FOLDER)
         const models: Record<string, Model> = {}
         for (const name of modelsNames) {
@@ -112,7 +121,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
         res.status(200).json(models)
     })
-    expressApp.post('/3D/model', (req, res) => {
+    expressApp.post('/model', (req, res) => {
         const schema = z.record(
             z.string(),
             z.object({
@@ -133,17 +142,9 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
         res.status(200)
     })
+    expressApp.post('/image/preview')
 
-    expressApp.get('/printers', (req, res) => {
-        const out: Omit<Printer, 'ws'>[] = []
-        for (const printer of printers) {
-            const { ws, ...printerWithoutWS } = printer
-            out.push(printerWithoutWS)
-        }
-        res.status(200).json(out)
-    })
-
-    expressApp.post('/3D/build', (req, res) => {
+    expressApp.post('/build', (req, res) => {
         interface Params {
             file: string
             pos: [number, number, number]
@@ -338,4 +339,38 @@ function getTime() {
     const minutes = date.getMinutes().toString().padStart(2, '0')
     const seconds = date.getSeconds().toString().padStart(2, '0')
     return `${hours}:${minutes}:${seconds}`
+}
+
+interface ImageToArrayOptions {
+    threshold: number
+    inverted: boolean
+    scale: number
+    horizontalMirror: boolean
+    verticalMirror: boolean
+}
+function imageToArray(image: jimp, options: Partial<ImageToArrayOptions>) {
+    const {
+        threshold = 50,
+        inverted = true,
+        scale = 1,
+        horizontalMirror = false,
+        verticalMirror = false
+    } = options
+
+    const output: number[][] = []
+    const width = image.getWidth()
+    const height = image.getHeight()
+    for (let y = 0; y < height; y++) {
+        output.push([])
+        for (let x = 0; x < width; x++) {
+            const color = jimp.intToRGBA(image.getPixelColor(x, y))
+            const gray = Math.round((color.r + color.g + color.b) / 3)
+            if (gray > threshold) {
+                output[y].push(inverted ? 0 : 1)
+            } else {
+                output[y].push(inverted ? 1 : 0)
+            }
+        }
+    }
+    return output
 }

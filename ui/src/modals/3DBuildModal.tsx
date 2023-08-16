@@ -29,7 +29,7 @@ export default function BuildModal({
     const [error, setError] = useState('')
 
     const build = () => {
-        fetch(`${address}/3D/build`, {
+        fetch(`${address}/build`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
