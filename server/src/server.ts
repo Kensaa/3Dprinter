@@ -142,7 +142,20 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
         res.status(200)
     })
-    expressApp.post('/image/preview')
+    expressApp.post('/image/preview', async (req, res) => {
+        const schema = z.object({
+            image: z.string(),
+            threshold: z.number().positive().default(50),
+            inverted: z.boolean().default(true),
+            scale: z.number().positive().default(1),
+            horizontalMirror: z.boolean().default(false),
+            verticalMirror: z.boolean().default(false)
+        })
+        const { image: imageString, ...options } = schema.parse(req.body)
+        const imageBuffer = Buffer.from(imageString, 'base64')
+        const image = await jimp.read(imageBuffer)
+        const imageArray = imageToArray(image, options)
+    })
 
     expressApp.post('/build', (req, res) => {
         interface Params {
@@ -356,7 +369,7 @@ function imageToArray(image: jimp, options: Partial<ImageToArrayOptions>) {
         horizontalMirror = false,
         verticalMirror = false
     } = options
-
+    image.scale(scale)
     const output: number[][] = []
     const width = image.getWidth()
     const height = image.getHeight()
