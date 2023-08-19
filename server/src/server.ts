@@ -4,7 +4,7 @@ import * as http from 'http'
 import * as ws from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
-import { z } from 'zod'
+import { ZodError, z } from 'zod'
 import * as jimp from 'jimp'
 import 'dotenv/config'
 
@@ -12,6 +12,11 @@ const WEB_SERVER_PORT = 9513
 const BUILDS_FOLDER =
     process.env.buildsFolder ?? path.join(__dirname, '..', 'builds')
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
+
+const modelSchema = z.object({
+    shape: z.number().array().array().array()
+})
+type Model = z.infer<typeof modelSchema>
 ;(async () => {
     const expressApp = express()
     expressApp.use(express.json())
@@ -94,9 +99,6 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
             }
         })
     })
-    interface Model {
-        shape: number[][][]
-    }
 
     expressApp.get('/printers', (req, res) => {
         const out: Omit<Printer, 'ws'>[] = []
@@ -122,12 +124,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
         res.status(200).json(models)
     })
     expressApp.post('/model', (req, res) => {
-        const schema = z.record(
-            z.string(),
-            z.object({
-                shape: z.number().array().array().array()
-            })
-        )
+        const schema = z.record(z.string(), modelSchema)
         const body = schema.parse(req.body)
         for (const key of Object.keys(body)) {
             const model = body[key]
@@ -142,7 +139,7 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
         res.status(200)
     })
-    expressApp.post('/image/preview', async (req, res) => {
+    expressApp.post('/image/preview', async (req, res, next) => {
         const schema = z.object({
             image: z.string(),
             threshold: z.number().positive().default(50),
@@ -151,10 +148,67 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
             horizontalMirror: z.boolean().default(false),
             verticalMirror: z.boolean().default(false)
         })
-        const { image: imageString, ...options } = schema.parse(req.body)
+        let body
+        try {
+            body = schema.parse(req.body)
+        } catch (err) {
+            return next(err)
+        }
+        const { image: imageString, ...options } = body
         const imageBuffer = Buffer.from(imageString, 'base64')
         const image = await jimp.read(imageBuffer)
         const imageArray = imageToArray(image, options)
+        const convertedImage = arrayToImage(imageArray)
+        convertedImage.getBuffer(jimp.MIME_PNG, (err, buffer) => {
+            if (err || !buffer || buffer.length === 0) {
+                return res.sendStatus(500)
+            }
+
+            res.writeHead(200, {
+                'Content-Type': 'image/png',
+                'Content-Length': buffer.length
+            })
+            res.end(buffer)
+        })
+    })
+    expressApp.post('/image/convert', async (req, res, next) => {
+        const schema = z.object({
+            image: z.string(),
+            name: z.string(),
+            threshold: z.number().positive().default(50),
+            inverted: z.boolean().default(true),
+            scale: z.number().positive().default(1),
+            horizontalMirror: z.boolean().default(false),
+            verticalMirror: z.boolean().default(false)
+        })
+        let body
+        try {
+            body = schema.parse(req.body)
+        } catch (err) {
+            return next(err)
+        }
+        const { image: imageString, name, ...options } = body
+        const imageBuffer = Buffer.from(imageString, 'base64')
+        let image
+        try {
+            image = await jimp.read(imageBuffer)
+        } catch {
+            return res.sendStatus(400)
+        }
+        const imageArray = imageToArray(image, options)
+
+        const model: Model = {
+            shape: [imageArray]
+        }
+
+        fs.writeFileSync(
+            path.join(
+                BUILDS_FOLDER,
+                name.endsWith('.json') ? name : name + '.json'
+            ),
+            JSON.stringify(model, null, 4)
+        )
+        res.sendStatus(200)
     })
 
     expressApp.post('/build', (req, res) => {
@@ -304,6 +358,20 @@ if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
     expressApp.get('*', (req: express.Request, res: express.Response) => {
         res.sendFile(path.join(publicPath, 'index.html'))
     })
+    expressApp.use(
+        (
+            err: Error,
+            req: express.Request,
+            res: express.Response,
+            next: express.NextFunction
+        ) => {
+            if (err instanceof ZodError) {
+                res.status(400).json(err.errors)
+            } else {
+                res.status(500).json(err.stack)
+            }
+        }
+    )
 })()
 
 /**
@@ -361,6 +429,12 @@ interface ImageToArrayOptions {
     horizontalMirror: boolean
     verticalMirror: boolean
 }
+/**
+ * Convert an Jimp image into a 2D array
+ * @param image image to convert
+ * @param options options (see ImageToArrayOptions interface)
+ * @returns a 2D array representing the image's pixels
+ */
 function imageToArray(image: jimp, options: Partial<ImageToArrayOptions>) {
     const {
         threshold = 50,
@@ -370,6 +444,7 @@ function imageToArray(image: jimp, options: Partial<ImageToArrayOptions>) {
         verticalMirror = false
     } = options
     image.scale(scale)
+    image.flip(horizontalMirror, verticalMirror)
     const output: number[][] = []
     const width = image.getWidth()
     const height = image.getHeight()
@@ -386,4 +461,18 @@ function imageToArray(image: jimp, options: Partial<ImageToArrayOptions>) {
         }
     }
     return output
+}
+
+function arrayToImage(arr: number[][]) {
+    const width = arr[0].length
+    const height = arr.length
+    const img = new jimp(width, height, 'white')
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            if (arr[y][x] === 1) {
+                img.setPixelColor(0x000000ff, x, y)
+            }
+        }
+    }
+    return img
 }
