@@ -4,7 +4,10 @@ import { useInterval } from 'usehooks-ts'
 import PrinterTable from '../components/PrinterTable'
 
 export default function Printerpage() {
-    const { printers, fetchPrinters } = dataStore(state => ({ ...state }))
+    const { printers, fetchPrinters } = dataStore(state => ({
+        printers: state.printers,
+        fetchPrinters: state.fetchPrinters
+    }))
 
     useInterval(fetchPrinters, 1000)
 

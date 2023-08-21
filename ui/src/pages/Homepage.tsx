@@ -9,7 +9,10 @@ import BuildModal from '../modals/3DBuildModal'
 import CreateModal from '../modals/NewModelModal'
 
 export default function Homepage() {
-    const { models, fetchModels } = dataStore(state => ({ ...state }))
+    const { models, fetchModels } = dataStore(state => ({
+        models: state.models,
+        fetchModels: state.fetchModels
+    }))
     const [buildModalShown, setBuildModalShown] = useState(false)
     const [createModalShown, setCreateModalShown] = useState(false)
     const [selectedModel, setSelectedModel] = useState<string>()

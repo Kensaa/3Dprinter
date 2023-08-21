@@ -13,10 +13,12 @@ const BUILDS_FOLDER =
     process.env.buildsFolder ?? path.join(__dirname, '..', 'builds')
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
-const modelSchema = z.object({
+const buildSchema = z.object({
+    type: z.enum(['model', 'image']),
     shape: z.number().array().array().array()
 })
-type Model = z.infer<typeof modelSchema>
+
+type Build = z.infer<typeof buildSchema>
 ;(async () => {
     const expressApp = express()
     expressApp.use(express.json())
@@ -108,36 +110,37 @@ type Model = z.infer<typeof modelSchema>
         }
         res.status(200).json(out)
     })
-    expressApp.get('/model', (req, res) => {
+    expressApp.get('/build', (req, res) => {
         const modelsNames = fs.readdirSync(BUILDS_FOLDER)
-        const models: Record<string, Model> = {}
+        const builds: Record<string, Build> = {}
         for (const name of modelsNames) {
             const strData = fs.readFileSync(
                 path.join(BUILDS_FOLDER, name),
                 'utf-8'
             )
             try {
-                models[path.parse(name).name] = JSON.parse(strData)
-            } catch {}
+                builds[path.parse(name).name] = JSON.parse(strData)
+            } catch {
+                return res.status(400).send('file is not json')
+            }
         }
 
-        res.status(200).json(models)
+        res.status(200).json(builds)
     })
-    expressApp.post('/model', (req, res) => {
-        const schema = z.record(z.string(), modelSchema)
+    expressApp.post('/build', (req, res) => {
+        const schema = z.record(z.string(), buildSchema)
         const body = schema.parse(req.body)
         for (const key of Object.keys(body)) {
-            const model = body[key]
+            const build = body[key]
             fs.writeFileSync(
                 path.join(
                     BUILDS_FOLDER,
                     key.endsWith('.json') ? key : key + '.json'
                 ),
-                JSON.stringify(model, null, 4)
+                JSON.stringify(build, null, 4)
             )
         }
-
-        res.status(200)
+        res.sendStatus(200)
     })
     expressApp.post('/image/preview', async (req, res, next) => {
         const schema = z.object({
@@ -188,16 +191,16 @@ type Model = z.infer<typeof modelSchema>
             return next(err)
         }
         const { image: imageString, name, ...options } = body
-        const imageBuffer = Buffer.from(imageString, 'base64')
         let image
         try {
-            image = await jimp.read(imageBuffer)
+            image = await jimp.read(Buffer.from(imageString, 'base64'))
         } catch {
             return res.sendStatus(400)
         }
         const imageArray = imageToArray(image, options)
 
-        const model: Model = {
+        const build: Build = {
+            type: 'image',
             shape: [imageArray]
         }
 
@@ -206,7 +209,7 @@ type Model = z.infer<typeof modelSchema>
                 BUILDS_FOLDER,
                 name.endsWith('.json') ? name : name + '.json'
             ),
-            JSON.stringify(model, null, 4)
+            JSON.stringify(build, null, 4)
         )
         res.sendStatus(200)
     })
@@ -235,7 +238,7 @@ type Model = z.infer<typeof modelSchema>
         if (printerCount === 0) return res.status(404).send('no printer found')
         let build
         try {
-            build = JSON.parse(fs.readFileSync(filepath, 'utf-8')) as Model
+            build = JSON.parse(fs.readFileSync(filepath, 'utf-8')) as Build
         } catch {
             return res.status(400).send('file is not json')
         }

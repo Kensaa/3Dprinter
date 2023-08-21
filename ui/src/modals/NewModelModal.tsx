@@ -16,13 +16,16 @@ export default function CreateModal({ show, hide }: CreateModalProps) {
         updateModel: state.updateModel
     }))
 
-    const create = () => {
+    const create = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        event.stopPropagation()
         const modelNames = Object.keys(models)
         if (modelNames.includes(name) || modelNames.includes(name + '.json')) {
             setError('model already exists')
             setName('')
         } else {
             const newModel = {
+                type: 'model',
                 shape: [[[1]]]
             }
             updateModel(name, newModel)
