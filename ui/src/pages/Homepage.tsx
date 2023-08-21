@@ -7,6 +7,7 @@ import Selector from '../components/Selector'
 import { Button } from 'react-bootstrap'
 import BuildModal from '../modals/3DBuildModal'
 import CreateModal from '../modals/NewModelModal'
+import ImageViewer from '../components/ImageViewer'
 
 export default function Homepage() {
     const { builds, fetchBuilds } = dataStore(state => ({
@@ -60,17 +61,25 @@ export default function Homepage() {
 
                     <div className='w-50 unselectable'>
                         <h4>Preview</h4>
-                        <ModelViewer
-                            width='100%'
-                            height='100%'
-                            modelName={selectedBuild ?? ''}
-                            build={
-                                selectedBuild
-                                    ? builds[selectedBuild]
-                                    : undefined
-                            }
-                            editable
-                        />
+                        {selectedBuild ? (
+                            builds[selectedBuild].type === 'model' ? (
+                                <ModelViewer
+                                    width='100%'
+                                    height='100%'
+                                    buildName={selectedBuild}
+                                    build={builds[selectedBuild]}
+                                    editable
+                                />
+                            ) : (
+                                <ImageViewer
+                                    width='100%'
+                                    height='100%'
+                                    build={builds[selectedBuild]}
+                                />
+                            )
+                        ) : (
+                            ''
+                        )}
                     </div>
                 </div>
             </div>

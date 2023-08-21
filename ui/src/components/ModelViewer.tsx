@@ -10,15 +10,15 @@ import { Button } from 'react-bootstrap'
 import dataStore from '../stores/data'
 
 interface ModelViewerProps {
-    modelName: string
-    build: Build | undefined
+    buildName: string
+    build: Build
     width?: string
     height?: string
     editable?: boolean
 }
 
 export default function ModelViewer({
-    modelName,
+    buildName,
     build: defaultBuild,
     width = '25%',
     height = '50%',
@@ -111,7 +111,7 @@ export default function ModelViewer({
                     {
                         //@ts-ignore
                         <Button
-                            onClick={() => updateBuild(modelName, build)}
+                            onClick={() => updateBuild(buildName, build)}
                             variant='outline-primary'
                         >
                             Save Model

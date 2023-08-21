@@ -159,7 +159,12 @@ type Build = z.infer<typeof buildSchema>
         }
         const { image: imageString, ...options } = body
         const imageBuffer = Buffer.from(imageString, 'base64')
-        const image = await jimp.read(imageBuffer)
+        let image
+        try {
+            image = await jimp.read(imageBuffer)
+        } catch {
+            return res.sendStatus(400)
+        }
         const imageArray = imageToArray(image, options)
         const convertedImage = arrayToImage(imageArray)
         convertedImage.getBuffer(jimp.MIME_PNG, (err, buffer) => {
@@ -212,6 +217,24 @@ type Build = z.infer<typeof buildSchema>
             JSON.stringify(build, null, 4)
         )
         res.sendStatus(200)
+    })
+    expressApp.post('/image/arrayToImage', (req, res, next) => {
+        const schema = z.number().array().array()
+        console.log(req.body)
+        const array = schema.parse(req.body)
+
+        const convertedImage = arrayToImage(array)
+        convertedImage.getBuffer(jimp.MIME_PNG, (err, buffer) => {
+            if (err || !buffer || buffer.length === 0) {
+                return res.sendStatus(500)
+            }
+
+            res.writeHead(200, {
+                'Content-Type': 'image/png',
+                'Content-Length': buffer.length
+            })
+            res.end(buffer)
+        })
     })
 
     expressApp.post('/build', (req, res) => {
