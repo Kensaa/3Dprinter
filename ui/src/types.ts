@@ -1,4 +1,5 @@
-export interface Model {
+export interface Build {
+    type: 'model' | 'image'
     shape: number[][][]
 }
 

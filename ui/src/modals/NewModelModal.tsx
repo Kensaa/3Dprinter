@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Button, Modal, Form, Alert } from 'react-bootstrap'
 import dataStore from '../stores/data'
+import { Build } from '../types'
 
 interface CreateModalProps {
     show: boolean
@@ -11,24 +12,24 @@ interface CreateModalProps {
 export default function CreateModal({ show, hide }: CreateModalProps) {
     const [error, setError] = useState('')
     const [name, setName] = useState('')
-    const { models, updateModel } = dataStore(state => ({
-        models: state.models,
-        updateModel: state.updateModel
+    const { builds, updateBuild } = dataStore(state => ({
+        builds: state.builds,
+        updateBuild: state.updateBuild
     }))
 
     const create = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         event.stopPropagation()
-        const modelNames = Object.keys(models)
+        const modelNames = Object.keys(builds)
         if (modelNames.includes(name) || modelNames.includes(name + '.json')) {
             setError('model already exists')
             setName('')
         } else {
-            const newModel = {
+            const newBuild = {
                 type: 'model',
                 shape: [[[1]]]
-            }
-            updateModel(name, newModel)
+            } as Build
+            updateBuild(name, newBuild)
             hide()
         }
     }

@@ -9,15 +9,15 @@ import BuildModal from '../modals/3DBuildModal'
 import CreateModal from '../modals/NewModelModal'
 
 export default function Homepage() {
-    const { models, fetchModels } = dataStore(state => ({
-        models: state.models,
-        fetchModels: state.fetchModels
+    const { builds, fetchBuilds } = dataStore(state => ({
+        builds: state.builds,
+        fetchBuilds: state.fetchBuilds
     }))
     const [buildModalShown, setBuildModalShown] = useState(false)
     const [createModalShown, setCreateModalShown] = useState(false)
-    const [selectedModel, setSelectedModel] = useState<string>()
+    const [selectedBuild, setSelectedBuild] = useState<string>()
 
-    useEffect(() => fetchModels, [fetchModels])
+    useEffect(fetchBuilds, [fetchBuilds])
 
     return (
         <div className='page'>
@@ -25,17 +25,21 @@ export default function Homepage() {
             <div className='content'>
                 <div className='w-100 h-75 d-flex justify-content-between'>
                     <div className='mx-2 w-25 unselectable'>
-                        <h4>Select a model</h4>
+                        <h4>Select a Build</h4>
+
                         <Selector
                             width='100%'
-                            elements={Object.keys(models)}
-                            onChange={setSelectedModel}
+                            elements={Object.entries(builds).map(e => ({
+                                name: e[0],
+                                type: e[1].type
+                            }))}
+                            onChange={setSelectedBuild}
                         />
                         <div className='w-100 d-flex justify-content-between'>
                             {
                                 //@ts-ignore
                                 <Button
-                                    disabled={!selectedModel}
+                                    disabled={!selectedBuild}
                                     variant='outline-success'
                                     onClick={() => setBuildModalShown(true)}
                                 >
@@ -59,10 +63,10 @@ export default function Homepage() {
                         <ModelViewer
                             width='100%'
                             height='100%'
-                            modelName={selectedModel ?? ''}
-                            model={
-                                selectedModel
-                                    ? models[selectedModel]
+                            modelName={selectedBuild ?? ''}
+                            build={
+                                selectedBuild
+                                    ? builds[selectedBuild]
                                     : undefined
                             }
                             editable
@@ -73,8 +77,8 @@ export default function Homepage() {
             <BuildModal
                 show={buildModalShown}
                 hide={() => setBuildModalShown(false)}
-                model={selectedModel ? models[selectedModel] : undefined}
-                modelName={selectedModel ?? ''}
+                model={selectedBuild ? builds[selectedBuild] : undefined}
+                modelName={selectedBuild ?? ''}
             />
             <CreateModal
                 show={createModalShown}
