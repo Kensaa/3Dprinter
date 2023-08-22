@@ -1,5 +1,8 @@
 if fs.exists('printer') then
     fs.delete('printer')
 end
-shell.run('pastebin get mpuxagdY printer')
+
+if not pcall(function () shell.run('pastebin get mpuxagdY printer') end) then
+    sleep(1)
+    os.reboot()
 shell.run('printer')
