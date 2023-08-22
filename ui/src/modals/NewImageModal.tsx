@@ -188,9 +188,9 @@ export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
                         </div>
                     </Form>
                     {preview !== '' ? (
-                        <div className='mx-3'>
+                        <div className='mx-3 w-50'>
                             <h2>Preview</h2>
-                            <img src={preview} style={{ maxWidth: '100%' }} />
+                            <img className='w-100' src={preview} />
                             <h1>{dimensions}</h1>
                         </div>
                     ) : undefined}

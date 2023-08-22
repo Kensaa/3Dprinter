@@ -35,9 +35,12 @@ export default function ImageViewer({
     }, [address, build])
 
     return (
-        <>
-            <img style={{ maxWidth: width, maxHeight: height }} src={image} />
+        <div
+            style={{ width: width, height: height }}
+            className='d-flex flex-column align-items-center'
+        >
+            <img className='w-100 h-100' src={image} />
             <h1>{dimensions}</h1>
-        </>
+        </div>
     )
 }

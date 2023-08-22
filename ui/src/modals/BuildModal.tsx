@@ -80,7 +80,7 @@ export default function BuildModal({
                     </Alert>
                 )}
                 <div className='d-flex'>
-                    <Form onSubmit={buildAction} className='mx-2'>
+                    <Form onSubmit={buildAction} className='mx-2 w-50'>
                         <Form.Label>Build Position : </Form.Label>
                         <Row>
                             {
