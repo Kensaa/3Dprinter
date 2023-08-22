@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { Canvas, ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stage, Edges, Html } from '@react-three/drei'
-import { Model } from '../types'
+import { Build } from '../types'
 import chevronLeft from '../assets/chevron-left.svg'
 import chevronRight from '../assets/chevron-right.svg'
 import { edit3DArray, trim3DArray } from '../arrayUtils'
@@ -10,27 +10,27 @@ import { Button } from 'react-bootstrap'
 import dataStore from '../stores/data'
 
 interface ModelViewerProps {
-    modelName: string
-    model: Model | undefined
+    buildName: string
+    build: Build
     width?: string
     height?: string
     editable?: boolean
 }
 
 export default function ModelViewer({
-    modelName,
-    model: defaultModel,
+    buildName,
+    build: defaultBuild,
     width = '25%',
     height = '50%',
     editable = false
 }: ModelViewerProps) {
     const [selectedLayer, setSelectedLayer] = useState(0)
-    const [model, setModel] = useState(defaultModel)
-    const updateModel = dataStore(store => store.updateModel)
+    const [build, setBuild] = useState(defaultBuild)
+    const updateBuild = dataStore(store => store.updateBuild)
 
-    useEffect(() => setModel(defaultModel), [defaultModel])
-    const constructLayer = (y: number, model: Model) => {
-        return model.shape[y].map((row, z) =>
+    useEffect(() => setBuild(defaultBuild), [defaultBuild])
+    const constructLayer = (y: number, build: Build) => {
+        return build.shape[y].map((row, z) =>
             row.map(
                 (col, x) =>
                     col === 1 && (
@@ -50,10 +50,10 @@ export default function ModelViewer({
                             addBlock={
                                 editable
                                     ? (x: number, y: number, z: number) => {
-                                          const shape = model.shape
+                                          const shape = build.shape
                                           edit3DArray(shape, x, y, z, 1)
                                           console.log(shape)
-                                          setModel({ ...model, shape })
+                                          setBuild({ ...build, shape })
                                       }
                                     : undefined
                             }
@@ -61,11 +61,11 @@ export default function ModelViewer({
                                 editable
                                     ? (x: number, y: number, z: number) => {
                                           //TODO: At least 1 block left at all times
-                                          const shape = model.shape
+                                          const shape = build.shape
                                           edit3DArray(shape, x, y, z, 0)
                                           trim3DArray(shape)
                                           console.log(shape)
-                                          setModel({ ...model, shape })
+                                          setBuild({ ...build, shape })
                                       }
                                     : undefined
                             }
@@ -75,7 +75,7 @@ export default function ModelViewer({
         )
     }
 
-    if (model === undefined) {
+    if (build === undefined) {
         return (
             <div
                 style={{ width, height }}
@@ -90,15 +90,15 @@ export default function ModelViewer({
                 <ambientLight />
                 <Stage adjustCamera>
                     {selectedLayer === 0
-                        ? model.shape.map((_, y) => constructLayer(y, model))
-                        : constructLayer(selectedLayer - 1, model)}
+                        ? build.shape.map((_, y) => constructLayer(y, build))
+                        : constructLayer(selectedLayer - 1, build)}
                 </Stage>
                 <Panel>
                     <div className='d-flex flex-column align-items-center'>
                         Select layer to show
                         <NumberSelect
                             min={0}
-                            max={model.shape.length}
+                            max={build.shape.length}
                             onChange={setSelectedLayer}
                             valueLabels={{ 0: 'all' }}
                         />
@@ -111,7 +111,7 @@ export default function ModelViewer({
                     {
                         //@ts-ignore
                         <Button
-                            onClick={() => updateModel(modelName, model)}
+                            onClick={() => updateBuild(buildName, build)}
                             variant='outline-primary'
                         >
                             Save Model

@@ -1,22 +1,22 @@
 import { create } from 'zustand'
-import { Model, Printer } from '../types'
+import { Build, Printer } from '../types'
 import config from './config'
 
 interface dataStore {
-    models: Record<string, Model>
+    builds: Record<string, Build>
     printers: Printer[]
-    fetchModels: () => void
-    updateModel: (name: string, model: Model) => void
+    fetchBuilds: () => void
+    updateBuild: (name: string, build: Build) => void
     fetchPrinters: () => void
 }
 
 export default create<dataStore>((set, get) => {
-    const fetchModels = () => {
+    const fetchBuilds = () => {
         const { address } = config.getState()
-        fetch(`${address}/models`, { method: 'GET' })
+        fetch(`${address}/builds`, { method: 'GET' })
             .then(res => res.json())
-            .then(data => data as Record<string, Model>)
-            .then(models => set({ models }))
+            .then(data => data as Record<string, Build>)
+            .then(builds => set({ builds }))
     }
     const fetchPrinters = () => {
         const { address } = config.getState()
@@ -26,26 +26,28 @@ export default create<dataStore>((set, get) => {
             .then(printers => set({ printers }))
     }
 
-    const updateModel = (name: string, model: Model) => {
+    const updateBuild = (name: string, build: Build) => {
         const { address } = config.getState()
-        const models = get().models
-        models[name] = model
-        set({ models })
-        fetch(`${address}/model`, {
+        const builds = get().builds
+        builds[name] = build
+        set({ builds })
+        fetch(`${address}/editBuilds`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...models })
+            body: JSON.stringify({ ...builds })
+        }).catch(err => {
+            console.log('an error occured while updating model : ', err)
         })
     }
 
-    fetchModels()
+    fetchBuilds()
     fetchPrinters()
 
     return {
-        models: {},
+        builds: {},
         printers: [],
-        fetchModels,
-        updateModel,
+        fetchBuilds,
+        updateBuild,
         fetchPrinters
     }
 })

@@ -371,7 +371,6 @@ function build(data, height, depth, width)
             end
             progress = (y - 1  + (z - 1) / depth) / height * 100
             send({type = 'setProgress', progress=progress})
-            log("progress : "..progress..'%')
         end
         -- end of layer
         if y ~= height then -- if it's the last layer, no need to go back to the start

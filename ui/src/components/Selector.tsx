@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { ListGroup, Spinner } from 'react-bootstrap'
 
 interface SelectorProps {
-    elements: string[]
+    elements: { name: string; type: string }[]
     onChange: (element: string) => void
     width?: string
     height?: string
@@ -30,7 +30,7 @@ export default function Selector({
 
     const itemClicked = (index: number) => {
         setSelectedElement(index)
-        onChange(elements[index])
+        onChange(elements[index].name)
     }
 
     return (
@@ -46,7 +46,10 @@ export default function Selector({
                     onClick={() => itemClicked(i)}
                     className='unselectable'
                 >
-                    {e}
+                    <div className='d-flex align-items-center justify-content-between'>
+                        {e.name}
+                        <div className='border p-1 tag'>{e.type}</div>
+                    </div>
                 </ListGroup.Item>
             ))}
         </ListGroup>
