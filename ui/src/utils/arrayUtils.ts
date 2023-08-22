@@ -6,13 +6,11 @@ export const edit3DArray = (
     element: number
 ) => {
     if (y < 0) {
-        console.log('extend down')
         const count = -y
         for (let i = 0; i < count; i++) {
             arr.unshift(generate2DArray(arr[0][0].length, arr[0].length))
         }
     } else if (y > arr.length - 1) {
-        console.log('extend up')
         const count = y - (arr.length - 1)
         for (let i = 0; i < count; i++) {
             arr.push(generate2DArray(arr[0][0].length, arr[0].length))
@@ -20,7 +18,6 @@ export const edit3DArray = (
     }
 
     if (z < 0) {
-        console.log('extend north')
         const count = -z
         for (let i = 0; i < arr.length; i++) {
             for (let j = 0; j < count; j++) {
@@ -28,7 +25,6 @@ export const edit3DArray = (
             }
         }
     } else if (z > arr[0].length - 1) {
-        console.log('extend south')
         const count = z - (arr[0].length - 1)
         for (let i = 0; i < arr.length; i++) {
             for (let j = 0; j < count; j++) {
@@ -38,7 +34,6 @@ export const edit3DArray = (
     }
 
     if (x < 0) {
-        console.log('extend east')
         const count = -x
         for (let i = 0; i < arr.length; i++) {
             for (let j = 0; j < arr[0].length; j++) {
@@ -48,7 +43,6 @@ export const edit3DArray = (
             }
         }
     } else if (x > arr[0][0].length - 1) {
-        console.log('extend west')
         const count = x - (arr[0][0].length - 1)
         for (let i = 0; i < arr.length; i++) {
             for (let j = 0; j < arr[0].length; j++) {
@@ -164,10 +158,6 @@ export function trim3DArray(arr: number[][][], nullE = 0) {
     const minStart2 = Math.min(...startIndexes2)
     const maxEnd2 = Math.max(...endIndexes2)
 
-    console.log(arr)
-    console.log(minStart2)
-    console.log(maxEnd2)
-
     let spliced2 = 0
     for (let z = 0; z < minStart2; z++) {
         for (let y = 0; y < arr.length; y++) {
@@ -175,8 +165,7 @@ export function trim3DArray(arr: number[][][], nullE = 0) {
         }
         spliced2++
     }
-    console.log(arr)
-    console.log(spliced2)
+
     for (let y = 0; y < arr.length; y++) {
         const end = arr[y].length + spliced2
         for (let z = maxEnd2; z < end - 1; z++) {
