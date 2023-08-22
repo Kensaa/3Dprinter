@@ -4,12 +4,12 @@ import { Button, Modal, Form, Alert } from 'react-bootstrap'
 import dataStore from '../stores/data'
 import { Build } from '../types'
 
-interface CreateModalProps {
+interface NewModelModalProps {
     show: boolean
     hide: () => void
 }
 
-export default function CreateModal({ show, hide }: CreateModalProps) {
+export default function NewModelModalModal({ show, hide }: NewModelModalProps) {
     const [error, setError] = useState('')
     const [name, setName] = useState('')
     const { builds, updateBuild } = dataStore(state => ({

@@ -1,19 +1,20 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState } from 'react'
-import { Model } from '../types'
+import { Build } from '../types'
 import configStore from '../stores/config'
 import { Button, Modal, Form, Row, Col, Alert } from 'react-bootstrap'
 import ModelViewer from '../components/ModelViewer'
+import ImageViewer from '../components/ImageViewer'
 
 interface BuildModalProps {
-    modelName: string
-    model?: Model
+    buildName: string
+    build?: Build
     show: boolean
     hide: () => void
 }
 export default function BuildModal({
-    modelName,
-    model,
+    buildName,
+    build,
     show,
     hide
 }: BuildModalProps) {
@@ -28,18 +29,22 @@ export default function BuildModal({
 
     const [error, setError] = useState('')
 
-    const build = () => {
+    const buildAction = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        event.stopPropagation()
         fetch(`${address}/build`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                file: modelName,
+                file: buildName,
                 pos: [x, y, z].map(e => parseInt(e)),
                 heading: heading + 1
             })
         }).then(res => {
             if (res.ok) return hide()
-            setError(`an error has occured (status code : ${res.status})`)
+            res.text().then(err => {
+                setError(`an error has occured ${err} (${res.status}) `)
+            })
         })
     }
 
@@ -55,14 +60,14 @@ export default function BuildModal({
         }
     }
 
-    if (!model) {
-        return
+    if (!build) {
+        return <div>error</div>
     }
 
     return (
-        <Modal show={show} onHide={hide}>
+        <Modal show={show} onHide={hide} dialogClassName='large-modal'>
             <Modal.Header closeButton>
-                <Modal.Title>Building model "{modelName}"</Modal.Title>
+                <Modal.Title>Building "{buildName}"</Modal.Title>
             </Modal.Header>
             <Modal.Body>
                 {error && (
@@ -74,8 +79,8 @@ export default function BuildModal({
                         {error}
                     </Alert>
                 )}
-                <div className='d-flex flex-column align-items-center'>
-                    <Form onSubmit={build}>
+                <div className='d-flex'>
+                    <Form onSubmit={buildAction} className='mx-2'>
                         <Form.Label>Build Position : </Form.Label>
                         <Row>
                             {
@@ -135,12 +140,6 @@ export default function BuildModal({
                                 ))}
                             </Form.Select>
                         </Form.Group>
-                        <ModelViewer
-                            width='100%'
-                            height='100%'
-                            modelName={modelName}
-                            model={model}
-                        />
                         <Form.Group className='d-flex justify-content-center mt-2'>
                             {
                                 //@ts-ignore
@@ -148,6 +147,16 @@ export default function BuildModal({
                             }
                         </Form.Group>
                     </Form>
+                    {build.type === 'model' ? (
+                        <ModelViewer
+                            width='50%'
+                            height='100%'
+                            buildName={buildName}
+                            build={build}
+                        />
+                    ) : (
+                        <ImageViewer width='50%' build={build} />
+                    )}
                 </div>
             </Modal.Body>
         </Modal>

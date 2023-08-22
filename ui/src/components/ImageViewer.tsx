@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import configStore from '../stores/config'
 import { Build } from '../types'
+import { blobToBase64, getImageDimensions } from '../utils'
 
 interface ImageViewerProps {
     build: Build
@@ -10,11 +11,12 @@ interface ImageViewerProps {
 
 export default function ImageViewer({
     build,
-    width = '25%',
-    height = '50%'
+    width,
+    height
 }: ImageViewerProps) {
     const address = configStore(state => state.address)
     const [image, setImage] = useState('')
+    const [dimensions, setDimensions] = useState('')
 
     useEffect(() => {
         fetch(`${address}/image/arrayToImage`, {
@@ -24,26 +26,18 @@ export default function ImageViewer({
         })
             .then(res => res.blob())
             .then(blob => blobToBase64(blob))
-            .then(image => setImage(image))
+            .then(image => {
+                setImage(image)
+                getImageDimensions(image).then(dims => {
+                    setDimensions(`${dims.w}x${dims.h}`)
+                })
+            })
     }, [address, build])
 
     return (
-        <div style={{ width, height }} className='border'>
-            <img className='w-100 h-100' src={image} />
-        </div>
+        <>
+            <img style={{ maxWidth: width, maxHeight: height }} src={image} />
+            <h1>{dimensions}</h1>
+        </>
     )
-}
-
-const blobToBase64 = async (blob: Blob) => {
-    return new Promise<string>((onSuccess, onError) => {
-        try {
-            const reader = new FileReader()
-            reader.onload = function () {
-                onSuccess(this.result as string)
-            }
-            reader.readAsDataURL(blob)
-        } catch (e) {
-            onError(e)
-        }
-    })
 }

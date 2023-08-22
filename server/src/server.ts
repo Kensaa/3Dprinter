@@ -110,7 +110,7 @@ type Build = z.infer<typeof buildSchema>
         }
         res.status(200).json(out)
     })
-    expressApp.get('/build', (req, res) => {
+    expressApp.get('/builds', (req, res) => {
         const modelsNames = fs.readdirSync(BUILDS_FOLDER)
         const builds: Record<string, Build> = {}
         for (const name of modelsNames) {
@@ -127,7 +127,7 @@ type Build = z.infer<typeof buildSchema>
 
         res.status(200).json(builds)
     })
-    expressApp.post('/build', (req, res) => {
+    expressApp.post('/editBuilds', (req, res) => {
         const schema = z.record(z.string(), buildSchema)
         const body = schema.parse(req.body)
         for (const key of Object.keys(body)) {
@@ -242,7 +242,6 @@ type Build = z.infer<typeof buildSchema>
             pos: [number, number, number]
             heading: number
         }
-
         const { file, pos, heading } = req.body as Params
         //const printerCount: number = 9
         const connectedPrinters = printers.filter(p => p.connected)

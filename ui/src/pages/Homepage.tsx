@@ -6,8 +6,9 @@ import dataStore from '../stores/data'
 import Selector from '../components/Selector'
 import { Button } from 'react-bootstrap'
 import BuildModal from '../modals/3DBuildModal'
-import CreateModal from '../modals/NewModelModal'
 import ImageViewer from '../components/ImageViewer'
+import NewModelModalModal from '../modals/NewModelModal'
+import NewImageModalModal from '../modals/NewImageModal'
 
 export default function Homepage() {
     const { builds, fetchBuilds } = dataStore(state => ({
@@ -15,7 +16,9 @@ export default function Homepage() {
         fetchBuilds: state.fetchBuilds
     }))
     const [buildModalShown, setBuildModalShown] = useState(false)
-    const [createModalShown, setCreateModalShown] = useState(false)
+
+    const [newModelShown, setNewModelShown] = useState(false)
+    const [newImageShown, setNewImageShown] = useState(false)
     const [selectedBuild, setSelectedBuild] = useState<string>()
 
     useEffect(fetchBuilds, [fetchBuilds])
@@ -51,9 +54,18 @@ export default function Homepage() {
                                 //@ts-ignore
                                 <Button
                                     variant='outline-primary'
-                                    onClick={() => setCreateModalShown(true)}
+                                    onClick={() => setNewModelShown(true)}
                                 >
                                     Create new Model
+                                </Button>
+                            }
+                            {
+                                //@ts-ignore
+                                <Button
+                                    variant='outline-primary'
+                                    onClick={() => setNewImageShown(true)}
+                                >
+                                    Convert an image
                                 </Button>
                             }
                         </div>
@@ -86,12 +98,16 @@ export default function Homepage() {
             <BuildModal
                 show={buildModalShown}
                 hide={() => setBuildModalShown(false)}
-                model={selectedBuild ? builds[selectedBuild] : undefined}
-                modelName={selectedBuild ?? ''}
+                build={selectedBuild ? builds[selectedBuild] : undefined}
+                buildName={selectedBuild ?? ''}
             />
-            <CreateModal
-                show={createModalShown}
-                hide={() => setCreateModalShown(false)}
+            <NewModelModalModal
+                show={newModelShown}
+                hide={() => setNewModelShown(false)}
+            />
+            <NewImageModalModal
+                show={newImageShown}
+                hide={() => setNewImageShown(false)}
             />
         </div>
     )
