@@ -1,5 +1,10 @@
 gpsTry = 5
 
+-- Setup : 
+-- equip chunk loader from advanced peripheral to the left
+-- equip either a pickaxe or a advanced wireless modem to the right and place the other into the 15th slot
+-- place the block enderchest in the last slot
+
 function equipPickaxe()
     turtle.select(15)
     if turtle.getItemDetail().name ~= 'minecraft:diamond_pickaxe' then
