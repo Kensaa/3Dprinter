@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Build } from '../types'
 import configStore from '../stores/config'
 import { Button, Modal, Form, Row, Col, Alert } from 'react-bootstrap'
@@ -18,9 +18,9 @@ export default function BuildModal({
     show,
     hide
 }: BuildModalProps) {
-    const [x, setX] = useState('0')
-    const [y, setY] = useState('0')
-    const [z, setZ] = useState('0')
+    const [x, setX] = useState(localStorage.getItem('x') ?? '0')
+    const [y, setY] = useState(localStorage.getItem('y') ?? '0')
+    const [z, setZ] = useState(localStorage.getItem('z') ?? '0')
 
     const headings = ['East', 'South', 'West', 'North']
     const [heading, setHeading] = useState(0)
@@ -59,6 +59,12 @@ export default function BuildModal({
             setZ(split[2].trim())
         }
     }
+
+    useEffect(() => {
+        localStorage.setItem('x', x)
+        localStorage.setItem('y', y)
+        localStorage.setItem('z', z)
+    }, [x, y, z])
 
     if (!build) {
         return <div>error</div>
