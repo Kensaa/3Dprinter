@@ -137,7 +137,7 @@ type Build = z.infer<typeof buildSchema>
                     BUILDS_FOLDER,
                     key.endsWith('.json') ? key : key + '.json'
                 ),
-                JSON.stringify(build, null, 4)
+                JSON.stringify(build)
             )
         }
         res.sendStatus(200)
@@ -214,7 +214,7 @@ type Build = z.infer<typeof buildSchema>
                 BUILDS_FOLDER,
                 name.endsWith('.json') ? name : name + '.json'
             ),
-            JSON.stringify(build, null, 4)
+            JSON.stringify(build)
         )
         res.sendStatus(200)
     })
