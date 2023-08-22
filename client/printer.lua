@@ -443,7 +443,7 @@ function handleData(JSONData)
     headTo(homeHeading)
     log("back to home position, waiting for order")
     send({type = 'setState', state='idle'})
-
+    send({type = 'setProgress', progress=0.0})
 end
 
 
