@@ -21,7 +21,7 @@ const buildSchema = z.object({
 type Build = z.infer<typeof buildSchema>
 ;(async () => {
     const expressApp = express()
-    expressApp.use(express.json())
+    expressApp.use(express.json({ limit: '50mb' }))
     expressApp.use(cors())
 
     const httpServer = http.createServer(expressApp)
@@ -218,9 +218,8 @@ type Build = z.infer<typeof buildSchema>
         )
         res.sendStatus(200)
     })
-    expressApp.post('/image/arrayToImage', (req, res, next) => {
+    expressApp.post('/image/arrayToImage', (req, res) => {
         const schema = z.number().array().array()
-        console.log(req.body)
         const array = schema.parse(req.body)
 
         const convertedImage = arrayToImage(array)
