@@ -4,7 +4,7 @@ import { Button, Modal, Form } from 'react-bootstrap'
 import dataStore from '../stores/data'
 import { FileUploader } from 'react-drag-drop-files'
 import configStore from '../stores/config'
-import { blobToBase64, getImageDimensions } from '../utils'
+import { blobToBase64, getImageDimensions } from '../utils/utils'
 
 interface NewImageModalProps {
     show: boolean

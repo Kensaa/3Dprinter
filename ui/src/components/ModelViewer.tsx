@@ -5,7 +5,7 @@ import { OrbitControls, Stage, Edges, Html } from '@react-three/drei'
 import { Build } from '../types'
 import chevronLeft from '../assets/chevron-left.svg'
 import chevronRight from '../assets/chevron-right.svg'
-import { edit3DArray, trim3DArray } from '../arrayUtils'
+import { edit3DArray, trim3DArray } from '../utils/arrayUtils'
 import { Button } from 'react-bootstrap'
 import dataStore from '../stores/data'
 

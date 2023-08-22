@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import configStore from '../stores/config'
 import { Build } from '../types'
-import { blobToBase64, getImageDimensions } from '../utils'
+import { blobToBase64, getImageDimensions } from '../utils/utils'
 
 interface ImageViewerProps {
     build: Build
