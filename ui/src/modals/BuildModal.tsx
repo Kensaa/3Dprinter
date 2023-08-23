@@ -8,7 +8,7 @@ import ImageViewer from '../components/ImageViewer'
 
 interface BuildModalProps {
     buildName: string
-    build?: Build
+    build: Build
     show: boolean
     hide: () => void
 }
@@ -65,10 +65,6 @@ export default function BuildModal({
         localStorage.setItem('y', y)
         localStorage.setItem('z', z)
     }, [x, y, z])
-
-    if (!build) {
-        return <div>error</div>
-    }
 
     return (
         <Modal show={show} onHide={hide} dialogClassName='large-modal'>

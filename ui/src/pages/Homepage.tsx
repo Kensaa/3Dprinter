@@ -95,12 +95,15 @@ export default function Homepage() {
                     </div>
                 </div>
             </div>
-            <BuildModal
-                show={buildModalShown}
-                hide={() => setBuildModalShown(false)}
-                build={selectedBuild ? builds[selectedBuild] : undefined}
-                buildName={selectedBuild ?? ''}
-            />
+            {selectedBuild && (
+                <BuildModal
+                    show={buildModalShown}
+                    hide={() => setBuildModalShown(false)}
+                    build={builds[selectedBuild]}
+                    buildName={selectedBuild ?? ''}
+                />
+            )}
+
             <NewModelModalModal
                 show={newModelShown}
                 hide={() => setNewModelShown(false)}
