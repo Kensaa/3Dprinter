@@ -141,13 +141,14 @@ for i = 1, num do
     sleep(0.5)
     requestItemIntoTurtle("minecraft:coal_block", requirements["minecraft:coal_block"])
     setFile([[
-        for i = 1,2 do
+        for i = 1,4 do
             turtle.select(i)
             turtle.refuel()
         end
         turtle.select(1)
     ]])
     peripheral.call('front','reboot')
+    sleep(2)
     requestItemIntoTurtle("advancedperipherals:chunk_controller", requirements["advancedperipherals:chunk_controller"])
     requestItemIntoTurtle("minecraft:diamond_pickaxe", requirements["minecraft:diamond_pickaxe"])
     requestItemIntoTurtle("computercraft:wireless_modem_advanced", requirements["computercraft:wireless_modem_advanced"])
