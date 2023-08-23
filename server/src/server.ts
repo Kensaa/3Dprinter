@@ -237,12 +237,13 @@ type Build = z.infer<typeof buildSchema>
     })
 
     expressApp.post('/build', (req, res) => {
-        interface Params {
-            file: string
-            pos: [number, number, number]
-            heading: number
-        }
-        const { file, pos, heading } = req.body as Params
+        const schema = z.object({
+            file: z.string(),
+            pos: z.array(z.number()).length(3),
+            heading: z.number().gte(1).lte(4).default(1)
+        })
+
+        const { file, pos, heading } = schema.parse(req.body)
         //const printerCount: number = 9
         const connectedPrinters = printers.filter(p => p.connected)
         const printerCount = connectedPrinters.length
