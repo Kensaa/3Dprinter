@@ -81,23 +81,18 @@ requirements["minecraft:coal_block"]=125
 
 
 for k,v in pairs(deployerRequirements) do
-    if(not isInMe(k)) then
-        print('deployer needs '..k..' (missing '..v..')') 
+    if not isInMe(k) then
+        print('You have 0 '..k..','..v..' needed') 
         return
     else 
         local amount = me.getItem({name=k}).amount
         if amount < v then
-            print('deployer needs '..k..' (missing '..(v-amount)..')') 
+            print('You have '..amount..' '..k..','..v..' needed')
             return
         end
     end
 end
 
--- get deployer requirements
--- for k,v in pairs(deployerRequirements) do
---     requestItem(k,v)
---     sleep(0.5)
--- end
 requestItem("computercraft:disk_drive",deployerRequirements["computercraft:disk_drive"])
 requestItem("computercraft:disk",deployerRequirements["computercraft:disk"])
 requestItem("minecraft:coal_block",deployerRequirements["minecraft:coal_block"])
@@ -112,14 +107,14 @@ local num = tonumber(read())
 clear()
 -- check requirements
 for k,v in pairs(requirements) do
-    if(not isInMe(k)) then
-        print('You dont have enough '..k..' (missing '..v..')') 
+    if not isInMe(k) then
+        print('You have 0 '..k..','..v..' needed')
         return
     else
         local amount = me.getItem({name=k}).amount
         local totalRequired = v * num
         if amount < totalRequired then
-            print('You dont have enough '..k..' (missing '..(totalRequired-amount)..')') 
+            print('You have '..amount..' '..k..','..totalRequired..' needed')
             return
         end
     end
