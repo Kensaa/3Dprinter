@@ -400,6 +400,8 @@ function build(data, height, depth, width)
         end
     end
     send({type = 'setProgress', progress=100.0})
+    up()
+    up()
 end
 
 function handleData(JSONData)
