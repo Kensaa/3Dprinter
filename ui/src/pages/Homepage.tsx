@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, createElement } from 'react'
 import AppNavbar from '../components/AppNavbar'
 import ModelViewer from '../components/ModelViewer'
 import dataStore from '../stores/data'
@@ -9,6 +9,11 @@ import BuildModal from '../modals/BuildModal'
 import ImageViewer from '../components/ImageViewer'
 import NewModelModalModal from '../modals/NewModelModal'
 import NewImageModalModal from '../modals/NewImageModal'
+
+const viewerMap = {
+    model: ModelViewer,
+    image: ImageViewer
+}
 
 export default function Homepage() {
     const { builds, fetchBuilds } = dataStore(state => ({
@@ -73,25 +78,17 @@ export default function Homepage() {
 
                     <div className='w-50 unselectable'>
                         <h4>Preview</h4>
-                        {selectedBuild ? (
-                            builds[selectedBuild].type === 'model' ? (
-                                <ModelViewer
-                                    width='100%'
-                                    height='100%'
-                                    buildName={selectedBuild}
-                                    build={builds[selectedBuild]}
-                                    editable
-                                />
-                            ) : (
-                                <ImageViewer
-                                    width='100%'
-                                    height='100%'
-                                    build={builds[selectedBuild]}
-                                />
-                            )
-                        ) : (
-                            ''
-                        )}
+                        {selectedBuild &&
+                            createElement(
+                                viewerMap[builds[selectedBuild].type],
+                                {
+                                    build: builds[selectedBuild],
+                                    buildName: selectedBuild,
+                                    width: '100%',
+                                    height: '100%',
+                                    editable: true
+                                }
+                            )}
                     </div>
                 </div>
             </div>
