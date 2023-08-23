@@ -279,12 +279,23 @@ type Build = z.infer<typeof buildSchema>
         //divided by printerCount / 2 in the biggest side (/2 because of the previous line)
         let xDivide = 0,
             yDivide = 0
-        if (width >= depth) {
-            yDivide = printerCount == 1 ? depth : Math.ceil(depth / 2)
-            xDivide = Math.ceil(width / Math.ceil(printerCount / 2))
+
+        if (printerCount === 1) {
+            if (width >= depth) {
+                xDivide = width
+                yDivide = depth
+            } else {
+                xDivide = depth
+                yDivide = width
+            }
         } else {
-            xDivide = printerCount == 1 ? width : Math.ceil(width / 2)
-            yDivide = Math.ceil(depth / Math.ceil(printerCount / 2))
+            if (width >= depth) {
+                xDivide = Math.ceil(width / Math.ceil(printerCount / 2))
+                yDivide = Math.ceil(depth / 2)
+            } else {
+                xDivide = Math.ceil(width / 2)
+                yDivide = Math.ceil(depth / Math.ceil(printerCount / 2))
+            }
         }
 
         xDivide = Math.max(3, xDivide) // set the minimal divide to 3, to avoid bugs where a turtle places a single block
@@ -293,7 +304,7 @@ type Build = z.infer<typeof buildSchema>
         console.log('xDivide', xDivide)
         console.log('yDivide', yDivide)
 
-        const divided = divide3D(shape, xDivide, yDivide, height).flat()
+        const divided = divide3D(shape, xDivide, yDivide, height).flat() //flattened because the turtle will build the height of the build
         console.log('parts : ', divided.length * divided[0].length)
 
         //fs.writeFileSync('output.json', JSON.stringify(divided))
