@@ -7,12 +7,16 @@ interface ImageViewerProps {
     build: Build
     width?: string
     height?: string
+    maxWidth?: string
+    maxHeight?: string
 }
 
 export default function ImageViewer({
     build,
     width,
-    height
+    height,
+    maxWidth,
+    maxHeight
 }: ImageViewerProps) {
     const address = configStore(state => state.address)
     const [image, setImage] = useState('')
@@ -36,7 +40,7 @@ export default function ImageViewer({
 
     return (
         <div
-            style={{ width: width, height: height }}
+            style={{ width, height, maxWidth, maxHeight }}
             className='d-flex flex-column align-items-center'
         >
             <img className='w-100 h-100' src={image} />

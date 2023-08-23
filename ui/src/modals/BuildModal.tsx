@@ -85,7 +85,7 @@ export default function BuildModal({
                         {error}
                     </Alert>
                 )}
-                <div className='d-flex w-100 h-100'>
+                <div className='d-flex w-100 h-75'>
                     <Form onSubmit={buildAction} className='mx-2 w-50'>
                         <Form.Label>Build Position : </Form.Label>
                         <Row>
@@ -161,7 +161,11 @@ export default function BuildModal({
                             build={build}
                         />
                     ) : (
-                        <ImageViewer width='50%' build={build} />
+                        <ImageViewer
+                            width='50%'
+                            maxHeight='80%'
+                            build={build}
+                        />
                     )}
                 </div>
             </Modal.Body>
