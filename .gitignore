@@ -3,3 +3,4 @@ dist
 builds
 server/public
 .env
+yarn-error.log
