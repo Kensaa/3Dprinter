@@ -1,11 +1,11 @@
-import * as express from 'express'
-import * as cors from 'cors'
+import express from 'express'
+import cors from 'cors'
 import * as http from 'http'
 import * as ws from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
 import { ZodError, z } from 'zod'
-import * as jimp from 'jimp'
+import jimp from 'jimp'
 import 'dotenv/config'
 
 const WEB_SERVER_PORT = 9513
@@ -275,7 +275,7 @@ type Build = z.infer<typeof buildSchema>
         console.log('build depth : ', depth)
         console.log('build width : ', width)
         console.log('available printers', printerCount)
-        //each turtle build the entier height of the build
+        //each turtle build the entire height of the build
         //divided by 2 in the smallest side
         //divided by printerCount / 2 in the biggest side (/2 because of the previous line)
         let xDivide = 0,

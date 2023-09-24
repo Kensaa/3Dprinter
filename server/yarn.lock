@@ -326,6 +326,11 @@
   resolved "https://registry.yarnpkg.com/@types/node/-/node-16.9.1.tgz#0611b37db4246c937feef529ddcc018cf8e35708"
   integrity sha512-QpLcX9ZSsq3YYUUnD3nFDY8H7wctAhQj/TFKL8Ya8v5fMm3CFXxo8zStsLAl780ltoYoo1WvKUVGBQK+1ifr7g==
 
+"@types/obj-file-parser@^0.5.0":
+  version "0.5.0"
+  resolved "https://registry.yarnpkg.com/@types/obj-file-parser/-/obj-file-parser-0.5.0.tgz#0e96cdc6828dbc18039be8e9666f3da6b6b6ef4b"
+  integrity sha512-NvpzqBxGxSn832ikf0oXNJPK1Ee+3DCyKLyQakPUVZUtg7Ax+OdQOkkEJeYSNvEjqFxbwWwd8irMcUeRZEs8kA==
+
 "@types/qs@*":
   version "6.9.7"
   resolved "https://registry.yarnpkg.com/@types/qs/-/qs-6.9.7.tgz#63bb7d067db107cc1e457c303bc25d511febf6cb"
@@ -772,6 +777,11 @@ node-fetch@^2.6.1:
   integrity sha512-C/fGU2E8ToujUivIO0H+tpQ6HWo4eEmchoPIoXtxCrVghxdKq+QOHqEZW7tuP3KlV3bC8FRMO5nMCC7Zm1VP6g==
   dependencies:
     whatwg-url "^5.0.0"
+
+obj-file-parser@^0.6.2:
+  version "0.6.2"
+  resolved "https://registry.yarnpkg.com/obj-file-parser/-/obj-file-parser-0.6.2.tgz#a04607540e4b0c92234bfe9b8da364efb7ea201f"
+  integrity sha512-eATpidA23O619wNjAcrve3WkNQ0vSTLiPSR8DLjPXrguD1DsN0/S49EMAI1T3wzhUD0aLGIiAZXLnWjORGOlng==
 
 object-assign@^4:
   version "4.1.1"

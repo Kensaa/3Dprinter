@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { Canvas, ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stage, Edges, Html } from '@react-three/drei'
 import { Build } from '../types'
@@ -8,6 +8,7 @@ import chevronRight from '../assets/chevron-right.svg'
 import { edit3DArray, trim3DArray } from '../utils/arrayUtils'
 import { Button } from 'react-bootstrap'
 import dataStore from '../stores/data'
+import configStore from '../stores/config'
 
 interface ModelViewerProps {
     buildName: string
@@ -27,53 +28,61 @@ export default function ModelViewer({
     const [selectedLayer, setSelectedLayer] = useState(0)
     const [build, setBuild] = useState(defaultBuild)
     const updateBuild = dataStore(store => store.updateBuild)
+    const disableRender = configStore(store => store.disableRender)
 
     useEffect(() => setBuild(defaultBuild), [defaultBuild])
-    const constructLayer = (y: number, build: Build) => {
-        return build.shape[y].map((row, z) =>
-            row.map(
-                (col, x) =>
-                    col === 1 && (
-                        <Box
-                            key={`${x},${y},${z}`}
-                            position={[x, y + 1, z]}
-                            color={
-                                y === 0 && z === 0 && x === 0
-                                    ? 0x005500
-                                    : undefined
-                            }
-                            hoveredColor={
-                                y === 0 && z === 0 && x === 0
-                                    ? 0x004900
-                                    : undefined
-                            }
-                            addBlock={
-                                editable
-                                    ? (x: number, y: number, z: number) => {
-                                          const shape = build.shape
-                                          edit3DArray(shape, x, y, z, 1)
-                                          console.log(shape)
-                                          setBuild({ ...build, shape })
-                                      }
-                                    : undefined
-                            }
-                            deleteBlock={
-                                editable
-                                    ? (x: number, y: number, z: number) => {
-                                          //TODO: At least 1 block left at all times
-                                          const shape = build.shape
-                                          edit3DArray(shape, x, y, z, 0)
-                                          trim3DArray(shape)
-                                          console.log(shape)
-                                          setBuild({ ...build, shape })
-                                      }
-                                    : undefined
-                            }
-                        />
-                    )
+
+    const layers = useMemo(() => {
+        console.log('recreating layers')
+        const constructLayer = (y: number, build: Build) => {
+            return build.shape[y].map((row, z) =>
+                row.map(
+                    (col, x) =>
+                        col === 1 && (
+                            <Box
+                                key={`${x},${y},${z}`}
+                                position={[x, y + 1, z]}
+                                color={
+                                    y === 0 && z === 0 && x === 0
+                                        ? 0x005500
+                                        : undefined
+                                }
+                                hoveredColor={
+                                    y === 0 && z === 0 && x === 0
+                                        ? 0x004900
+                                        : undefined
+                                }
+                                addBlock={
+                                    editable
+                                        ? (x: number, y: number, z: number) => {
+                                              const shape = build.shape
+                                              edit3DArray(shape, x, y, z, 1)
+                                              console.log(shape)
+                                              setBuild({ ...build, shape })
+                                          }
+                                        : undefined
+                                }
+                                deleteBlock={
+                                    editable
+                                        ? (x: number, y: number, z: number) => {
+                                              //TODO: At least 1 block left at all times
+                                              const shape = build.shape
+                                              edit3DArray(shape, x, y, z, 0)
+                                              trim3DArray(shape)
+                                              console.log(shape)
+                                              setBuild({ ...build, shape })
+                                          }
+                                        : undefined
+                                }
+                            />
+                        )
+                )
             )
-        )
-    }
+        }
+        return selectedLayer === 0
+            ? build.shape.map((_, y) => constructLayer(y, build))
+            : constructLayer(selectedLayer - 1, build)
+    }, [selectedLayer, build, editable])
 
     if (build === undefined) {
         return (
@@ -83,16 +92,13 @@ export default function ModelViewer({
             ></div>
         )
     }
+    if (disableRender) return <></>
 
     return (
         <div style={{ width, height }} className='border'>
             <Canvas>
                 <ambientLight />
-                <Stage adjustCamera>
-                    {selectedLayer === 0
-                        ? build.shape.map((_, y) => constructLayer(y, build))
-                        : constructLayer(selectedLayer - 1, build)}
-                </Stage>
+                <Stage adjustCamera>{layers}</Stage>
                 <Panel>
                     <div className='d-flex flex-column align-items-center'>
                         Select layer to show
