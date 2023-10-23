@@ -206,7 +206,9 @@ type Build = z.infer<typeof buildSchema>
         const build: Build = {
             type: 'image',
             shape: [imageArray],
-            preview: await image.getBase64Async(jimp.MIME_PNG)
+            preview: await arrayToImage(imageArray).getBase64Async(
+                jimp.MIME_PNG
+            )
         }
 
         fs.writeFileSync(
