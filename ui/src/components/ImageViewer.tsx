@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react'
-import configStore from '../stores/config'
-import { Build } from '../types'
-import { blobToBase64, getImageDimensions } from '../utils/utils'
+import { useState } from 'react'
+import { Build } from '../utils/types'
 
 interface ImageViewerProps {
     build: Build
@@ -18,33 +16,24 @@ export default function ImageViewer({
     maxWidth,
     maxHeight
 }: ImageViewerProps) {
-    const address = configStore(state => state.address)
-    const [image, setImage] = useState('')
-    const [dimensions, setDimensions] = useState('')
+    const [dims, setDims] = useState('0x0')
 
-    useEffect(() => {
-        fetch(`${address}/image/arrayToImage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(build.shape[0])
-        })
-            .then(res => res.blob())
-            .then(blob => blobToBase64(blob))
-            .then(image => {
-                setImage(image)
-                getImageDimensions(image).then(dims => {
-                    setDimensions(`${dims.w}x${dims.h}`)
-                })
-            })
-    }, [address, build])
-
+    if (build.type !== 'image') {
+        return <div>Error: Image Viewer is trying to show a model</div>
+    }
     return (
         <div
             style={{ width, height, maxWidth, maxHeight }}
             className='d-flex flex-column align-items-center'
         >
-            <img className='w-100 h-100' src={image} />
-            <h1>{dimensions}</h1>
+            <img
+                className='w-100 h-100'
+                src={build.preview}
+                onLoad={({ currentTarget }) => {
+                    setDims(`${currentTarget.width}x${currentTarget.height}`)
+                }}
+            />
+            <h1>{dims}</h1>
         </div>
     )
 }

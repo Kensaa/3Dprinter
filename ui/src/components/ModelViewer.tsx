@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { Canvas, ThreeEvent } from '@react-three/fiber'
 import { OrbitControls, Stage, Edges, Html } from '@react-three/drei'
-import { Build } from '../types'
+import { Build } from '../utils/types'
 import chevronLeft from '../assets/chevron-left.svg'
 import chevronRight from '../assets/chevron-right.svg'
 import { edit3DArray, trim3DArray } from '../utils/arrayUtils'

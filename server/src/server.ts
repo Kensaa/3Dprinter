@@ -1,11 +1,11 @@
-import express from 'express'
-import cors from 'cors'
+import * as express from 'express'
+import * as cors from 'cors'
 import * as http from 'http'
 import * as ws from 'ws'
 import * as fs from 'fs'
 import * as path from 'path'
 import { ZodError, z } from 'zod'
-import jimp from 'jimp'
+import * as jimp from 'jimp'
 import 'dotenv/config'
 
 const WEB_SERVER_PORT = 9513
@@ -13,10 +13,13 @@ const BUILDS_FOLDER =
     process.env.buildsFolder ?? path.join(__dirname, '..', 'builds')
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
-const buildSchema = z.object({
-    type: z.enum(['model', 'image']),
-    shape: z.number().array().array().array()
-})
+const buildSchema = z.intersection(
+    z.discriminatedUnion('type', [
+        z.object({ type: z.literal('model') }),
+        z.object({ type: z.literal('image'), preview: z.string() })
+    ]),
+    z.object({ shape: z.number().array().array().array() })
+)
 
 type Build = z.infer<typeof buildSchema>
 ;(async () => {
@@ -167,17 +170,13 @@ type Build = z.infer<typeof buildSchema>
         }
         const imageArray = imageToArray(image, options)
         const convertedImage = arrayToImage(imageArray)
-        convertedImage.getBuffer(jimp.MIME_PNG, (err, buffer) => {
-            if (err || !buffer || buffer.length === 0) {
-                return res.sendStatus(500)
-            }
+        const buffer = await convertedImage.getBufferAsync(jimp.MIME_PNG)
 
-            res.writeHead(200, {
-                'Content-Type': 'image/png',
-                'Content-Length': buffer.length
-            })
-            res.end(buffer)
+        res.writeHead(200, {
+            'Content-Type': 'image/png',
+            'Content-Length': buffer.length
         })
+        res.end(buffer)
     })
     expressApp.post('/image/convert', async (req, res, next) => {
         const schema = z.object({
@@ -206,7 +205,8 @@ type Build = z.infer<typeof buildSchema>
 
         const build: Build = {
             type: 'image',
-            shape: [imageArray]
+            shape: [imageArray],
+            preview: await image.getBase64Async(jimp.MIME_PNG)
         }
 
         fs.writeFileSync(
@@ -217,23 +217,6 @@ type Build = z.infer<typeof buildSchema>
             JSON.stringify(build)
         )
         res.sendStatus(200)
-    })
-    expressApp.post('/image/arrayToImage', (req, res) => {
-        const schema = z.number().array().array()
-        const array = schema.parse(req.body)
-
-        const convertedImage = arrayToImage(array)
-        convertedImage.getBuffer(jimp.MIME_PNG, (err, buffer) => {
-            if (err || !buffer || buffer.length === 0) {
-                return res.sendStatus(500)
-            }
-
-            res.writeHead(200, {
-                'Content-Type': 'image/png',
-                'Content-Length': buffer.length
-            })
-            res.end(buffer)
-        })
     })
 
     expressApp.post('/build', (req, res) => {

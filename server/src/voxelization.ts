@@ -1,8 +1,8 @@
 import * as fs from 'fs'
-import obj from 'obj-file-parser'
+import * as obj from 'obj-file-parser'
 
 export function voxelize(file: string) {
-    const objFile = new obj(fs.readFileSync('bite.obj', 'utf-8')).parse()
+    const objFile = new obj(fs.readFileSync(file, 'utf-8')).parse()
 
     const scale = 20
 

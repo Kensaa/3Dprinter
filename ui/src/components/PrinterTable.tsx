@@ -1,5 +1,5 @@
 import { Spinner, Table } from 'react-bootstrap'
-import { Printer } from '../types'
+import { Printer } from '../utils/types'
 
 interface PrinterTableProps {
     printers: Printer[]

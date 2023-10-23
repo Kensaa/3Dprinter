@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import { Button, Modal, Form, Alert } from 'react-bootstrap'
 import dataStore from '../stores/data'
-import { Build } from '../types'
+import { Build } from '../utils/types'
 
 interface NewModelModalProps {
     show: boolean
