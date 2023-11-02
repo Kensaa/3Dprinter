@@ -74,11 +74,16 @@ export function imageToArray(
         output.push([])
         for (let x = 0; x < width; x++) {
             const color = jimp.intToRGBA(image.getPixelColor(x, y))
-            const gray = Math.round((color.r + color.g + color.b) / 3)
-            if (gray > threshold) {
-                output[y].push(inverted ? 0 : 1)
+            const gray = (color.r + color.g + color.b) / 3
+
+            if (color.a === 0) {
+                output[y].push(0)
             } else {
-                output[y].push(inverted ? 1 : 0)
+                if (gray > threshold) {
+                    output[y].push(inverted ? 0 : 1)
+                } else {
+                    output[y].push(inverted ? 1 : 0)
+                }
             }
         }
     }
