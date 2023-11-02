@@ -26,8 +26,8 @@ const buildSchema = z.intersection(
 type Build = z.infer<typeof buildSchema>
 ;(async () => {
     const expressApp = express()
-    expressApp.use(express.json({ limit: '50mb' }))
-    expressApp.use(cors())
+    expressApp.use(express.json({ limit: '5000mb' }))
+    expressApp.use(cors({ origin: '*' }))
 
     const httpServer = http.createServer(expressApp)
     const wsServer = new ws.Server({ server: httpServer })
@@ -196,7 +196,8 @@ type Build = z.infer<typeof buildSchema>
         } catch (err) {
             return next(err)
         }
-        const { file, scale } = body
+        const { file: fileBase64, scale } = body
+        const file = Buffer.from(fileBase64, 'base64').toString('utf-8')
         const output = voxelize(file, scale)
         const build: Build = {
             type: 'model',

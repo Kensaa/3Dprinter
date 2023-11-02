@@ -5,8 +5,8 @@ import dataStore from '../stores/data'
 import Selector from '../components/Selector'
 import { Button } from 'react-bootstrap'
 import BuildModal from '../modals/BuildModal'
-import NewModelModalModal from '../modals/NewModelModal'
-import NewImageModalModal from '../modals/NewImageModal'
+import NewModelModal from '../modals/NewModelModal'
+import NewImageModal from '../modals/NewImageModal'
 import BuildPreview from '../components/BuildPreview'
 
 export default function Homepage() {
@@ -55,7 +55,7 @@ export default function Homepage() {
                                     variant='outline-primary'
                                     onClick={() => setNewModelShown(true)}
                                 >
-                                    Create new Model
+                                    Convert a 3D model
                                 </Button>
                             }
                             {
@@ -84,11 +84,11 @@ export default function Homepage() {
                 />
             )}
 
-            <NewModelModalModal
+            <NewModelModal
                 show={newModelShown}
                 hide={() => setNewModelShown(false)}
             />
-            <NewImageModalModal
+            <NewImageModal
                 show={newImageShown}
                 hide={() => setNewImageShown(false)}
             />

@@ -12,7 +12,7 @@ interface NewImageModalProps {
     hide: () => void
 }
 
-export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
+export default function NewImageModal({ show, hide }: NewImageModalProps) {
     const [image, setImage] = useState('')
     const [name, setName] = useState('')
     const [threshold, setThreshold] = useState(50)
