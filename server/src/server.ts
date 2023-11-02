@@ -146,7 +146,8 @@ type Build = z.infer<typeof buildSchema>
         }
         res.sendStatus(200)
     })
-    expressApp.post('/image/preview', async (req, res, next) => {
+
+    expressApp.post('/convertImage', async (req, res, next) => {
         const schema = z.object({
             image: z.string(),
             threshold: z.number().positive().default(50),
@@ -162,41 +163,6 @@ type Build = z.infer<typeof buildSchema>
             return next(err)
         }
         const { image: imageString, ...options } = body
-        const imageBuffer = Buffer.from(imageString, 'base64')
-        let image
-        try {
-            image = await jimp.read(imageBuffer)
-        } catch {
-            return res.sendStatus(400)
-        }
-        const imageArray = imageToArray(image, options)
-        trim2Darray(imageArray)
-        const convertedImage = arrayToImage(imageArray)
-        const buffer = await convertedImage.getBufferAsync(jimp.MIME_PNG)
-
-        res.writeHead(200, {
-            'Content-Type': 'image/png',
-            'Content-Length': buffer.length
-        })
-        res.end(buffer)
-    })
-    expressApp.post('/image/convert', async (req, res, next) => {
-        const schema = z.object({
-            image: z.string(),
-            name: z.string(),
-            threshold: z.number().positive().default(50),
-            inverted: z.boolean().default(true),
-            scale: z.number().positive().default(1),
-            horizontalMirror: z.boolean().default(false),
-            verticalMirror: z.boolean().default(false)
-        })
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { image: imageString, name, ...options } = body
         let image
         try {
             image = await jimp.read(Buffer.from(imageString, 'base64'))
@@ -214,14 +180,7 @@ type Build = z.infer<typeof buildSchema>
             )
         }
 
-        fs.writeFileSync(
-            path.join(
-                BUILDS_FOLDER,
-                name.endsWith('.json') ? name : name + '.json'
-            ),
-            JSON.stringify(build)
-        )
-        res.sendStatus(200)
+        res.status(200).json(build)
     })
 
     expressApp.post('/build', (req, res) => {

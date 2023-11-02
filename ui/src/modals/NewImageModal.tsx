@@ -4,8 +4,8 @@ import { Button, Modal, Form } from 'react-bootstrap'
 import dataStore from '../stores/data'
 import { FileUploader } from 'react-drag-drop-files'
 import configStore from '../stores/config'
-import { blobToBase64 } from '../utils/utils'
 import ImageViewer from '../components/ImageViewer'
+import { Build } from '../utils/types'
 
 interface NewImageModalProps {
     show: boolean
@@ -21,9 +21,13 @@ export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
     const [horizontalMirror, setHorizontalMirror] = useState(false)
     const [verticalMirror, setVerticalMirror] = useState(false)
 
-    const [preview, setPreview] = useState('')
+    const [build, setBuild] = useState<{
+        type: 'image'
+        preview: string
+        shape: number[][][]
+    }>()
 
-    const fetchBuilds = dataStore(state => state.fetchBuilds)
+    const updateBuild = dataStore(state => state.updateBuild)
     const address = configStore(state => state.address)
 
     const handleFileUpload = (file: File) => {
@@ -44,31 +48,15 @@ export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
     const submit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         event.stopPropagation()
-
-        fetch(`${address}/image/convert`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                image,
-                name,
-                threshold,
-                inverted,
-                scale,
-                horizontalMirror,
-                verticalMirror
-            })
-        }).then(res => {
-            if (res.ok) {
-                fetchBuilds()
-                hide()
-            }
-        })
+        if (!build) return
+        updateBuild(name, build)
+        hide()
     }
 
     useEffect(() => {
         const updatePreview = () => {
             if (!image) return
-            fetch(`${address}/image/preview`, {
+            fetch(`${address}/convertImage`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -80,9 +68,12 @@ export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
                     verticalMirror
                 })
             })
-                .then(res => res.blob())
-                .then(blob => blobToBase64(blob))
-                .then(image => setPreview(image))
+                .then(res => res.json())
+                .then(res => {
+                    const build = res as Build
+                    if (build.type !== 'image') return
+                    setBuild(build)
+                })
         }
         // this is a debounced useEffect, updatePreview will only be called if the deps of the hook weren't updated in the last 0ms
         const timeout = setTimeout(updatePreview, 70)
@@ -182,9 +173,9 @@ export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
                             }
                         </div>
                     </Form>
-                    {preview !== '' ? (
+                    {build ? (
                         <ImageViewer
-                            image={preview}
+                            image={build.preview}
                             width='50%'
                             maxHeight='80%'
                         />
