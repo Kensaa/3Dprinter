@@ -173,3 +173,15 @@ export function trim3DArray(arr: number[][][], nullE = 0) {
         }
     }
 }
+
+export function count3DArray(arr: number[][][], element = 1) {
+    let count = 0
+    for (let y = 0; y < arr.length; y++) {
+        for (let z = 0; z < arr[y].length; z++) {
+            for (let x = 0; x < arr[y][z].length; x++) {
+                if (arr[y][z][x] === element) count++
+            }
+        }
+    }
+    return count
+}
