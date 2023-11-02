@@ -46,7 +46,7 @@ export default function ModelViewer({
         <div style={{ width, height }} className='border'>
             <Canvas>
                 <ambientLight />
-                <Mesh build={build} />
+                <Mesh build={build} count={count3DArray(build.shape)} />
                 <CameraControls />
                 <axesHelper args={[50]} />
             </Canvas>
@@ -115,11 +115,11 @@ export default function ModelViewer({
 
 interface MeshProps {
     build: Build
+    count: number
 }
 
-function Mesh({ build }: MeshProps) {
+function Mesh({ build, count }: MeshProps) {
     const meshRef = useRef<InstancedMesh>(null)
-    const [count, setCount] = useState(count3DArray(build.shape))
 
     useEffect(() => {
         if (meshRef == null) return
@@ -132,9 +132,9 @@ function Mesh({ build }: MeshProps) {
         const depth = build.shape[0].length
         const width = build.shape[0][0].length
 
-        for (let y = 0; y < build.shape.length; y++) {
-            for (let z = 0; z < build.shape[y].length; z++) {
-                for (let x = 0; x < build.shape[y][z].length; x++) {
+        for (let y = 0; y < height; y++) {
+            for (let z = 0; z < depth; z++) {
+                for (let x = 0; x < width; x++) {
                     if (build.shape[y][z][x] === 1) {
                         tempObject.position.set(
                             x - width / 2,
@@ -157,10 +157,10 @@ function Mesh({ build }: MeshProps) {
         }
 
         meshRef.current.instanceMatrix.needsUpdate = true
-        setCount(count3DArray(build.shape))
     }, [build])
 
     return (
+        //@ts-ignore
         <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
             <boxGeometry args={[1, 1, 1]}></boxGeometry>
             <meshBasicMaterial color={0x515151} />
