@@ -4,22 +4,33 @@ import { Canvas } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
 import { Build } from '../utils/types'
 import configStore from '../stores/config'
+import dataStore from '../stores/data'
 import { Color, InstancedMesh, Object3D } from 'three'
-import { count3DArray } from '../utils/arrayUtils'
+import { count3DArray, rotate3DArray } from '../utils/arrayUtils'
+import { Button } from 'react-bootstrap'
 
 interface ModelViewerProps {
     buildName: string
-    build: Build
     width?: string
     height?: string
 }
 
 export default function ModelViewer({
-    build,
+    buildName,
     width = '25%',
     height = '50%'
 }: ModelViewerProps) {
     const disableRender = configStore(store => store.disableRender)
+    const { updateBuild, builds } = dataStore(store => ({
+        updateBuild: store.updateBuild,
+        builds: store.builds
+    }))
+
+    const [build, setBuild] = useState<Build>()
+
+    useEffect(() => {
+        setBuild(builds[buildName])
+    }, [builds, buildName])
 
     if (build === undefined) {
         return (
@@ -37,7 +48,67 @@ export default function ModelViewer({
                 <ambientLight />
                 <Mesh build={build} />
                 <CameraControls />
+                <axesHelper args={[50]} />
             </Canvas>
+            <div className='w-100 d-flex justify-content-center mt-3'>
+                {
+                    //@ts-ignore
+                    <Button
+                        onClick={() => {
+                            const newBuild = { ...build }
+                            newBuild.shape = rotate3DArray(
+                                build.shape,
+                                true,
+                                false,
+                                false
+                            )
+                            updateBuild(buildName, newBuild)
+                            setBuild(newBuild)
+                        }}
+                        variant='outline-primary'
+                    >
+                        Rotate X (Red Axis)
+                    </Button>
+                }
+                {
+                    //@ts-ignore
+                    <Button
+                        onClick={() => {
+                            const newBuild = { ...build }
+                            newBuild.shape = rotate3DArray(
+                                build.shape,
+                                false,
+                                true,
+                                false
+                            )
+                            updateBuild(buildName, newBuild)
+                            setBuild(newBuild)
+                        }}
+                        variant='outline-primary'
+                    >
+                        Rotate Y (Green Axis)
+                    </Button>
+                }
+                {
+                    //@ts-ignore
+                    <Button
+                        onClick={() => {
+                            const newBuild = { ...build }
+                            newBuild.shape = rotate3DArray(
+                                build.shape,
+                                false,
+                                false,
+                                true
+                            )
+                            updateBuild(buildName, newBuild)
+                            setBuild(newBuild)
+                        }}
+                        variant='outline-primary'
+                    >
+                        Rotate Z (Blue Axis)
+                    </Button>
+                }
+            </div>
         </div>
     )
 }

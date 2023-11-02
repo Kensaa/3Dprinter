@@ -18,13 +18,7 @@ export default function BuildPreview({ buildName }: BuildPreviewProps) {
     return (
         <>
             {build.type === 'model' ? (
-                <ModelViewer
-                    build={build}
-                    buildName={buildName}
-                    width='100%'
-                    height='100%'
-                    editable
-                />
+                <ModelViewer buildName={buildName} width='100%' height='100%' />
             ) : (
                 <ImageViewer image={build.preview} width='100%' height='100%' />
             )}

@@ -58,7 +58,7 @@ export const edit3DArray = (
 }
 
 function generate1DArray(width: number, element = 0) {
-    return new Array(width).fill(element)
+    return new Array(width).fill(element) as (typeof element)[]
 }
 
 function generate2DArray(width: number, height: number, element = 0) {
@@ -184,4 +184,36 @@ export function count3DArray(arr: number[][][], element = 1) {
         }
     }
     return count
+}
+
+export function rotate3DArray(
+    arr: number[][][],
+    xAxis = false,
+    yAxis = false,
+    zAxis = false
+) {
+    const newArr = []
+    for (let y = 0; y < arr.length; y++) {
+        newArr.push(generate2DArray(arr[0][0].length, arr[0].length, 0))
+    }
+
+    const height = arr.length
+    const width = arr[0][0].length
+
+    for (let y = 0; y < arr.length; y++) {
+        for (let z = 0; z < arr[y].length; z++) {
+            for (let x = 0; x < arr[y][z].length; x++) {
+                if (xAxis) {
+                    newArr[y][z][x] = arr[height - z - 1][y][x]
+                }
+                if (yAxis) {
+                    newArr[y][z][x] = arr[y][x][width - z - 1]
+                }
+                if (zAxis) {
+                    newArr[y][z][x] = arr[x][z][width - y - 1]
+                }
+            }
+        }
+    }
+    return newArr
 }
