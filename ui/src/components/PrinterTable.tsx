@@ -56,7 +56,7 @@ interface TableRowProps {
 function TableRow({ printer }: TableRowProps) {
     const { id, label, state, connected, pos, progress } = printer
     return (
-        <tr className='unselectable'>
+        <tr className=''>
             <td>{id}</td>
             <td>{label}</td>
             <td>{capitalise(state)}</td>

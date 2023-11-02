@@ -4,7 +4,8 @@ import { Button, Modal, Form } from 'react-bootstrap'
 import dataStore from '../stores/data'
 import { FileUploader } from 'react-drag-drop-files'
 import configStore from '../stores/config'
-import { blobToBase64, getImageDimensions } from '../utils/utils'
+import { blobToBase64 } from '../utils/utils'
+import ImageViewer from '../components/ImageViewer'
 
 interface NewImageModalProps {
     show: boolean
@@ -21,7 +22,6 @@ export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
     const [verticalMirror, setVerticalMirror] = useState(false)
 
     const [preview, setPreview] = useState('')
-    const [dimensions, setDimensions] = useState('')
 
     const fetchBuilds = dataStore(state => state.fetchBuilds)
     const address = configStore(state => state.address)
@@ -82,12 +82,7 @@ export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
             })
                 .then(res => res.blob())
                 .then(blob => blobToBase64(blob))
-                .then(image => {
-                    setPreview(image)
-                    getImageDimensions(image).then(dims => {
-                        setDimensions(`${dims.w}x${dims.h}`)
-                    })
-                })
+                .then(image => setPreview(image))
         }
         // this is a debounced useEffect, updatePreview will only be called if the deps of the hook weren't updated in the last 0ms
         const timeout = setTimeout(updatePreview, 70)
@@ -108,14 +103,14 @@ export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
                 <Modal.Title>Converting an image</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <div className='d-flex'>
+                <div className='d-flex w-100 h-100'>
                     <Form onSubmit={submit} className=' w-50'>
                         <div className='d-flex justify-content-center'>
                             <FileUploader
                                 handleChange={handleFileUpload}
                                 name='file'
                                 types={['JPG', 'PNG', 'GIF']}
-                                label='Upload or drop the image you want to convert here'
+                                label='Upload or drop the image you want to convert here '
                                 required
                             />
                         </div>
@@ -188,11 +183,11 @@ export default function NewImageModalModal({ show, hide }: NewImageModalProps) {
                         </div>
                     </Form>
                     {preview !== '' ? (
-                        <div className='mx-3 w-50'>
-                            <h2>Preview</h2>
-                            <img className='w-100' src={preview} />
-                            <h1>{dimensions}</h1>
-                        </div>
+                        <ImageViewer
+                            image={preview}
+                            width='50%'
+                            maxHeight='80%'
+                        />
                     ) : undefined}
                 </div>
             </Modal.Body>

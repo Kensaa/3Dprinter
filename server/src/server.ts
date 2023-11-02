@@ -7,6 +7,7 @@ import * as path from 'path'
 import { ZodError, z } from 'zod'
 import * as jimp from 'jimp'
 import 'dotenv/config'
+import { arrayToImage, imageToArray, trim2Darray } from './utils'
 
 const WEB_SERVER_PORT = 9513
 const BUILDS_FOLDER =
@@ -169,6 +170,7 @@ type Build = z.infer<typeof buildSchema>
             return res.sendStatus(400)
         }
         const imageArray = imageToArray(image, options)
+        trim2Darray(imageArray)
         const convertedImage = arrayToImage(imageArray)
         const buffer = await convertedImage.getBufferAsync(jimp.MIME_PNG)
 
@@ -202,6 +204,7 @@ type Build = z.infer<typeof buildSchema>
             return res.sendStatus(400)
         }
         const imageArray = imageToArray(image, options)
+        trim2Darray(imageArray)
 
         const build: Build = {
             type: 'image',
@@ -441,59 +444,4 @@ function getTime() {
     const minutes = date.getMinutes().toString().padStart(2, '0')
     const seconds = date.getSeconds().toString().padStart(2, '0')
     return `${hours}:${minutes}:${seconds}`
-}
-
-interface ImageToArrayOptions {
-    threshold: number
-    inverted: boolean
-    scale: number
-    horizontalMirror: boolean
-    verticalMirror: boolean
-}
-/**
- * Convert an Jimp image into a 2D array
- * @param image image to convert
- * @param options options (see ImageToArrayOptions interface)
- * @returns a 2D array representing the image's pixels
- */
-function imageToArray(image: jimp, options: Partial<ImageToArrayOptions>) {
-    const {
-        threshold = 50,
-        inverted = true,
-        scale = 1,
-        horizontalMirror = false,
-        verticalMirror = false
-    } = options
-    image.scale(scale)
-    image.flip(horizontalMirror, verticalMirror)
-    const output: number[][] = []
-    const width = image.getWidth()
-    const height = image.getHeight()
-    for (let y = 0; y < height; y++) {
-        output.push([])
-        for (let x = 0; x < width; x++) {
-            const color = jimp.intToRGBA(image.getPixelColor(x, y))
-            const gray = Math.round((color.r + color.g + color.b) / 3)
-            if (gray > threshold) {
-                output[y].push(inverted ? 0 : 1)
-            } else {
-                output[y].push(inverted ? 1 : 0)
-            }
-        }
-    }
-    return output
-}
-
-function arrayToImage(arr: number[][]) {
-    const width = arr[0].length
-    const height = arr.length
-    const img = new jimp(width, height, 'white')
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            if (arr[y][x] === 1) {
-                img.setPixelColor(0x000000ff, x, y)
-            }
-        }
-    }
-    return img
 }

@@ -1,8 +1,8 @@
-import { useState } from 'react'
-import { Build } from '../utils/types'
+import { useEffect, useState } from 'react'
+import { getImageDimensions } from '../utils/utils'
 
 interface ImageViewerProps {
-    build: Build
+    image: string
     width?: string
     height?: string
     maxWidth?: string
@@ -10,29 +10,25 @@ interface ImageViewerProps {
 }
 
 export default function ImageViewer({
-    build,
+    image,
     width,
     height,
     maxWidth,
     maxHeight
 }: ImageViewerProps) {
-    const [dims, setDims] = useState('0x0')
+    const [dims, setDims] = useState<string>()
+    useEffect(() => {
+        getImageDimensions(image).then(({ w, h }) => {
+            setDims(`${w}x${h}`)
+        })
+    })
 
-    if (build.type !== 'image') {
-        return <div>Error: Image Viewer is trying to show a model</div>
-    }
     return (
         <div
             style={{ width, height, maxWidth, maxHeight }}
             className='d-flex flex-column align-items-center'
         >
-            <img
-                className='w-100 h-100'
-                src={build.preview}
-                onLoad={({ currentTarget }) => {
-                    setDims(`${currentTarget.width}x${currentTarget.height}`)
-                }}
-            />
+            <img className='w-100 h-100 border' src={image} />
             <h1>{dims}</h1>
         </div>
     )

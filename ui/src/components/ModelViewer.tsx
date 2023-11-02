@@ -33,7 +33,6 @@ export default function ModelViewer({
     useEffect(() => setBuild(defaultBuild), [defaultBuild])
 
     const layers = useMemo(() => {
-        console.log('recreating layers')
         const constructLayer = (y: number, build: Build) => {
             return build.shape[y].map((row, z) =>
                 row.map(
@@ -102,7 +101,7 @@ export default function ModelViewer({
                 <Panel>
                     <div className='d-flex flex-column align-items-center'>
                         Select layer to show
-                        <NumberSelect
+                        <NumberSelector
                             min={0}
                             max={build.shape.length}
                             onChange={setSelectedLayer}
@@ -129,19 +128,18 @@ export default function ModelViewer({
     )
 }
 
-interface NumberSelector {
+interface NumberSelectorProps {
     min: number
     max: number
     onChange: (value: number) => void
     valueLabels?: Record<number, string>
 }
-
-function NumberSelect({
+function NumberSelector({
     min,
     max,
     onChange,
     valueLabels = {}
-}: NumberSelector) {
+}: NumberSelectorProps) {
     const [value, setValue] = useState(min)
 
     const update = (value: number) => {

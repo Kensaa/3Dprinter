@@ -1,23 +1,15 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useEffect, useState } from 'react'
-import { Build } from '../utils/types'
 import configStore from '../stores/config'
 import { Button, Modal, Form, Row, Col, Alert } from 'react-bootstrap'
-import ModelViewer from '../components/ModelViewer'
-import ImageViewer from '../components/ImageViewer'
+import BuildPreview from '../components/BuildPreview'
 
 interface BuildModalProps {
     buildName: string
-    build: Build
     show: boolean
     hide: () => void
 }
-export default function BuildModal({
-    buildName,
-    build,
-    show,
-    hide
-}: BuildModalProps) {
+export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
     const [x, setX] = useState(localStorage.getItem('x') ?? '0')
     const [y, setY] = useState(localStorage.getItem('y') ?? '0')
     const [z, setZ] = useState(localStorage.getItem('z') ?? '0')
@@ -149,20 +141,7 @@ export default function BuildModal({
                             }
                         </Form.Group>
                     </Form>
-                    {build.type === 'model' ? (
-                        <ModelViewer
-                            width='50%'
-                            height='100%'
-                            buildName={buildName}
-                            build={build}
-                        />
-                    ) : (
-                        <ImageViewer
-                            width='50%'
-                            maxHeight='80%'
-                            build={build}
-                        />
-                    )}
+                    <BuildPreview buildName={buildName} />
                 </div>
             </Modal.Body>
         </Modal>
