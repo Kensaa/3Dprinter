@@ -8,6 +8,7 @@ import { ZodError, z } from 'zod'
 import * as jimp from 'jimp'
 import 'dotenv/config'
 import { arrayToImage, imageToArray, trim2Darray } from './utils'
+import { voxelize } from './voxelization'
 
 const WEB_SERVER_PORT = 9513
 const BUILDS_FOLDER =
@@ -180,6 +181,27 @@ type Build = z.infer<typeof buildSchema>
             )
         }
 
+        res.status(200).json(build)
+    })
+
+    expressApp.post('/voxelize', async (req, res, next) => {
+        const schema = z.object({
+            file: z.string(),
+            scale: z.number().positive().default(1)
+        })
+
+        let body
+        try {
+            body = schema.parse(req.body)
+        } catch (err) {
+            return next(err)
+        }
+        const { file, scale } = body
+        const output = voxelize(file, scale)
+        const build: Build = {
+            type: 'model',
+            shape: output
+        }
         res.status(200).json(build)
     })
 

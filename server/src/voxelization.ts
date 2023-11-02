@@ -1,10 +1,7 @@
-import * as fs from 'fs'
 import * as obj from 'obj-file-parser'
 
-export function voxelize(file: string) {
-    const objFile = new obj(fs.readFileSync(file, 'utf-8')).parse()
-
-    const scale = 20
+export function voxelize(data: string, scale = 20) {
+    const objFile = new obj(data).parse()
 
     const models = objFile.models[0]
     // get vertices as [x,y,z] arrays
@@ -45,14 +42,13 @@ export function voxelize(file: string) {
     // console.log(translatedVertices);
     // console.log(normalizedVertices);
     // console.log(scaledVertices);
-    //console.log(faces);
 
     const output: number[][][] = []
-    for (let i = 0; i < scale + 2; i++) {
+    for (let i = 0; i <= scale; i++) {
         output.push([])
-        for (let j = 0; j < scale + 2; j++) {
+        for (let j = 0; j <= scale; j++) {
             output[i].push([])
-            for (let k = 0; k < scale + 2; k++) {
+            for (let k = 0; k <= scale; k++) {
                 output[i][j].push(0)
             }
         }
@@ -132,22 +128,40 @@ export function voxelize(file: string) {
 
         for (let y = bound[0][1]; y <= bound[1][1]; y++) {
             for (let z = bound[0][2]; z <= bound[1][2]; z++) {
-                rays.push({ origin: [bound[0][0] - 5, y, z], direction: 'x' })
-                rays.push({ origin: [bound[1][0] + 5, y, z], direction: 'x' })
+                rays.push({
+                    origin: [bound[0][0] - scale, y, z],
+                    direction: 'x'
+                })
+                rays.push({
+                    origin: [bound[1][0] + scale, y, z],
+                    direction: 'x'
+                })
             }
         }
 
         for (let x = bound[0][0]; x <= bound[1][0]; x++) {
             for (let z = bound[0][2]; z <= bound[1][2]; z++) {
-                rays.push({ origin: [x, bound[0][1] - 5, z], direction: 'y' })
-                rays.push({ origin: [x, bound[1][1] + 5, z], direction: 'y' })
+                rays.push({
+                    origin: [x, bound[0][1] - scale, z],
+                    direction: 'y'
+                })
+                rays.push({
+                    origin: [x, bound[1][1] + scale, z],
+                    direction: 'y'
+                })
             }
         }
 
         for (let x = bound[0][0]; x <= bound[1][0]; x++) {
             for (let y = bound[0][1]; y <= bound[1][1]; y++) {
-                rays.push({ origin: [x, y, bound[0][2] - 5], direction: 'z' })
-                rays.push({ origin: [x, y, bound[1][2] + 5], direction: 'z' })
+                rays.push({
+                    origin: [x, y, bound[0][2] - scale],
+                    direction: 'z'
+                })
+                rays.push({
+                    origin: [x, y, bound[1][2] + scale],
+                    direction: 'z'
+                })
             }
         }
         return rays
@@ -173,31 +187,27 @@ export function voxelize(file: string) {
         }
     }
 
-    //fs.writeFileSync('output.json', JSON.stringify(output, null, 2))
-
     // convert to weird 3d printer array format
 
     const model: number[][][] = []
 
-    for (let x = 0; x < scale; x++) {
+    for (let x = 0; x <= scale; x++) {
         model.push([])
-        for (let y = 0; y < scale; y++) {
+        for (let y = 0; y <= scale; y++) {
             model[x].push([])
-            for (let z = 0; z < scale; z++) {
+            for (let z = 0; z <= scale; z++) {
                 model[x][y].push(0)
             }
         }
     }
 
-    for (let y = 0; y < scale; y++) {
-        for (let z = 0; z < scale; z++) {
-            for (let x = 0; x < scale; x++) {
+    for (let y = 0; y <= scale; y++) {
+        for (let z = 0; z <= scale; z++) {
+            for (let x = 0; x <= scale; x++) {
                 model[y][z][x] = output[x][y][z]
             }
         }
     }
-
-    //fs.writeFileSync('model.json', JSON.stringify(model, null, 2))
 
     function min(args: number[]) {
         let min = args[0]
