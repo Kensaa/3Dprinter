@@ -1,75 +1,37 @@
-function suckAll(start) 
-    start = start or 1
-    before = turtle.getSelectedSlot()
-    for i = start,16 do 
-        turtle.select(i)
-        local current = turtle.getItemCount()
-        if current ~= 0 then
-            turtle.suck(64-current)
-        else
-            turtle.suck()
-        end 
-    end
-    turtle.select(before)
-end
-function dropAll(start) 
-    start = start or 1
-    before = turtle.getSelectedSlot()
-    for i = start,16 do 
-        turtle.select(i)
-        turtle.drop()
-    end
-    turtle.select(before)
-end
-
-if turtle.getFuelLevel() == 0 then
-    print('please refuel this turtle')
+local url = "http://localhost:9513"
+local me = peripheral.wrap('bottom')
+if not me then
+    print('No ME controller found below the turtle')
     return
 end
-print('place following items into the turtle and press ENTER')
-print('slot 1 : turtles')
-print('slot 2 : disk drive')
-print('slot 3 : floppy disk')
-read()
-turtle.select(1)
-num = turtle.getItemCount()
-print('place 4 chest behind the turtle and press ENTER')
-print('place fuel in the bottom one')
-print('place chunkloaders on the one above')
-print('place pickaxes on the one above')
-print('place modems on the one above')
-print('place enderchests on the one above')
-read()
 
-
--- if disk folder exist before plugging the disk in, delete it
-if fs.exists('disk') then
-    fs.delete('disk')
+function requestItem(item,count)
+    me.exportItem({name=item,count=count},"up")
+    sleep(0.5)
 end
---creating install disk
-turtle.select(2)
-turtle.place()
-turtle.select(3)
-turtle.drop()
-sleep(1)
-fs.delete('disk/bootstrap')
-shell.run('pastebin get Zed0viXR disk/bootstrap')
-sleep(1)
-turtle.suck()
-turtle.select(2)
-turtle.dig()
 
-turtle.select(1)
-local sSlot = 4
+function requestItemIntoTurtle(item, count)
+    me.exportItemToPeripheral({name=item,count=count},"front")
+    sleep(0.5)
+end
+
+function isInMe(item)
+    local items = me.listItems()
+    for k,v in pairs(items) do
+        if v.name == item then
+            return true
+        end
+    end
+    return false
+end
 
 function execute(str,delay)
-    delay = delay or 2
+    delay = delay or 0
     beforeSlot = turtle.getSelectedSlot()
-
     turtle.up()
-    turtle.select(2)
+    turtle.select(1)
     turtle.place()
-    turtle.select(3)
+    turtle.select(2)
     turtle.drop()
     if fs.exists("disk/startup") then 
         fs.delete("disk/startup")
@@ -80,201 +42,145 @@ function execute(str,delay)
     sleep(delay)
     turtle.up()
     turtle.suck()
-    turtle.select(2)
+    turtle.select(1)
     turtle.dig()
     turtle.down()
 
     turtle.select(beforeSlot)
 end
 
-for i=1,num do
-    turtle.forward()
-    turtle.turnLeft()
-    turtle.place()
-    turtle.turnRight()
-end
-turtle.turnRight()
-turtle.turnRight()
-for i=1,num do
-    turtle.forward()
-end
-for i=1,num do
-    suckAll(sSlot)
-    turtle.turnRight()
-    turtle.turnRight()
-    for j=1,i do
-        turtle.forward()
+function setFile(str)
+    turtle.up()
+    if fs.exists("disk/startup") then 
+        fs.delete("disk/startup")
     end
-    turtle.turnLeft()
-    dropAll(sSlot)
-    execute([[
-        for i = 1,16 do
+    io.open("disk/startup","w"):write(str)
+    turtle.down()
+end
+
+function clear()
+    term.clear()
+    term.setCursorPos(1,1)
+end
+
+clear()
+print('Intializing deployer...')
+
+local deployerRequirements = {}
+deployerRequirements["computercraft:disk_drive"]=1
+deployerRequirements["computercraft:disk"]=1
+deployerRequirements["minecraft:coal_block"]=64
+
+
+local requirements = {}
+requirements["computercraft:turtle_advanced"]=1
+requirements["advancedperipherals:chunk_controller"]=1
+requirements["minecraft:diamond_pickaxe"]=1
+requirements["computercraft:wireless_modem_advanced"]=1
+requirements["enderchests:ender_chest"]=1
+requirements["minecraft:coal_block"]=125
+
+
+for k,v in pairs(deployerRequirements) do
+    if not isInMe(k) then
+        print('You have 0 '..k..','..v..' needed') 
+        return
+    else 
+        local amount = me.getItem({name=k}).amount
+        if amount < v then
+            print('You have '..amount..' '..k..','..v..' needed')
+            return
+        end
+    end
+end
+
+requestItem("computercraft:disk_drive",deployerRequirements["computercraft:disk_drive"])
+requestItem("computercraft:disk",deployerRequirements["computercraft:disk"])
+requestItem("minecraft:coal_block",deployerRequirements["minecraft:coal_block"])
+
+--refuel deployer
+turtle.select(3)
+turtle.refuel()
+me.importItem({name="minecraft:coal_block",count=64},"up")
+
+print('how much turtle do you want to deploy?')
+local num = tonumber(read())
+clear()
+-- check requirements
+for k,v in pairs(requirements) do
+    if not isInMe(k) then
+        print('You have 0 '..k..','..v..' needed')
+        return
+    else
+        local amount = me.getItem({name=k}).amount
+        local totalRequired = v * num
+        if amount < totalRequired then
+            print('You have '..amount..' '..k..','..totalRequired..' needed')
+            return
+        end
+    end
+end
+
+print('About to deploy '..num..' printers, press ENTER to continue')
+read()
+clear()
+turtle.select(1)
+turtle.up()
+turtle.place()
+turtle.select(2)
+turtle.drop()
+turtle.down()
+turtle.select(1)
+for i = 1, num do
+    requestItem("computercraft:turtle_advanced",1)
+    turtle.place()
+    sleep(0.5)
+    requestItemIntoTurtle("minecraft:coal_block", requirements["minecraft:coal_block"])
+    setFile([[
+        for i = 1,4 do
             turtle.select(i)
             turtle.refuel()
         end
         turtle.select(1)
     ]])
-    suckAll(sSlot)
-    turtle.turnLeft()
-    for j=1,i do
-        turtle.forward()
-    end
-end
-dropAll(sSlot)
-
---print('Empty the chest, place the chunkloaders and press ENTER')
---read()
-
-turtle.up()
-suckAll(sSlot)
-turtle.down()
-turtle.turnLeft()
-turtle.turnLeft()
-for i=1,num do
-    turtle.forward()
-    turtle.turnLeft()
-    for i = sSlot,16 do
-        turtle.select(i)
-        if turtle.getItemCount() ~= 0 then
-            turtle.drop(1)
-            break
-        end
-    end
-    execute([[
+    peripheral.call('front','reboot')
+    sleep(2)
+    requestItemIntoTurtle("advancedperipherals:chunk_controller", requirements["advancedperipherals:chunk_controller"])
+    requestItemIntoTurtle("minecraft:diamond_pickaxe", requirements["minecraft:diamond_pickaxe"])
+    requestItemIntoTurtle("computercraft:wireless_modem_advanced", requirements["computercraft:wireless_modem_advanced"])
+    requestItemIntoTurtle("enderchests:ender_chest", requirements["enderchests:ender_chest"])
+    setFile([[
         turtle.select(1)
         turtle.equipLeft()
-    ]])
-    turtle.turnRight()
-end
-
-turtle.turnLeft()
-turtle.turnLeft()
-for i=1,num do
-    turtle.forward()
-end
-turtle.up()
-dropAll(sSlot)
-turtle.down()
-
---print('Empty the chest, place the pickaxes and press ENTER')
---read()
-
-for i=1,num do
-    turtle.up()
-    turtle.up()
-    turtle.select(sSlot)
-    turtle.suck(1)
-    turtle.down()
-    turtle.down()
-    turtle.turnRight()
-    turtle.turnRight()
-    for j=1,i do
-        turtle.forward()
-    end
-    turtle.turnLeft()
-    turtle.select(sSlot)
-    turtle.drop(1)
-    execute([[
-        turtle.select(1)
+        turtle.select(2)
         turtle.equipRight()
-    ]])
-    turtle.turnLeft()
-    for j=1,i do
-        turtle.forward()
-    end
-end
-
---print('Empty the chest, place the modems and press ENTER')
---read()
-
-turtle.up()
-turtle.up()
-turtle.up()
-turtle.select(sSlot)
-turtle.suck()
-turtle.down()
-turtle.down()
-turtle.down()
-
-turtle.turnLeft()
-turtle.turnLeft()
-for i=1,num do
-    turtle.forward()
-    turtle.turnLeft()
-    turtle.drop(1)
-    execute([[
-        turtle.select(1)
+        turtle.select(3)
         turtle.transferTo(15,1)
-    ]])
-    turtle.turnRight()
-end
-
-turtle.turnLeft()
-turtle.turnLeft()
-for i=1,num do
-    turtle.forward()
-end
-turtle.up()
-turtle.up()
-turtle.up()
-turtle.drop()
-
-turtle.up()
-turtle.select(sSlot)
-turtle.suck()
-turtle.down()
-turtle.down()
-turtle.down()
-turtle.down()
-
-turtle.turnLeft()
-turtle.turnLeft()
-for i=1,num do
-    turtle.forward()
-    turtle.turnLeft()
-    turtle.drop(1)
-    execute([[
-        turtle.select(1)
+        turtle.select(4)
         turtle.transferTo(16,1)
-    ]])
-    turtle.turnRight()
-end
+        turtle.select(1)
 
-turtle.turnLeft()
-turtle.turnLeft()
-for i=1,num do
-    turtle.forward()
-end
-
-turtle.up()
-turtle.up()
-turtle.up()
-turtle.up()
-turtle.drop()
-turtle.down()
-turtle.down()
-turtle.down()
-turtle.down()
-
-turtle.turnLeft()
-turtle.turnLeft()
-
-for i=1,num do
-    turtle.forward()
-    turtle.turnLeft()
-    execute([[
-        os.setComputerLabel("printer ]]..i..[[")
-        fs.copy("disk/bootstrap","startup")
-        sleep(5)
+        os.setComputerLabel('printer '..]]..i..[[)
+        shell.run('wget '..']]..url..[[/clients/bootstrap.lua startup')
+        for i = 1,]]..i..[[ do
+            turtle.forward()
+        end
+        turtle.turnLeft()
+        turtle.forward()
         os.reboot()
     ]])
-    turtle.turnRight()
+    peripheral.call('front','reboot')
+    print('deployed '..i..'/'..num)
+    sleep(3)
 end
 
-turtle.turnLeft()
-turtle.turnLeft()
-for i=1,num do
-    turtle.forward()
-end
-turtle.turnLeft()
-turtle.turnLeft()
+turtle.up()
+turtle.select(2)
+turtle.suck()
+turtle.select(1)
+turtle.dig()
+turtle.down()
+print('finished deploying '..num..' turtles')
+print('storing deployer requirements in ME system')
+me.importItem({name="computercraft:disk_drive",count=1},"up")
+me.importItem({name="computercraft:disk",count=1},"up")

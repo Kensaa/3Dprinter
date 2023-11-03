@@ -1,5 +1,9 @@
 gpsTry = 5
-
+local url = "localhost:9513"
+if not fs.exists('json.lua') then
+    shell.run('wget https://raw.githubusercontent.com/rxi/json.lua/master/json.lua json.lua')
+end
+json = require "json"
 -- Setup : 
 -- equip chunk loader from advanced peripheral to the left
 -- equip either a pickaxe or a advanced wireless modem to the right and place the other into the 15th slot
@@ -51,15 +55,14 @@ function place()
     turtle.placeDown()
 end
 
-local url = "ws://localhost:9513"
-local ws, err = http.websocket(url)
+local ws, err = http.websocket('ws://'..url)
 if not err == nil then
     print(err)
     return
 end
 
 function send(data)
-    ws.send(textutils.serialiseJSON(data))
+    ws.send(json.encode(data))
 end
 
 function log(message)
@@ -469,7 +472,7 @@ end
 while true do
     if fs.exists('data') then
         print('data exists')
-        local data = textutils.unserialiseJSON(fs.open("data","r").readAll())
+        local data = json.decode(fs.open("data","r").readAll())
         handleData(data)
     else
         print('waiting for message')
@@ -479,8 +482,33 @@ while true do
             return
         end
         print('received message')
-        local JSONResponse = textutils.unserialiseJSON(response)
-        io.open("data","w"):write(textutils.serialiseJSON(JSONResponse))
-        handleData(JSONResponse)
+        local JSONResponse = json.decode(response)
+
+        buildData = ''
+        if(JSONResponse['type'] == 'sendStart') then
+            print('starting receiving data chunk')
+            finished = false
+            i = 0
+            while not finished do
+                local _, url, response, isBinary = os.pullEvent("websocket_message")
+                if isBinary then
+                    return
+                end
+                local JSONResponse = json.decode(response)
+                if(JSONResponse['type'] == 'chunk') then
+                    print('new chunk received : '..i)
+                    buildData = buildData .. JSONResponse['chunk']
+                    i = i + 1
+                elseif JSONResponse['type'] == 'sendEnd' then
+                    finished = true
+                    print('finished receiving data chunk')
+                    io.open("data","w"):write(buildData)
+                    handleData(json.decode(buildData))
+                end
+            end
+        end
+
+    --     io.open("data","w"):write(textutils.serialiseJSON(JSONResponse))
+    --     handleData(JSONResponse)
     end
 end

@@ -23,6 +23,17 @@ const buildSchema = z.intersection(
     z.object({ shape: z.number().array().array().array() })
 )
 
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+async function sendAsync(ws: ws.WebSocket, data: string) {
+    return new Promise<void>((resolve, reject) => {
+        ws.send(data, err => {
+            if (err) reject(err)
+            else resolve()
+        })
+    })
+}
+
 type Build = z.infer<typeof buildSchema>
 ;(async () => {
     const expressApp = express()
@@ -206,7 +217,7 @@ type Build = z.infer<typeof buildSchema>
         res.status(200).json(build)
     })
 
-    expressApp.post('/build', (req, res) => {
+    expressApp.post('/build', async (req, res) => {
         const schema = z.object({
             file: z.string(),
             pos: z.array(z.number()).length(3),
@@ -343,27 +354,55 @@ type Build = z.infer<typeof buildSchema>
                 console.log('\tdepth offset', depthOffset)
                 console.log('\twidth offset', widthOffset)
 
-                printer.ws.send(JSON.stringify(msg))
+                const strMsg = JSON.stringify(msg)
+                const msgParts = strMsg.match(/.{1,40000}/g) ?? [strMsg]
+
+                console.log('number of chunk to send', msgParts.length)
+
+                await sendAsync(
+                    printer.ws,
+                    JSON.stringify({ type: 'sendStart' })
+                )
+                await wait(100)
+                for (const chunk of msgParts) {
+                    await sendAsync(
+                        printer.ws,
+                        JSON.stringify({ type: 'chunk', chunk: chunk })
+                    )
+                    await wait(50)
+                }
+                await wait(100)
+
+                await sendAsync(printer.ws, JSON.stringify({ type: 'sendEnd' }))
+
+                //await sendAsync(printer.ws, strMsg)
+
                 printerIndex++
             }
         }
 
         res.sendStatus(200)
     })
+    const CLIENT_PATH =
+        process.env.NODE_ENV === 'production'
+            ? path.join(__dirname, '..', 'client/')
+            : path.join(__dirname, '..', '..', 'client/')
 
-    const PUBLIC_FOLDER = 'public/'
-    let publicPath = ''
-    if (process.env.NODE_ENV === 'production') {
-        publicPath = PUBLIC_FOLDER
-    } else {
-        publicPath = path.join(__dirname, '..', PUBLIC_FOLDER)
-    }
-    if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath)
-    console.log('public folder :', publicPath)
-    expressApp.use('/', express.static(publicPath))
+    console.log('client folder :', CLIENT_PATH)
+    expressApp.use('/clients', express.static(CLIENT_PATH))
+
+    const PUBLIC_PATH =
+        process.env.NODE_ENV === 'production'
+            ? 'public/'
+            : path.join(__dirname, '..', 'public/')
+
+    if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
+    console.log('public folder :', PUBLIC_PATH)
+    expressApp.use('/', express.static(PUBLIC_PATH))
     expressApp.get('*', (req: express.Request, res: express.Response) => {
-        res.sendFile(path.join(publicPath, 'index.html'))
+        res.sendFile(path.join(PUBLIC_PATH, 'index.html'))
     })
+
     expressApp.use(
         (
             err: Error,
