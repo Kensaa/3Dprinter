@@ -256,32 +256,11 @@ type Build = z.infer<typeof buildSchema>
         console.log('build depth : ', depth)
         console.log('build width : ', width)
         console.log('available printers', printerCount)
+
         //each turtle build the entire height of the build
-        //divided by 2 in the smallest side
-        //divided by printerCount / 2 in the biggest side (/2 because of the previous line)
-        let xDivide = 0,
-            yDivide = 0
-
-        if (printerCount === 1) {
-            if (width >= depth) {
-                xDivide = width
-                yDivide = depth
-            } else {
-                xDivide = depth
-                yDivide = width
-            }
-        } else {
-            if (width >= depth) {
-                xDivide = Math.ceil(width / Math.ceil(printerCount / 2))
-                yDivide = Math.ceil(depth / 2)
-            } else {
-                xDivide = Math.ceil(width / 2)
-                yDivide = Math.ceil(depth / Math.ceil(printerCount / 2))
-            }
-        }
-
-        xDivide = Math.max(3, xDivide) // set the minimal divide to 3, to avoid bugs where a turtle places a single block
-        yDivide = Math.max(3, yDivide)
+        const sqrtCount = Math.sqrt(printerCount)
+        const xDivide = Math.max(Math.ceil(width / sqrtCount), 3)
+        const yDivide = Math.max(Math.ceil(depth / sqrtCount), 3)
 
         console.log('xDivide', xDivide)
         console.log('yDivide', yDivide)
