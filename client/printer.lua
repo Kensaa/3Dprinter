@@ -272,134 +272,151 @@ function build(data, height, depth, width)
         local startIndexes = {}
         local endIndexes = {}
 
+        -- if the layer is empty, we don't have to do anything
+        local layerEmpty = true
         for z = 1,depth do
-            for x = width,1,-1 do
-                if tonumber(layer[z][x]) == 1 then
-                    startIndexes[z] = x
-                end
-            end
             for x = 1,width do
                 if tonumber(layer[z][x]) == 1 then
-                    endIndexes[z] = x
+                    layerEmpty = false
                 end
             end
         end
-
-        local Xdir = 0 -- 0 = left to right | 1 = right to left
-        local startX = 1 -- index from which to start on next row (default to 1 to start the first row at the start)
-        for z = 1,depth do
-            local row = layer[z]
-            print('row n°' .. z..', Xdir: '..Xdir)
-            send({type = 'setPos', pos=currentPosition})
-            
-
-            if startIndexes[z] == nil and z ~= depth then
-                --last row --> don't have to take shortcut --> break everything
-                print('line is empty')
-                if Xdir == 0 then
-                    turnRight()
-                    forward()
-                    turnLeft()
-                else
-                    turnLeft()
-                    forward()
-                    turnRight()
+        if layerEmpty then
+            print('layer is empty')
+            if y ~= height then
+                up()
+            end
+        else
+            print('layer is not empty')
+            for z = 1,depth do
+                for x = width,1,-1 do
+                    if tonumber(layer[z][x]) == 1 then
+                        startIndexes[z] = x
+                    end
                 end
-            else
-                print('line is not empty')
-                --don't forward on first pass because at the start of each row, the turtle is 1 bloc further from where it should be
-                firstPass = true
-                for x = startX, width do
-                    index = x
-                    
-                    if Xdir == 1 then
-                        index = width-x+1
+                for x = 1,width do
+                    if tonumber(layer[z][x]) == 1 then
+                        endIndexes[z] = x
                     end
-                    if not firstPass then
+                end
+            end
+    
+            local Xdir = 0 -- 0 = left to right | 1 = right to left
+            local startX = 1 -- index from which to start on next row (default to 1 to start the first row at the start)
+            for z = 1,depth do
+                local row = layer[z]
+                print('row n°' .. z..', Xdir: '..Xdir)
+                send({type = 'setPos', pos=currentPosition})
+                
+    
+                if startIndexes[z] == nil and z ~= depth then
+                    --last row --> don't have to take shortcut --> break everything
+                    print('line is empty')
+                    if Xdir == 0 then
+                        turnRight()
                         forward()
-                    else 
-                        firstPass = false
-                    end
-                    if tonumber(row[index]) == 1 then
-                        place()
-                    end
-                    
-                    -- end of line
-                    if x == width then
-                        print("end of line")
-                        if z ~= depth then
-                            -- last row ---> dont turn --> makes the turtle go 1 block down while it shouldn't
-                            startX = 1
-                            if Xdir == 0 then
-                                Xdir = 1
-                                turnRight()
-                                forward()
-                                turnRight()
-                            else
-                                Xdir = 0
-                                turnLeft()
-                                forward()
-                                turnLeft()
-                            end
-                        end
+                        turnLeft()
                     else
-                        -- shortcut
-                        if Xdir == 0 then
-                            if endIndexes[z] ~= nil and x >= endIndexes[z] then -- if further than last on current line
-                                if endIndexes[z+1] ~= nil and x >= endIndexes[z+1] then -- if further than last on next line
-                                    -- shortcut available
-                                    startX = width-x+1 -- set next start to where the shortcut places us
-                                    Xdir = 1 -- we change direction (obviously)
-                                    print("turning earlier to the right")
+                        turnLeft()
+                        forward()
+                        turnRight()
+                    end
+                else
+                    print('line is not empty')
+                    --don't forward on first pass because at the start of each row, the turtle is 1 bloc further from where it should be
+                    firstPass = true
+                    for x = startX, width do
+                        index = x
+                        
+                        if Xdir == 1 then
+                            index = width-x+1
+                        end
+                        if not firstPass then
+                            forward()
+                        else 
+                            firstPass = false
+                        end
+                        if tonumber(row[index]) == 1 then
+                            place()
+                        end
+                        
+                        -- end of line
+                        if x == width then
+                            print("end of line")
+                            if z ~= depth then
+                                -- last row ---> dont turn --> makes the turtle go 1 block down while it shouldn't
+                                startX = 1
+                                if Xdir == 0 then
+                                    Xdir = 1
                                     turnRight()
                                     forward()
                                     turnRight()
-                                    break
+                                else
+                                    Xdir = 0
+                                    turnLeft()
+                                    forward()
+                                    turnLeft()
                                 end
                             end
                         else
-                            i = width-x+1
-                            if startIndexes[z] ~= nil and i <= startIndexes[z] then -- if further than first on current line
-                                if startIndexes[z+1] ~= nil and i <= startIndexes[z+1] then -- if further than first on next line
-                                    -- shortcut available
-                                    startX = i -- set next start to where the shortcut places us
-                                    Xdir = 0 -- we change direction (obviously)
-                                    print("turning earlier to the left")
-                                    --backward()
-                                    turnLeft()
-                                    forward()
-                                    turnLeft()
-                                    break
+                            -- shortcut
+                            if Xdir == 0 then
+                                if endIndexes[z] ~= nil and x >= endIndexes[z] then -- if further than last on current line
+                                    if endIndexes[z+1] ~= nil and x >= endIndexes[z+1] then -- if further than last on next line
+                                        -- shortcut available
+                                        startX = width-x+1 -- set next start to where the shortcut places us
+                                        Xdir = 1 -- we change direction (obviously)
+                                        print("turning earlier to the right")
+                                        turnRight()
+                                        forward()
+                                        turnRight()
+                                        break
+                                    end
+                                end
+                            else
+                                i = width-x+1
+                                if startIndexes[z] ~= nil and i <= startIndexes[z] then -- if further than first on current line
+                                    if startIndexes[z+1] ~= nil and i <= startIndexes[z+1] then -- if further than first on next line
+                                        -- shortcut available
+                                        startX = i -- set next start to where the shortcut places us
+                                        Xdir = 0 -- we change direction (obviously)
+                                        print("turning earlier to the left")
+                                        --backward()
+                                        turnLeft()
+                                        forward()
+                                        turnLeft()
+                                        break
+                                    end
                                 end
                             end
                         end
-                    end
-
-                end
-            end
-            progress = (y - 1  + (z - 1) / depth) / height * 100
-            send({type = 'setProgress', progress=progress})
-        end
-        -- end of layer
-        if y ~= height then -- if it's the last layer, no need to go back to the start
-            if Xdir == 0 then
-                --oposite side as start
-                turnRight()
-                turnRight()
     
-                for i = 1,width-1 do
+                    end
+                end
+                progress = (y - 1  + (z - 1) / depth) / height * 100
+                send({type = 'setProgress', progress=progress})
+            end
+            -- end of layer
+            if y ~= height then -- if it's the last layer, no need to go back to the start
+                if Xdir == 0 then
+                    --oposite side as start
+                    turnRight()
+                    turnRight()
+        
+                    for i = 1,width-1 do
+                        forward()
+                    end
+                    turnRight()
+                else
+                    --same side as start
+                    turnRight()
+                end
+                for i = 1,depth-1 do
                     forward()
                 end
                 turnRight()
-            else
-                --same side as start
-                turnRight()
+                up()
             end
-            for i = 1,depth-1 do
-                forward()
-            end
-            turnRight()
-            up()
         end
     end
     send({type = 'setProgress', progress=100.0})
