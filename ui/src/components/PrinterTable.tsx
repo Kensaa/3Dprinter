@@ -24,28 +24,38 @@ export default function PrinterTable({
     }
 
     return (
-        <Table
-            style={{ width, height }}
-            /*className='mt-5 mx-2'
+        <>
+            <Table
+                style={{ width, height }}
+                /*className='mt-5 mx-2'
             bordered
             hover*/
-        >
-            <thead>
-                <tr className='unselectable'>
-                    <th>ID</th>
-                    <th>Label</th>
-                    <th>State</th>
-                    <th>Connected</th>
-                    <th>Position</th>
-                    <th>Progress</th>
-                </tr>
-            </thead>
-            <tbody>
-                {printers.map((printer, i) => (
-                    <TableRow printer={printer} key={i} />
-                ))}
-            </tbody>
-        </Table>
+            >
+                <thead>
+                    <tr className='unselectable'>
+                        <th>ID</th>
+                        <th>Label</th>
+                        <th>State</th>
+                        <th>Connected</th>
+                        <th>Position</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {printers.map((printer, i) => (
+                        <TableRow printer={printer} key={i} />
+                    ))}
+                </tbody>
+            </Table>
+            <h4>
+                Average Progress:{' '}
+                {(
+                    printers.reduce((v, e) => v + (e.progress ?? 0), 0) /
+                    printers.length
+                ).toFixed(2)}
+                %
+            </h4>
+        </>
     )
 }
 
