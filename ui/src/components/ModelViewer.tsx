@@ -154,8 +154,8 @@ function Mesh({ build, count }: MeshProps) {
                         meshRef.current.setColorAt(
                             id,
                             id % 2 == 0
-                                ? new Color(1, 1, 1)
-                                : new Color(0, 0, 0)
+                                ? new Color(0, 0, 0)
+                                : new Color(0.1, 0.1, 0.1)
                         )
                     }
                 }
@@ -169,7 +169,7 @@ function Mesh({ build, count }: MeshProps) {
         //@ts-ignore
         <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
             <boxGeometry args={[1, 1, 1]}></boxGeometry>
-            <meshBasicMaterial color={0x515151} />
+            <meshBasicMaterial />
         </instancedMesh>
     )
 }
