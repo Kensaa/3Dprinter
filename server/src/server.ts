@@ -7,22 +7,38 @@ import * as path from 'path'
 import { ZodError, z } from 'zod'
 import * as jimp from 'jimp'
 import 'dotenv/config'
+import { arrayToImage, imageToArray, trim2Darray } from './utils'
+import { voxelize } from './voxelization'
 
 const WEB_SERVER_PORT = 9513
 const BUILDS_FOLDER =
     process.env.buildsFolder ?? path.join(__dirname, '..', 'builds')
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
-const buildSchema = z.object({
-    type: z.enum(['model', 'image']),
-    shape: z.number().array().array().array()
-})
+const buildSchema = z.intersection(
+    z.discriminatedUnion('type', [
+        z.object({ type: z.literal('model') }),
+        z.object({ type: z.literal('image'), preview: z.string() })
+    ]),
+    z.object({ shape: z.number().array().array().array() })
+)
+
+const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+async function sendAsync(ws: ws.WebSocket, data: string) {
+    return new Promise<void>((resolve, reject) => {
+        ws.send(data, err => {
+            if (err) reject(err)
+            else resolve()
+        })
+    })
+}
 
 type Build = z.infer<typeof buildSchema>
 ;(async () => {
     const expressApp = express()
-    expressApp.use(express.json({ limit: '50mb' }))
-    expressApp.use(cors())
+    expressApp.use(express.json({ limit: '5000mb' }))
+    expressApp.use(cors({ origin: '*' }))
 
     const httpServer = http.createServer(expressApp)
     const wsServer = new ws.Server({ server: httpServer })
@@ -142,7 +158,8 @@ type Build = z.infer<typeof buildSchema>
         }
         res.sendStatus(200)
     })
-    expressApp.post('/image/preview', async (req, res, next) => {
+
+    expressApp.post('/convertImage', async (req, res, next) => {
         const schema = z.object({
             image: z.string(),
             threshold: z.number().positive().default(50),
@@ -158,44 +175,6 @@ type Build = z.infer<typeof buildSchema>
             return next(err)
         }
         const { image: imageString, ...options } = body
-        const imageBuffer = Buffer.from(imageString, 'base64')
-        let image
-        try {
-            image = await jimp.read(imageBuffer)
-        } catch {
-            return res.sendStatus(400)
-        }
-        const imageArray = imageToArray(image, options)
-        const convertedImage = arrayToImage(imageArray)
-        convertedImage.getBuffer(jimp.MIME_PNG, (err, buffer) => {
-            if (err || !buffer || buffer.length === 0) {
-                return res.sendStatus(500)
-            }
-
-            res.writeHead(200, {
-                'Content-Type': 'image/png',
-                'Content-Length': buffer.length
-            })
-            res.end(buffer)
-        })
-    })
-    expressApp.post('/image/convert', async (req, res, next) => {
-        const schema = z.object({
-            image: z.string(),
-            name: z.string(),
-            threshold: z.number().positive().default(50),
-            inverted: z.boolean().default(true),
-            scale: z.number().positive().default(1),
-            horizontalMirror: z.boolean().default(false),
-            verticalMirror: z.boolean().default(false)
-        })
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { image: imageString, name, ...options } = body
         let image
         try {
             image = await jimp.read(Buffer.from(imageString, 'base64'))
@@ -203,40 +182,42 @@ type Build = z.infer<typeof buildSchema>
             return res.sendStatus(400)
         }
         const imageArray = imageToArray(image, options)
+        trim2Darray(imageArray)
 
         const build: Build = {
             type: 'image',
-            shape: [imageArray]
+            shape: [imageArray],
+            preview: await arrayToImage(imageArray).getBase64Async(
+                jimp.MIME_PNG
+            )
         }
 
-        fs.writeFileSync(
-            path.join(
-                BUILDS_FOLDER,
-                name.endsWith('.json') ? name : name + '.json'
-            ),
-            JSON.stringify(build)
-        )
-        res.sendStatus(200)
+        res.status(200).json(build)
     })
-    expressApp.post('/image/arrayToImage', (req, res) => {
-        const schema = z.number().array().array()
-        const array = schema.parse(req.body)
 
-        const convertedImage = arrayToImage(array)
-        convertedImage.getBuffer(jimp.MIME_PNG, (err, buffer) => {
-            if (err || !buffer || buffer.length === 0) {
-                return res.sendStatus(500)
-            }
-
-            res.writeHead(200, {
-                'Content-Type': 'image/png',
-                'Content-Length': buffer.length
-            })
-            res.end(buffer)
+    expressApp.post('/voxelize', async (req, res, next) => {
+        const schema = z.object({
+            file: z.string(),
+            scale: z.number().positive().default(1)
         })
+
+        let body
+        try {
+            body = schema.parse(req.body)
+        } catch (err) {
+            return next(err)
+        }
+        const { file: fileBase64, scale } = body
+        const file = Buffer.from(fileBase64, 'base64').toString('utf-8')
+        const output = voxelize(file, scale)
+        const build: Build = {
+            type: 'model',
+            shape: output
+        }
+        res.status(200).json(build)
     })
 
-    expressApp.post('/build', (req, res) => {
+    expressApp.post('/build', async (req, res) => {
         const schema = z.object({
             file: z.string(),
             pos: z.array(z.number()).length(3),
@@ -275,32 +256,11 @@ type Build = z.infer<typeof buildSchema>
         console.log('build depth : ', depth)
         console.log('build width : ', width)
         console.log('available printers', printerCount)
-        //each turtle build the entier height of the build
-        //divided by 2 in the smallest side
-        //divided by printerCount / 2 in the biggest side (/2 because of the previous line)
-        let xDivide = 0,
-            yDivide = 0
 
-        if (printerCount === 1) {
-            if (width >= depth) {
-                xDivide = width
-                yDivide = depth
-            } else {
-                xDivide = depth
-                yDivide = width
-            }
-        } else {
-            if (width >= depth) {
-                xDivide = Math.ceil(width / Math.ceil(printerCount / 2))
-                yDivide = Math.ceil(depth / 2)
-            } else {
-                xDivide = Math.ceil(width / 2)
-                yDivide = Math.ceil(depth / Math.ceil(printerCount / 2))
-            }
-        }
-
-        xDivide = Math.max(3, xDivide) // set the minimal divide to 3, to avoid bugs where a turtle places a single block
-        yDivide = Math.max(3, yDivide)
+        //each turtle build the entire height of the build
+        const sqrtCount = Math.sqrt(printerCount)
+        const xDivide = Math.max(Math.ceil(width / sqrtCount), 3)
+        const yDivide = Math.max(Math.ceil(depth / sqrtCount), 3)
 
         console.log('xDivide', xDivide)
         console.log('yDivide', yDivide)
@@ -373,27 +333,55 @@ type Build = z.infer<typeof buildSchema>
                 console.log('\tdepth offset', depthOffset)
                 console.log('\twidth offset', widthOffset)
 
-                printer.ws.send(JSON.stringify(msg))
+                const strMsg = JSON.stringify(msg)
+                const msgParts = strMsg.match(/.{1,40000}/g) ?? [strMsg]
+
+                console.log('number of chunk to send', msgParts.length)
+
+                await sendAsync(
+                    printer.ws,
+                    JSON.stringify({ type: 'sendStart' })
+                )
+                await wait(100)
+                for (const chunk of msgParts) {
+                    await sendAsync(
+                        printer.ws,
+                        JSON.stringify({ type: 'chunk', chunk: chunk })
+                    )
+                    await wait(50)
+                }
+                await wait(100)
+
+                await sendAsync(printer.ws, JSON.stringify({ type: 'sendEnd' }))
+
+                //await sendAsync(printer.ws, strMsg)
+
                 printerIndex++
             }
         }
 
         res.sendStatus(200)
     })
+    const CLIENT_PATH =
+        process.env.NODE_ENV === 'production'
+            ? path.join(__dirname, '..', 'client/')
+            : path.join(__dirname, '..', '..', 'client/')
 
-    const PUBLIC_FOLDER = 'public/'
-    let publicPath = ''
-    if (process.env.NODE_ENV === 'production') {
-        publicPath = PUBLIC_FOLDER
-    } else {
-        publicPath = path.join(__dirname, '..', PUBLIC_FOLDER)
-    }
-    if (!fs.existsSync(publicPath)) fs.mkdirSync(publicPath)
-    console.log('public folder :', publicPath)
-    expressApp.use('/', express.static(publicPath))
+    console.log('client folder :', CLIENT_PATH)
+    expressApp.use('/clients', express.static(CLIENT_PATH))
+
+    const PUBLIC_PATH =
+        process.env.NODE_ENV === 'production'
+            ? 'public/'
+            : path.join(__dirname, '..', 'public/')
+
+    if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
+    console.log('public folder :', PUBLIC_PATH)
+    expressApp.use('/', express.static(PUBLIC_PATH))
     expressApp.get('*', (req: express.Request, res: express.Response) => {
-        res.sendFile(path.join(publicPath, 'index.html'))
+        res.sendFile(path.join(PUBLIC_PATH, 'index.html'))
     })
+
     expressApp.use(
         (
             err: Error,
@@ -456,59 +444,4 @@ function getTime() {
     const minutes = date.getMinutes().toString().padStart(2, '0')
     const seconds = date.getSeconds().toString().padStart(2, '0')
     return `${hours}:${minutes}:${seconds}`
-}
-
-interface ImageToArrayOptions {
-    threshold: number
-    inverted: boolean
-    scale: number
-    horizontalMirror: boolean
-    verticalMirror: boolean
-}
-/**
- * Convert an Jimp image into a 2D array
- * @param image image to convert
- * @param options options (see ImageToArrayOptions interface)
- * @returns a 2D array representing the image's pixels
- */
-function imageToArray(image: jimp, options: Partial<ImageToArrayOptions>) {
-    const {
-        threshold = 50,
-        inverted = true,
-        scale = 1,
-        horizontalMirror = false,
-        verticalMirror = false
-    } = options
-    image.scale(scale)
-    image.flip(horizontalMirror, verticalMirror)
-    const output: number[][] = []
-    const width = image.getWidth()
-    const height = image.getHeight()
-    for (let y = 0; y < height; y++) {
-        output.push([])
-        for (let x = 0; x < width; x++) {
-            const color = jimp.intToRGBA(image.getPixelColor(x, y))
-            const gray = Math.round((color.r + color.g + color.b) / 3)
-            if (gray > threshold) {
-                output[y].push(inverted ? 0 : 1)
-            } else {
-                output[y].push(inverted ? 1 : 0)
-            }
-        }
-    }
-    return output
-}
-
-function arrayToImage(arr: number[][]) {
-    const width = arr[0].length
-    const height = arr.length
-    const img = new jimp(width, height, 'white')
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            if (arr[y][x] === 1) {
-                img.setPixelColor(0x000000ff, x, y)
-            }
-        }
-    }
-    return img
 }

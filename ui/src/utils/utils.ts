@@ -13,10 +13,10 @@ export const blobToBase64 = async (blob: Blob) => {
 }
 
 export const getImageDimensions = (image: string) => {
-    return new Promise<{ w: number; h: number }>(resolved => {
+    return new Promise<{ w: number; h: number }>(resolve => {
         const i = new Image()
         i.onload = function () {
-            resolved({ w: i.width, h: i.height })
+            resolve({ w: i.width, h: i.height })
         }
         i.src = image
     })

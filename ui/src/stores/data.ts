@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Build, Printer } from '../types'
+import { Build, Printer } from '../utils/types'
 import config from './config'
 
 interface dataStore {

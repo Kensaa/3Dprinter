@@ -1,69 +1,93 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState } from 'react'
-import { Button, Modal, Form, Alert } from 'react-bootstrap'
+import { Button, Modal, Form } from 'react-bootstrap'
+import { FileUploader } from 'react-drag-drop-files'
 import dataStore from '../stores/data'
-import { Build } from '../types'
+import configStore from '../stores/config'
 
 interface NewModelModalProps {
     show: boolean
     hide: () => void
 }
 
-export default function NewModelModalModal({ show, hide }: NewModelModalProps) {
-    const [error, setError] = useState('')
+export default function NewModelModal({ show, hide }: NewModelModalProps) {
     const [name, setName] = useState('')
-    const { builds, updateBuild } = dataStore(state => ({
-        builds: state.builds,
-        updateBuild: state.updateBuild
-    }))
+    const [scale, setScale] = useState(20)
+    const [objectFile, setObjectFile] = useState('')
 
-    const create = (event: React.FormEvent<HTMLFormElement>) => {
+    const updateBuild = dataStore(state => state.updateBuild)
+    const address = configStore(store => store.address)
+
+    const handleFileUpload = (file: File) => {
+        console.log(file)
+        const filename = file.name
+
+        setName(filename.substring(0, filename.lastIndexOf('.')))
+        const reader = new FileReader()
+        reader.addEventListener('load', event => {
+            if (!event.target) return
+            const result = event.target.result as string
+            setObjectFile(result.split(',')[1])
+        })
+        reader.readAsDataURL(file)
+    }
+
+    const submit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         event.stopPropagation()
-        const modelNames = Object.keys(builds)
-        if (modelNames.includes(name) || modelNames.includes(name + '.json')) {
-            setError('model already exists')
-            setName('')
-        } else {
-            const newBuild = {
-                type: 'model',
-                shape: [[[1]]]
-            } as Build
-            updateBuild(name, newBuild)
-            hide()
-        }
+        fetch(`${address}/voxelize`, {
+            method: 'POST',
+            body: JSON.stringify({ file: objectFile, scale }),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(res => res.json())
+            .then(build => {
+                updateBuild(name, build)
+                hide()
+            })
     }
 
     return (
         <Modal show={show} onHide={hide}>
             <Modal.Header closeButton>
-                <Modal.Title>Creating a new model</Modal.Title>
+                <Modal.Title>Converting a 3D model</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                {error && (
-                    <Alert
-                        dismissible
-                        variant='danger'
-                        onClose={() => setError('')}
-                    >
-                        {error}
-                    </Alert>
-                )}
-                <div className='d-flex flex-column align-items-center'>
-                    <Form onSubmit={create}>
+                <Form onSubmit={submit}>
+                    <div className='d-flex justify-content-center'>
+                        <FileUploader
+                            handleChange={handleFileUpload}
+                            name='file'
+                            types={['OBJ']}
+                            label='Upload or drop the image you want to convert here'
+                            required
+                        />
+                    </div>
+                    <Form.Group>
+                        <Form.Label>Name: </Form.Label>
                         <Form.Control
                             value={name}
                             onChange={e => setName(e.target.value)}
-                            placeholder='Name of the model'
-                        ></Form.Control>
-                        <div className='w-100 d-flex justify-content-center mt-2'>
-                            {
-                                //@ts-ignore
-                                <Button type='submit'>Create</Button>
-                            }
-                        </div>
-                    </Form>
-                </div>
+                        />
+                    </Form.Group>
+                    <Form.Group>
+                        <Form.Label>Scale: </Form.Label>
+                        <Form.Control
+                            type='number'
+                            value={scale}
+                            onChange={e => setScale(parseInt(e.target.value))}
+                        />
+                    </Form.Group>
+
+                    <div className='d-flex justify-content-center'>
+                        {
+                            //@ts-ignore
+                            <Button type='submit'>Convert</Button>
+                        }
+                    </div>
+                </Form>
             </Modal.Body>
         </Modal>
     )

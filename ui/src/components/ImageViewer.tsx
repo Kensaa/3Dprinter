@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
-import configStore from '../stores/config'
-import { Build } from '../types'
-import { blobToBase64, getImageDimensions } from '../utils/utils'
+import { getImageDimensions } from '../utils/utils'
 
 interface ImageViewerProps {
-    build: Build
+    image: string
     width?: string
     height?: string
     maxWidth?: string
@@ -12,39 +10,26 @@ interface ImageViewerProps {
 }
 
 export default function ImageViewer({
-    build,
+    image,
     width,
     height,
     maxWidth,
     maxHeight
 }: ImageViewerProps) {
-    const address = configStore(state => state.address)
-    const [image, setImage] = useState('')
-    const [dimensions, setDimensions] = useState('')
-
+    const [dims, setDims] = useState<string>()
     useEffect(() => {
-        fetch(`${address}/image/arrayToImage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(build.shape[0])
+        getImageDimensions(image).then(({ w, h }) => {
+            setDims(`${w}x${h}`)
         })
-            .then(res => res.blob())
-            .then(blob => blobToBase64(blob))
-            .then(image => {
-                setImage(image)
-                getImageDimensions(image).then(dims => {
-                    setDimensions(`${dims.w}x${dims.h}`)
-                })
-            })
-    }, [address, build])
+    })
 
     return (
         <div
             style={{ width, height, maxWidth, maxHeight }}
             className='d-flex flex-column align-items-center'
         >
-            <img className='w-100 h-100' src={image} />
-            <h1>{dimensions}</h1>
+            <img className='w-100 h-100 border' src={image} />
+            <h1>{dims}</h1>
         </div>
     )
 }

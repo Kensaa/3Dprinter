@@ -1,19 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { useState, useEffect, createElement } from 'react'
+import { useState, useEffect } from 'react'
 import AppNavbar from '../components/AppNavbar'
-import ModelViewer from '../components/ModelViewer'
 import dataStore from '../stores/data'
 import Selector from '../components/Selector'
 import { Button } from 'react-bootstrap'
 import BuildModal from '../modals/BuildModal'
-import ImageViewer from '../components/ImageViewer'
-import NewModelModalModal from '../modals/NewModelModal'
-import NewImageModalModal from '../modals/NewImageModal'
-
-const viewerMap = {
-    model: ModelViewer,
-    image: ImageViewer
-}
+import NewModelModal from '../modals/NewModelModal'
+import NewImageModal from '../modals/NewImageModal'
+import BuildPreview from '../components/BuildPreview'
 
 export default function Homepage() {
     const { builds, fetchBuilds } = dataStore(state => ({
@@ -61,7 +55,7 @@ export default function Homepage() {
                                     variant='outline-primary'
                                     onClick={() => setNewModelShown(true)}
                                 >
-                                    Create new Model
+                                    Convert a 3D model
                                 </Button>
                             }
                             {
@@ -76,19 +70,9 @@ export default function Homepage() {
                         </div>
                     </div>
 
-                    <div className='w-50 unselectable'>
+                    <div className='w-50 h-100 unselectable'>
                         <h4>Preview</h4>
-                        {selectedBuild &&
-                            createElement(
-                                viewerMap[builds[selectedBuild].type],
-                                {
-                                    build: builds[selectedBuild],
-                                    buildName: selectedBuild,
-                                    width: '100%',
-                                    height: '100%',
-                                    editable: true
-                                }
-                            )}
+                        <BuildPreview buildName={selectedBuild} />
                     </div>
                 </div>
             </div>
@@ -96,16 +80,15 @@ export default function Homepage() {
                 <BuildModal
                     show={buildModalShown}
                     hide={() => setBuildModalShown(false)}
-                    build={builds[selectedBuild]}
                     buildName={selectedBuild ?? ''}
                 />
             )}
 
-            <NewModelModalModal
+            <NewModelModal
                 show={newModelShown}
                 hide={() => setNewModelShown(false)}
             />
-            <NewImageModalModal
+            <NewImageModal
                 show={newImageShown}
                 hide={() => setNewImageShown(false)}
             />
