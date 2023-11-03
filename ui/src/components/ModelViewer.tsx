@@ -126,11 +126,18 @@ function Mesh({ build, count }: MeshProps) {
         if (meshRef.current == null) return
 
         const tempObject = new Object3D()
-        let i = 0
+        let i = 1
 
         const height = build.shape.length
         const depth = build.shape[0].length
         const width = build.shape[0][0].length
+
+        tempObject.position.set(-width / 2, -height / 2, -depth / 2)
+        tempObject.scale.set(1, 1, 1)
+        tempObject.updateMatrix()
+
+        meshRef.current.setMatrixAt(0, tempObject.matrix)
+        meshRef.current.setColorAt(0, new Color(0, 1, 0))
 
         for (let y = 0; y < height; y++) {
             for (let z = 0; z < depth; z++) {
@@ -141,7 +148,6 @@ function Mesh({ build, count }: MeshProps) {
                             y - height / 2,
                             z - depth / 2
                         )
-                        tempObject.scale.set(1, 1, 1)
                         tempObject.updateMatrix()
                         const id = i++
                         meshRef.current.setMatrixAt(id, tempObject.matrix)
