@@ -258,7 +258,7 @@ type Build = z.infer<typeof buildSchema>
         console.log('available printers', printerCount)
 
         //each turtle build the entire height of the build
-        const sqrtCount = Math.sqrt(printerCount)
+        const sqrtCount = Math.floor(Math.sqrt(printerCount))
         const xDivide = Math.max(Math.ceil(width / sqrtCount), 3)
         const yDivide = Math.max(Math.ceil(depth / sqrtCount), 3)
 
