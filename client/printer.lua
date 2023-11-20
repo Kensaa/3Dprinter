@@ -214,7 +214,7 @@ end
 function goTo(x,y,z)
     local target = {x,y,z}
     print(currentHeading)
-    if heading == -1 then
+    if currentHeading == -1 then
         print('error')
         return
     end
