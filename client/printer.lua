@@ -212,6 +212,7 @@ end
     
 
 function goTo(targetX,targetY,targetZ, maxHeight)
+    maxHeight = maxHeight or 310
     print(currentHeading)
     if currentHeading == -1 then
         print('error')
