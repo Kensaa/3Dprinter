@@ -450,17 +450,17 @@ function handleData(JSONData)
         x = x + depthOffset
         z = z - widthOffset
     end
-
+    buildMaxHeight = height+y+1
     log('building a '..width..'x'..depth..'x'..height..' shape at '..x..','..y..','..z)
     send({type = 'setState', state='moving'})
-    goTo(x,y+1,z)
+    goTo(x,y+1,z,buildMaxHeight)
     headTo(heading)
     send({type = 'setState', state='building'})
     build(data,height,depth,width)
     fs.delete('data')
     log("finished building, going back to home position")
     send({type = 'setState', state='moving'})
-    goTo(homePosition[1],homePosition[2],homePosition[3])
+    goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight)
     headTo(homeHeading)
     log("back to home position, waiting for order")
     send({type = 'setState', state='idle'})
