@@ -211,46 +211,45 @@ function turnLeft()
 end
     
 
-function goTo(x,y,z)
-    local target = {x,y,z}
+function goTo(targetX,targetY,targetZ)
     print(currentHeading)
     if currentHeading == -1 then
         print('error')
         return
     end
-    while currentPosition[1] ~= target[1] or currentPosition[2] ~= target[2] or currentPosition[3] ~= target[3] do
-        if currentPosition[1] < target[1] then
+    while currentPosition[1] ~= targetX or currentPosition[2] ~= targetY or currentPosition[3] ~= targetZ do
+        if currentPosition[1] < targetX then
             -- x+
             while currentHeading % 4 ~= 1 do
                 turtle.turnRight()
                 currentHeading = currentHeading + 1
             end
             forward()
-        elseif currentPosition[1] > target[1] then
+        elseif currentPosition[1] > targetX then
             -- x-
             while currentHeading % 4 ~= 3 do
                 turtle.turnRight()
                 currentHeading = currentHeading + 1
             end
             forward()
-        elseif currentPosition[3] < target[3] then
+        elseif currentPosition[3] < targetZ then
             -- z+
             while currentHeading % 4 ~= 2 do
                 turtle.turnRight()
                 currentHeading = currentHeading + 1
             end
             forward()
-        elseif currentPosition[3] > target[3] then
+        elseif currentPosition[3] > targetZ then
             -- z-
             while currentHeading % 4 ~= 0 do
                 turtle.turnRight()
                 currentHeading = currentHeading + 1
             end
             forward()
-        elseif currentPosition[2] < target[2] then
+        elseif currentPosition[2] < targetY then
             -- y+
             up()
-        elseif currentPosition[2] > target[2] then
+        elseif currentPosition[2] > targetY then
             -- y-
             down()
         end
