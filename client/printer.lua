@@ -211,40 +211,34 @@ function turnLeft()
 end
     
 
-function goTo(targetX,targetY,targetZ)
+function goTo(targetX,targetY,targetZ, maxHeight)
     print(currentHeading)
     if currentHeading == -1 then
         print('error')
         return
     end
+
+    -- go to max height first, to avoid block already placed by other turtles
+    while currentPosition[2] < maxHeight do
+        up()
+    end
+
     while currentPosition[1] ~= targetX or currentPosition[2] ~= targetY or currentPosition[3] ~= targetZ do
         if currentPosition[1] < targetX then
             -- x+
-            while currentHeading % 4 ~= 1 do
-                turtle.turnRight()
-                currentHeading = currentHeading + 1
-            end
+            headTo(1)
             forward()
         elseif currentPosition[1] > targetX then
             -- x-
-            while currentHeading % 4 ~= 3 do
-                turtle.turnRight()
-                currentHeading = currentHeading + 1
-            end
+            headTo(3)
             forward()
         elseif currentPosition[3] < targetZ then
             -- z+
-            while currentHeading % 4 ~= 2 do
-                turtle.turnRight()
-                currentHeading = currentHeading + 1
-            end
+            headTo(2)
             forward()
         elseif currentPosition[3] > targetZ then
             -- z-
-            while currentHeading % 4 ~= 0 do
-                turtle.turnRight()
-                currentHeading = currentHeading + 1
-            end
+            headTo(0)
             forward()
         elseif currentPosition[2] < targetY then
             -- y+
