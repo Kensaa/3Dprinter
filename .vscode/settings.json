@@ -1,0 +1,14 @@
+{
+    "Lua.diagnostics.globals": [
+        "turtle",
+        "shell",
+        "fs",
+        "http",
+        "gps",
+        "sleep",
+        "peripheral",
+        "term",
+        "read"
+    ],
+    "Lua.diagnostics.disable": ["lowercase-global", "undefined-field"]
+}
