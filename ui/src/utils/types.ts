@@ -19,3 +19,9 @@ export interface Printer {
     pos?: [number, number, number]
     progress?: number
 }
+
+export interface Task {
+    buildName: string
+    length: number
+    completedParts: number
+}

@@ -1,13 +1,15 @@
 import { create } from 'zustand'
-import { Build, Printer } from '../utils/types'
+import type { Build, Printer, Task } from '../utils/types'
 import config from './config'
 
 interface dataStore {
     builds: Record<string, Build>
     printers: Printer[]
+    currentTask?: Task
     fetchBuilds: () => void
-    updateBuild: (name: string, build: Build) => void
     fetchPrinters: () => void
+    fetchCurrentTask: () => void
+    updateBuild: (name: string, build: Build) => void
 }
 
 export default create<dataStore>((set, get) => {
@@ -26,6 +28,17 @@ export default create<dataStore>((set, get) => {
             .then(printers => set({ printers }))
     }
 
+    const fetchCurrentTask = () => {
+        const { address } = config.getState()
+        fetch(`${address}/current`, { method: 'GET' })
+            .then(res => {
+                if (res.status === 404) return undefined
+                return res.json()
+            })
+            .then(data => data as Task | undefined)
+            .then(currentTask => set({ currentTask }))
+    }
+
     const updateBuild = (name: string, build: Build) => {
         const { address } = config.getState()
         const builds = get().builds
@@ -42,12 +55,14 @@ export default create<dataStore>((set, get) => {
 
     fetchBuilds()
     fetchPrinters()
+    fetchCurrentTask()
 
     return {
         builds: {},
         printers: [],
         fetchBuilds,
-        updateBuild,
-        fetchPrinters
+        fetchPrinters,
+        fetchCurrentTask,
+        updateBuild
     }
 })
