@@ -47,11 +47,12 @@ export default function PrinterTable({
                     ))}
                 </tbody>
             </Table>
+            {}
             <h4>
                 Average Progress:{' '}
                 {(
-                    printers.reduce((v, e) => v + (e.progress ?? 0), 0) /
-                    printers.length
+                    printers.reduce((v, e) => v + (e.progress ?? 0), 0) ??
+                    0 / printers.length
                 ).toFixed(2)}
                 %
             </h4>
