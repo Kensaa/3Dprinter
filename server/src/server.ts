@@ -38,6 +38,7 @@ interface BuildMessage {
 
 interface Task {
     build: Build
+    buildName: string
     length: number // total number of parts
     completedParts: number
     queue: BuildMessage[]
@@ -173,6 +174,11 @@ let currentTask: undefined | Task
             out.push(printerWithoutWS)
         }
         res.status(200).json(out)
+    })
+
+    expressApp.get('/current', (req, res) => {
+        if (!currentTask) return res.status(404).send('no current task')
+        res.status(200).json(omit(currentTask, 'queue', 'build'))
     })
     expressApp.get('/builds', (req, res) => {
         const modelsNames = fs.readdirSync(BUILDS_FOLDER)
@@ -380,6 +386,7 @@ let currentTask: undefined | Task
 
         currentTask = {
             build,
+            buildName: file,
             length: queue.length,
             completedParts: 0,
             queue
@@ -507,4 +514,12 @@ async function sendPartToPrinter(printer: Printer, part: BuildMessage) {
 
     await sendAsync(printer.ws, JSON.stringify({ type: 'sendEnd' }))
     console.log('part sent')
+}
+
+function omit(obj: any, ...keys: string[]) {
+    const newObj: any = {}
+    for (const key of Object.keys(obj)) {
+        if (!keys.includes(key)) newObj[key] = obj[key]
+    }
+    return newObj
 }
