@@ -325,13 +325,6 @@ let currentTask: undefined | Task
 
         //fs.writeFileSync('output.json', JSON.stringify(divided))
 
-        if (divided.length * divided[0].length > printerCount)
-            return res
-                .status(500)
-                .send(
-                    'problem with the division of the build, more part than printer'
-                )
-
         const queue: BuildMessage[] = []
         for (let partRow = 0; partRow < divided.length; partRow++) {
             for (let partCol = 0; partCol < divided[0].length; partCol++) {
