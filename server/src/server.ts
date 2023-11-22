@@ -163,18 +163,26 @@ let currentTask: undefined | Task
                     )
 
                 currentTask.completedParts++
-                if (currentTask.queue.length === 0) {
-                    await sendAsync(
+                if (currentTask.length === currentTask.completedParts) {
+                    currentTask = undefined
+                    return await sendAsync(
                         printer.ws,
                         JSON.stringify({ type: 'noNextPart' })
                     )
                 } else {
-                    const nextMsg = currentTask.queue.shift()
-                    if (!nextMsg) {
-                        currentTask = undefined
-                        return
+                    if (currentTask.queue.length === 0) {
+                        await sendAsync(
+                            printer.ws,
+                            JSON.stringify({ type: 'noNextPart' })
+                        )
+                    } else {
+                        const nextMsg = currentTask.queue.shift()
+                        if (!nextMsg) {
+                            currentTask = undefined
+                            return
+                        }
+                        await sendPartToPrinter(printer, nextMsg)
                     }
-                    await sendPartToPrinter(printer, nextMsg)
                 }
             }
         })
