@@ -3,6 +3,7 @@ local url = "localhost:9513"
 if not fs.exists('json.lua') then
     shell.run('wget https://raw.githubusercontent.com/rxi/json.lua/master/json.lua json.lua')
 end
+sleep(1)
 json = require "json"
 -- Setup : 
 -- equip chunk loader from advanced peripheral to the left
@@ -42,6 +43,27 @@ function restock()
     turtle.select(1)
 end
 
+function checkFuel()
+    currentSlot = turtle.getSelectedSlot()
+    previousState = currentState
+    if turtle.getFuelLevel() < 100 then
+        print('turtle is out of fuel')
+        print('please add fuel and press enter')
+        setState('refueling')
+        read()
+        for slot=1,14 do
+            turtle.select(slot)
+            turtle.refuel()
+        end
+        turtle.select(currentSlot)
+        print('turtle refueled')
+        print('remove leftover fuel and press enter')
+        read()
+        setState(previousState)
+    end
+    return true
+end
+
 function place()
     local slot = 0
     while turtle.getItemCount() == 0 do
@@ -67,6 +89,13 @@ end
 
 function log(message)
     send({type = 'log', message = message})
+end
+
+function setState(state)
+    if currentState ~= state then
+        currentState = state
+        send({type = 'setState', state=state})
+    end
 end
 
 -- register the client (to associate a websocket with a label and an id on the server)
@@ -147,6 +176,7 @@ function getHeading()
 end
 
 function forward()
+    checkFuel()
     if not turtle.forward() then
         up()
         forward()
@@ -164,6 +194,7 @@ function forward()
 end
 
 function backward()
+    checkFuel()
     if not turtle.back() then
         up()
         backward()
@@ -181,6 +212,7 @@ function backward()
 end
 
 function up()
+    checkFuel()
     if not turtle.up() then
         turtle.forward()
         up()
@@ -191,6 +223,7 @@ function up()
 end
 
 function down()
+    checkFuel()
     if not turtle.down() then
         forward()
         down()
@@ -452,24 +485,27 @@ function handleData(JSONData)
     end
     buildMaxHeight = height+y+1
     log('building a '..width..'x'..depth..'x'..height..' shape at '..x..','..y..','..z)
-    send({type = 'setState', state='moving'})
+    print('max height: '..buildMaxHeight)
+    setState('moving')
     goTo(x,y+1,z,buildMaxHeight)
     headTo(heading)
-    send({type = 'setState', state='building'})
+    setState('building')
     build(data,height,depth,width)
     fs.delete('data')
     log("finished building, going back to home position")
-    send({type = 'setState', state='moving'})
+    setState('moving')
     goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight)
     headTo(homeHeading)
     log("back to home position, waiting for order")
-    send({type = 'setState', state='idle'})
+    setState('idle')
     send({type = 'setProgress', progress=0.0})
 end
 
 
 currentPosition = {locate()}
 homePosition = {currentPosition[1],currentPosition[2],currentPosition[3]}
+currentState = ''
+setState('idle')
 send({type = 'setPos', pos=currentPosition})
 
 currentHeading = getHeading()
@@ -518,8 +554,5 @@ while true do
                 end
             end
         end
-
-    --     io.open("data","w"):write(textutils.serialiseJSON(JSONResponse))
-    --     handleData(JSONResponse)
     end
 end
