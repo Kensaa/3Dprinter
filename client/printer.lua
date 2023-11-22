@@ -482,6 +482,7 @@ function handleData(JSONData)
         x = x + depthOffset
         z = z - widthOffset
     end
+
     buildMaxHeight = height+y+1
     log('building a '..width..'x'..depth..'x'..height..' shape at '..x..','..y..','..z)
     print('max height: '..buildMaxHeight)
@@ -491,15 +492,47 @@ function handleData(JSONData)
     setState('building')
     build(data,height,depth,width)
     fs.delete('data')
-    log("finished building, going back to home position")
-    setState('moving')
-    goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight)
-    headTo(homeHeading)
-    log("back to home position, waiting for order")
-    setState('idle')
+    log("finished building, asking for next part")
     send({type = 'setProgress', progress=0.0})
+    send({type="nextPart"})
 end
 
+function partReception()
+    print('waiting for message')
+    local _, _, response, isBinary = os.pullEvent("websocket_message")
+    if isBinary then
+        print('received binary message')
+        return
+    end
+    print('received message')
+    local JSONResponse = json.decode(response)
+
+    buildData = ''
+    if(JSONResponse['type'] == 'sendStart') then
+        print('starting receiving data chunk')
+        finished = false
+        i = 0
+        while not finished do
+            local _, _, response, isBinary = os.pullEvent("websocket_message")
+            if isBinary then
+                return
+            end
+            local JSONResponse = json.decode(response)
+            if(JSONResponse['type'] == 'chunk') then
+                print('new chunk received : '..i)
+                buildData = buildData .. JSONResponse['chunk']
+                i = i + 1
+            elseif JSONResponse['type'] == 'sendEnd' then
+                finished = true
+                print('finished receiving data chunk')
+                io.open("data","w"):write(buildData)
+                return json.decode(buildData)
+            end
+        end
+    else
+        return false
+    end
+end
 
 currentPosition = {locate()}
 homePosition = {currentPosition[1],currentPosition[2],currentPosition[3]}
@@ -510,10 +543,7 @@ send({type = 'setPos', pos=currentPosition})
 currentHeading = getHeading()
 homeHeading = currentHeading
 
-if turtle.getFuelLevel() < 100 then
-    print('turtle is out of fuel')
-    return
-end
+checkFuel()
 
 while true do
     if fs.exists('data') then
@@ -521,37 +551,18 @@ while true do
         local data = json.decode(fs.open("data","r").readAll())
         handleData(data)
     else
-        print('waiting for message')
-        local _, url, response, isBinary = os.pullEvent("websocket_message")
-        if isBinary then
-            print('received binary message')
-            return
+        part = partReception()
+        
+        while (part ~= false) do
+            print('new part available')
+            handleData(part)
+            part = partReception()            
         end
-        print('received message')
-        local JSONResponse = json.decode(response)
-
-        buildData = ''
-        if(JSONResponse['type'] == 'sendStart') then
-            print('starting receiving data chunk')
-            finished = false
-            i = 0
-            while not finished do
-                local _, url, response, isBinary = os.pullEvent("websocket_message")
-                if isBinary then
-                    return
-                end
-                local JSONResponse = json.decode(response)
-                if(JSONResponse['type'] == 'chunk') then
-                    print('new chunk received : '..i)
-                    buildData = buildData .. JSONResponse['chunk']
-                    i = i + 1
-                elseif JSONResponse['type'] == 'sendEnd' then
-                    finished = true
-                    print('finished receiving data chunk')
-                    io.open("data","w"):write(buildData)
-                    handleData(json.decode(buildData))
-                end
-            end
-        end
+        print('no part available')
+        setState('moving')
+        goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight)
+        headTo(homeHeading)
+        log("back to home position, waiting for order")
+        setState('idle')
     end
 end

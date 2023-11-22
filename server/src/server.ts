@@ -64,7 +64,8 @@ const websocketMessageSchema = z.discriminatedUnion('type', [
     }),
     z.object({ type: z.literal('setState'), state: z.string() }),
     z.object({ type: z.literal('setPos'), pos: z.array(z.number()).length(3) }),
-    z.object({ type: z.literal('setProgress'), progress: z.number() })
+    z.object({ type: z.literal('setProgress'), progress: z.number() }),
+    z.object({ type: z.literal('nextPart') })
 ])
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -144,17 +145,6 @@ let currentTask: undefined | Task
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
                 printer.state = msg.state as PrinterState
-                if (!currentTask) return
-                if (msg.state === 'idle') {
-                    // start new task
-                    currentTask.completedParts++
-                    const nextMsg = currentTask.queue.shift()
-                    if (!nextMsg) {
-                        currentTask = undefined
-                        return
-                    }
-                    await sendPartToPrinter(printer, nextMsg)
-                }
             } else if (msg.type === 'setPos') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
@@ -163,6 +153,29 @@ let currentTask: undefined | Task
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
                 printer.progress = msg.progress
+            } else if (msg.type === 'nextPart') {
+                const printer = printers.find(p => p.ws === ws)
+                if (!printer) return
+                if (!currentTask)
+                    return await sendAsync(
+                        printer.ws,
+                        JSON.stringify({ type: 'noNextPart' })
+                    )
+
+                currentTask.completedParts++
+                if (currentTask.queue.length === 0) {
+                    await sendAsync(
+                        printer.ws,
+                        JSON.stringify({ type: 'noNextPart' })
+                    )
+                } else {
+                    const nextMsg = currentTask.queue.shift()
+                    if (!nextMsg) {
+                        currentTask = undefined
+                        return
+                    }
+                    await sendPartToPrinter(printer, nextMsg)
+                }
             }
         })
     })
@@ -301,7 +314,9 @@ let currentTask: undefined | Task
         }
         if (!build.shape)
             return res.status(400).send('file does not contain a "shape" field')
-        // do the things to build
+        if (currentTask)
+            return res.status(400).send('a build is already running')
+
         const { shape } = build
         const height = shape.length // z
         const depth = shape[0].length // y
@@ -479,16 +494,11 @@ function getTime() {
 }
 
 async function sendPartToPrinter(printer: Printer, part: BuildMessage) {
-    const { height, depth, width, heightOffset, depthOffset, widthOffset } =
-        part
-
     console.log('sending build to ', printer.label)
-    console.log('.....')
+    console.log('\t.....')
 
     const strMsg = JSON.stringify(part)
     const msgParts = strMsg.match(/.{1,40000}/g) ?? [strMsg]
-
-    console.log('\tnumber of chunk to send', msgParts.length)
 
     await sendAsync(printer.ws, JSON.stringify({ type: 'sendStart' }))
     await wait(100)
@@ -502,7 +512,7 @@ async function sendPartToPrinter(printer: Printer, part: BuildMessage) {
     await wait(100)
 
     await sendAsync(printer.ws, JSON.stringify({ type: 'sendEnd' }))
-    console.log('part sent')
+    console.log('\tpart sent')
 }
 
 function omit(obj: any, ...keys: string[]) {
