@@ -61,7 +61,6 @@ function checkFuel()
         read()
         setState(previousState)
     end
-    return true
 end
 
 function place()
