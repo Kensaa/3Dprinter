@@ -44,7 +44,7 @@ interface Task {
     queue: BuildMessage[]
 }
 
-type PrinterState = 'idle' | 'building' | 'moving'
+type PrinterState = 'idle' | 'building' | 'moving' | 'refueling'
 interface Printer {
     ws: ws.WebSocket
     id: number
@@ -312,7 +312,7 @@ let currentTask: undefined | Task
         console.log('available printers', printerCount)
 
         //each turtle build the entire height of the build
-        // make 4 times more parts than printers
+        // make 4 times more parts than printers (see excalidraw)
         const sqrtCount = Math.floor(Math.sqrt(printerCount)) * 2
         const xDivide = Math.max(Math.ceil(width / sqrtCount), 3)
         const yDivide = Math.max(Math.ceil(depth / sqrtCount), 3)
@@ -323,14 +323,14 @@ let currentTask: undefined | Task
         const divided = divide3D(shape, xDivide, yDivide, height).flat() //flattened because the turtle will build the height of the build
         console.log('parts : ', divided.length * divided[0].length)
 
-        //fs.writeFileSync('output.json', JSON.stringify(divided))
-
-        let queue: BuildMessage[] = []
+        const queue: BuildMessage[] = []
         for (let partRow = 0; partRow < divided.length; partRow++) {
             for (let partCol = 0; partCol < divided[0].length; partCol++) {
                 const part = divided[partRow][partCol]
 
-                //TODO: Trim empty layer from the build to optimise build
+                //remove empty parts
+                if (!part.some(e1 => e1.some(e2 => e2.some(e3 => e3 === 1))))
+                    continue
 
                 const partHeight = part.length
                 const partDepth = part[0].length
@@ -377,11 +377,6 @@ let currentTask: undefined | Task
             }
         }
 
-        // check remove empty parts
-        queue = queue.filter(e =>
-            e.data.some(e1 => e1.some(e2 => e2.some(e3 => e3 === 1)))
-        )
-
         currentTask = {
             build,
             buildName: file,
@@ -391,6 +386,7 @@ let currentTask: undefined | Task
         }
 
         for (const printer of connectedPrinters) {
+            if (printer.state !== 'idle') continue
             const msg = currentTask.queue.shift()
             if (!msg) break
             await sendPartToPrinter(printer, msg)
