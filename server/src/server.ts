@@ -482,18 +482,13 @@ async function sendPartToPrinter(printer: Printer, part: BuildMessage) {
     const { height, depth, width, heightOffset, depthOffset, widthOffset } =
         part
 
-    console.log('printer : ', printer.label)
-    console.log('\tpart height', height)
-    console.log('\tpart depth', depth)
-    console.log('\tpart width', width)
-    console.log('\theight offset', heightOffset)
-    console.log('\tdepth offset', depthOffset)
-    console.log('\twidth offset', widthOffset)
+    console.log('sending build to ', printer.label)
+    console.log('.....')
 
     const strMsg = JSON.stringify(part)
     const msgParts = strMsg.match(/.{1,40000}/g) ?? [strMsg]
 
-    console.log('number of chunk to send', msgParts.length)
+    console.log('\tnumber of chunk to send', msgParts.length)
 
     await sendAsync(printer.ws, JSON.stringify({ type: 'sendStart' }))
     await wait(100)
