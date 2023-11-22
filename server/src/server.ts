@@ -405,6 +405,7 @@ let currentTask: undefined | Task
             const msg = currentTask.queue.shift()
             if (!msg) break
             await sendPartToPrinter(printer, msg)
+            await wait(200)
         }
 
         res.sendStatus(200)
