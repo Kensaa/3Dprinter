@@ -325,7 +325,7 @@ let currentTask: undefined | Task
 
         //fs.writeFileSync('output.json', JSON.stringify(divided))
 
-        const queue: BuildMessage[] = []
+        let queue: BuildMessage[] = []
         for (let partRow = 0; partRow < divided.length; partRow++) {
             for (let partCol = 0; partCol < divided[0].length; partCol++) {
                 const part = divided[partRow][partCol]
@@ -376,6 +376,11 @@ let currentTask: undefined | Task
                 queue.push(msg)
             }
         }
+
+        // check remove empty parts
+        queue = queue.filter(e =>
+            e.data.some(e1 => e1.some(e2 => e2.some(e3 => e3 === 1)))
+        )
 
         currentTask = {
             build,
