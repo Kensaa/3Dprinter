@@ -421,7 +421,6 @@ let currentTask: undefined | Task
 
         res.sendStatus(200)
     })
-    console.log(__dirname)
     const CLIENTS_PATH =
         process.env.NODE_ENV === 'production'
             ? './clients/'
