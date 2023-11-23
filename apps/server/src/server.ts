@@ -24,7 +24,7 @@ const BUILDS_FOLDER =
         ? '/builds'
         : path.join(__dirname, '..', 'builds'))
 
-const URL = process.env.URL
+const URL = process.env.URL ?? 'http://localhost:' + WEB_SERVER_PORT
 
 console.log('URL:', URL)
 
