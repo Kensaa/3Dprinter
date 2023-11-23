@@ -7,8 +7,18 @@ export default defineConfig({
     plugins: [react()],
     resolve: {
         alias: {
-            '~bootstrap': resolve(__dirname, 'node_modules/bootstrap'),
-            '~normalize.css': resolve(__dirname, 'node_modules/normalize.css')
+            '~bootstrap': resolve(
+                __dirname,
+                '..',
+                '..',
+                'node_modules/bootstrap'
+            ),
+            '~normalize.css': resolve(
+                __dirname,
+                '..',
+                '..',
+                'node_modules/normalize.css'
+            )
         }
     }
 })
