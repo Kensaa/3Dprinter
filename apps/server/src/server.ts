@@ -16,6 +16,10 @@ const BUILDS_FOLDER =
         ? '/builds'
         : path.join(__dirname, '..', 'builds'))
 
+const URL = process.env.URL
+
+console.log('URL:', URL)
+
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
 const buildSchema = z.intersection(
