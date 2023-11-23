@@ -24,7 +24,7 @@ WORKDIR /build/
 RUN cp -r /app/out/json/ ./
 RUN cp -r /app/out/yarn.lock ./yarn.lock
 RUN yarn install
-RUN cp /app/out/full/ ./
+RUN cp -r /app/out/full/ ./
 RUN turbo build --filter=server
 RUN yarn install --production
 
