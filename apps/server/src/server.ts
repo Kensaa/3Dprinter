@@ -424,7 +424,7 @@ let currentTask: undefined | Task
     console.log(__dirname)
     const CLIENTS_PATH =
         process.env.NODE_ENV === 'production'
-            ? 'clients/'
+            ? './clients/'
             : path.join(__dirname, '..', '..', 'clients/')
 
     console.log('clients folder :', CLIENTS_PATH)
@@ -432,7 +432,7 @@ let currentTask: undefined | Task
 
     const PUBLIC_PATH =
         process.env.NODE_ENV === 'production'
-            ? 'public/'
+            ? './public/'
             : path.join(__dirname, '..', 'public/')
 
     if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
