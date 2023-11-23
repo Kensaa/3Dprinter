@@ -8,7 +8,7 @@ WORKDIR /build/
 COPY /app/out/json/ .
 COPY /app/out/yarn.lock ./yarn.lock
 RUN yarn install
-COPY /app/out/full .
+COPY /app/out/full/ .
 RUN turbo build --filter=web
 RUN yarn install --production
 
@@ -24,7 +24,7 @@ WORKDIR /build/
 COPY /app/out/json/ .
 COPY /app/out/yarn.lock ./yarn.lock
 RUN yarn install
-COPY /app/out/full .
+COPY /app/out/full/ .
 RUN turbo build --filter=server
 RUN yarn install --production
 
