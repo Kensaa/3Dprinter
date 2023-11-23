@@ -8,6 +8,14 @@ import { ZodError, z } from 'zod'
 import jimp from 'jimp'
 import { arrayToImage, imageToArray, trim2Darray } from './utils'
 import { voxelize } from './voxelization'
+import { buildSchema } from 'printer-types'
+import type {
+    Build,
+    BuildMessage,
+    Task,
+    PrinterState,
+    Printer
+} from 'printer-types'
 
 const WEB_SERVER_PORT = parseInt(process.env.PORT ?? '9513')
 const BUILDS_FOLDER =
@@ -21,46 +29,6 @@ const URL = process.env.URL
 console.log('URL:', URL)
 
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
-
-const buildSchema = z.intersection(
-    z.discriminatedUnion('type', [
-        z.object({ type: z.literal('model') }),
-        z.object({ type: z.literal('image'), preview: z.string() })
-    ]),
-    z.object({ shape: z.number().array().array().array() })
-)
-type Build = z.infer<typeof buildSchema>
-
-interface BuildMessage {
-    pos: [number, number, number]
-    heading: number
-    data: number[][][]
-    height: number
-    depth: number
-    width: number
-    heightOffset: number
-    depthOffset: number
-    widthOffset: number
-}
-
-interface Task {
-    build: Build
-    buildName: string
-    length: number // total number of parts
-    completedParts: number
-    queue: BuildMessage[]
-}
-
-type PrinterState = 'idle' | 'building' | 'moving' | 'refueling'
-interface Printer {
-    ws: ws.WebSocket
-    id: number
-    label: string
-    state: PrinterState
-    connected: boolean
-    pos?: [number, number, number]
-    progress?: number
-}
 
 const websocketMessageSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('log'), message: z.string() }),

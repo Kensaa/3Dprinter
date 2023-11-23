@@ -5,7 +5,7 @@ import dataStore from '../stores/data'
 import { FileUploader } from 'react-drag-drop-files'
 import configStore from '../stores/config'
 import ImageViewer from '../components/ImageViewer'
-import { Build } from '../utils/types'
+import type { Build } from '../utils/types'
 
 interface NewImageModalProps {
     show: boolean

@@ -2,7 +2,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
-import { Build } from '../utils/types'
+import type { Build } from '../utils/types'
 import configStore from '../stores/config'
 import dataStore from '../stores/data'
 import { Color, InstancedMesh, Object3D } from 'three'

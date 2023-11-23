@@ -1,0 +1,13 @@
+{
+    "name": "printer-types",
+    "version": "1.0.0",
+    "author": "Kensa",
+    "private": true,
+    "license": "MIT",
+    "main": "./index.ts",
+    "types": "./index.ts",
+    "dependencies": {
+        "zod": "^3.22.4",
+        "@types/ws": "^8.5.5"
+    }
+}

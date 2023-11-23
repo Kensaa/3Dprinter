@@ -2,7 +2,7 @@ import AppNavbar from '../components/AppNavbar'
 import dataStore from '../stores/data'
 import PrinterTable from '../components/PrinterTable'
 import { useInterval } from 'usehooks-ts'
-import { Task } from '../utils/types'
+import type { Task } from '../utils/types'
 
 export default function Printerpage() {
     const { printers, currentTask, fetchPrinters, fetchCurrentTask } =
