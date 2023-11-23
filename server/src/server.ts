@@ -22,6 +22,51 @@ const buildSchema = z.intersection(
     ]),
     z.object({ shape: z.number().array().array().array() })
 )
+type Build = z.infer<typeof buildSchema>
+
+interface BuildMessage {
+    pos: [number, number, number]
+    heading: number
+    data: number[][][]
+    height: number
+    depth: number
+    width: number
+    heightOffset: number
+    depthOffset: number
+    widthOffset: number
+}
+
+interface Task {
+    build: Build
+    buildName: string
+    length: number // total number of parts
+    completedParts: number
+    queue: BuildMessage[]
+}
+
+type PrinterState = 'idle' | 'building' | 'moving' | 'refueling'
+interface Printer {
+    ws: ws.WebSocket
+    id: number
+    label: string
+    state: PrinterState
+    connected: boolean
+    pos?: [number, number, number]
+    progress?: number
+}
+
+const websocketMessageSchema = z.discriminatedUnion('type', [
+    z.object({ type: z.literal('log'), message: z.string() }),
+    z.object({
+        type: z.literal('register'),
+        id: z.number(),
+        label: z.string()
+    }),
+    z.object({ type: z.literal('setState'), state: z.string() }),
+    z.object({ type: z.literal('setPos'), pos: z.array(z.number()).length(3) }),
+    z.object({ type: z.literal('setProgress'), progress: z.number() }),
+    z.object({ type: z.literal('nextPart') })
+])
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -34,7 +79,7 @@ async function sendAsync(ws: ws.WebSocket, data: string) {
     })
 }
 
-type Build = z.infer<typeof buildSchema>
+let currentTask: undefined | Task
 ;(async () => {
     const expressApp = express()
     expressApp.use(express.json({ limit: '5000mb' }))
@@ -47,16 +92,6 @@ type Build = z.infer<typeof buildSchema>
         console.log(`server started on port ${WEB_SERVER_PORT}`)
     )
 
-    type PrinterState = 'idle' | 'building' | 'moving'
-    interface Printer {
-        ws: ws.WebSocket
-        id: number
-        label: string
-        state: PrinterState
-        connected: boolean
-        pos?: [number, number, number]
-        progress?: number
-    }
     const printers: Printer[] = []
 
     wsServer.on('connection', ws => {
@@ -74,8 +109,12 @@ type Build = z.infer<typeof buildSchema>
             }
         })
 
-        ws.on('message', data => {
-            const msg = JSON.parse(data.toString())
+        ws.on('message', async data => {
+            const parseResult = websocketMessageSchema.safeParse(
+                JSON.parse(data.toString())
+            )
+            if (!parseResult.success) return
+            const msg = { ...parseResult.data }
             if (msg.type == 'log') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
@@ -105,15 +144,46 @@ type Build = z.infer<typeof buildSchema>
             } else if (msg.type === 'setState') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
-                printer.state = msg.state
+                printer.state = msg.state as PrinterState
             } else if (msg.type === 'setPos') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
-                printer.pos = msg.pos
+                printer.pos = msg.pos as [number, number, number]
             } else if (msg.type === 'setProgress') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
                 printer.progress = msg.progress
+            } else if (msg.type === 'nextPart') {
+                const printer = printers.find(p => p.ws === ws)
+                if (!printer) return
+                if (!currentTask)
+                    return await sendAsync(
+                        printer.ws,
+                        JSON.stringify({ type: 'noNextPart' })
+                    )
+
+                currentTask.completedParts++
+                if (currentTask.length === currentTask.completedParts) {
+                    currentTask = undefined
+                    return await sendAsync(
+                        printer.ws,
+                        JSON.stringify({ type: 'noNextPart' })
+                    )
+                } else {
+                    if (currentTask.queue.length === 0) {
+                        await sendAsync(
+                            printer.ws,
+                            JSON.stringify({ type: 'noNextPart' })
+                        )
+                    } else {
+                        const nextMsg = currentTask.queue.shift()
+                        if (!nextMsg) {
+                            currentTask = undefined
+                            return
+                        }
+                        await sendPartToPrinter(printer, nextMsg)
+                    }
+                }
             }
         })
     })
@@ -125,6 +195,11 @@ type Build = z.infer<typeof buildSchema>
             out.push(printerWithoutWS)
         }
         res.status(200).json(out)
+    })
+
+    expressApp.get('/current', (req, res) => {
+        if (!currentTask) return res.status(404).send('no current task')
+        res.status(200).json(omit(currentTask, 'queue', 'build'))
     })
     expressApp.get('/builds', (req, res) => {
         const modelsNames = fs.readdirSync(BUILDS_FOLDER)
@@ -247,7 +322,9 @@ type Build = z.infer<typeof buildSchema>
         }
         if (!build.shape)
             return res.status(400).send('file does not contain a "shape" field')
-        // do the things to build
+        if (currentTask)
+            return res.status(400).send('a build is already running')
+
         const { shape } = build
         const height = shape.length // z
         const depth = shape[0].length // y
@@ -258,7 +335,8 @@ type Build = z.infer<typeof buildSchema>
         console.log('available printers', printerCount)
 
         //each turtle build the entire height of the build
-        const sqrtCount = Math.floor(Math.sqrt(printerCount))
+        // make 4 times more parts than printers (see excalidraw)
+        const sqrtCount = Math.floor(Math.sqrt(printerCount)) * 2
         const xDivide = Math.max(Math.ceil(width / sqrtCount), 3)
         const yDivide = Math.max(Math.ceil(depth / sqrtCount), 3)
 
@@ -268,22 +346,14 @@ type Build = z.infer<typeof buildSchema>
         const divided = divide3D(shape, xDivide, yDivide, height).flat() //flattened because the turtle will build the height of the build
         console.log('parts : ', divided.length * divided[0].length)
 
-        //fs.writeFileSync('output.json', JSON.stringify(divided))
-
-        if (divided.length * divided[0].length > printerCount)
-            return res
-                .status(500)
-                .send(
-                    'problem with the division of the build, more part than printer'
-                )
-
-        let printerIndex = 0
+        const queue: BuildMessage[] = []
         for (let partRow = 0; partRow < divided.length; partRow++) {
             for (let partCol = 0; partCol < divided[0].length; partCol++) {
                 const part = divided[partRow][partCol]
-                const printer = connectedPrinters[printerIndex]
 
-                //TODO: Trim empty layer from the build to optimise build
+                //remove empty parts
+                if (!part.some(e1 => e1.some(e2 => e2.some(e3 => e3 === 1))))
+                    continue
 
                 const partHeight = part.length
                 const partDepth = part[0].length
@@ -313,8 +383,8 @@ type Build = z.infer<typeof buildSchema>
                 const depthOffset = calcDepthOffset(divided, partRow)
                 const widthOffset = calcWidthOffset(divided, partCol)
 
-                const msg = {
-                    pos,
+                const msg: BuildMessage = {
+                    pos: pos as [number, number, number],
                     heading,
                     data: part,
                     height: partHeight,
@@ -325,39 +395,25 @@ type Build = z.infer<typeof buildSchema>
                     depthOffset,
                     widthOffset
                 }
-                console.log('printer : ', printer.label)
-                console.log('\tpart height', partHeight)
-                console.log('\tpart depth', partDepth)
-                console.log('\tpart width', partWidth)
-                console.log('\theight offset', heightOffset)
-                console.log('\tdepth offset', depthOffset)
-                console.log('\twidth offset', widthOffset)
 
-                const strMsg = JSON.stringify(msg)
-                const msgParts = strMsg.match(/.{1,40000}/g) ?? [strMsg]
-
-                console.log('number of chunk to send', msgParts.length)
-
-                await sendAsync(
-                    printer.ws,
-                    JSON.stringify({ type: 'sendStart' })
-                )
-                await wait(100)
-                for (const chunk of msgParts) {
-                    await sendAsync(
-                        printer.ws,
-                        JSON.stringify({ type: 'chunk', chunk: chunk })
-                    )
-                    await wait(50)
-                }
-                await wait(100)
-
-                await sendAsync(printer.ws, JSON.stringify({ type: 'sendEnd' }))
-
-                //await sendAsync(printer.ws, strMsg)
-
-                printerIndex++
+                queue.push(msg)
             }
+        }
+
+        currentTask = {
+            build,
+            buildName: file,
+            length: queue.length,
+            completedParts: 0,
+            queue
+        }
+
+        for (const printer of connectedPrinters) {
+            if (printer.state !== 'idle') continue
+            const msg = currentTask.queue.shift()
+            if (!msg) break
+            await sendPartToPrinter(printer, msg)
+            await wait(200)
         }
 
         res.sendStatus(200)
@@ -404,7 +460,7 @@ type Build = z.infer<typeof buildSchema>
  * @param xsize x size of the divided parts
  * @param ysize z size of the divided parts
  * @param zsize z size of the divided parts
- * @returns a 3D array where each cell is an other 3D array
+ * @returns a 3D array where each cell is another 3D array
  */
 function divide3D(
     arr: number[][][],
@@ -444,4 +500,34 @@ function getTime() {
     const minutes = date.getMinutes().toString().padStart(2, '0')
     const seconds = date.getSeconds().toString().padStart(2, '0')
     return `${hours}:${minutes}:${seconds}`
+}
+
+async function sendPartToPrinter(printer: Printer, part: BuildMessage) {
+    console.log('sending build to ', printer.label)
+    console.log('\t.....')
+
+    const strMsg = JSON.stringify(part)
+    const msgParts = strMsg.match(/.{1,40000}/g) ?? [strMsg]
+
+    await sendAsync(printer.ws, JSON.stringify({ type: 'sendStart' }))
+    await wait(100)
+    for (const chunk of msgParts) {
+        await sendAsync(
+            printer.ws,
+            JSON.stringify({ type: 'chunk', chunk: chunk })
+        )
+        await wait(50)
+    }
+    await wait(100)
+
+    await sendAsync(printer.ws, JSON.stringify({ type: 'sendEnd' }))
+    console.log('\tpart sent')
+}
+
+function omit(obj: any, ...keys: string[]) {
+    const newObj: any = {}
+    for (const key of Object.keys(obj)) {
+        if (!keys.includes(key)) newObj[key] = obj[key]
+    }
+    return newObj
 }

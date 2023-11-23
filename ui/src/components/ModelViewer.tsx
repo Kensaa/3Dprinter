@@ -85,6 +85,7 @@ export default function ModelViewer({
                             setBuild(newBuild)
                         }}
                         variant='outline-primary'
+                        className='mx-2'
                     >
                         Rotate Y (Green Axis)
                     </Button>
