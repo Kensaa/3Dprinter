@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import configStore from '../stores/config'
 import { Button, Modal, Form, Row, Col, Alert } from 'react-bootstrap'
 import BuildPreview from '../components/BuildPreview'
+import { useLocation } from 'wouter'
 
 interface BuildModalProps {
     buildName: string
@@ -10,6 +11,7 @@ interface BuildModalProps {
     hide: () => void
 }
 export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
+    const [, setLocation] = useLocation()
     const [x, setX] = useState(localStorage.getItem('x') ?? '0')
     const [y, setY] = useState(localStorage.getItem('y') ?? '0')
     const [z, setZ] = useState(localStorage.getItem('z') ?? '0')
@@ -33,7 +35,11 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
                 heading: heading + 1
             })
         }).then(res => {
-            if (res.ok) return hide()
+            if (res.ok) {
+                hide()
+                setLocation('/printers')
+            }
+
             res.text().then(err => {
                 setError(`an error has occured ${err} (${res.status}) `)
             })
