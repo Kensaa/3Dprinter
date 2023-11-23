@@ -1,0 +1,7 @@
+{
+    "compilerOptions": {
+        "composite": true
+    },
+    "extends": "tsconfig/vite.json",
+    "include": ["vite.config.ts"]
+}

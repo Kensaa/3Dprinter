@@ -1,24 +1,45 @@
-FROM node:latest as build_env
+FROM node:latest as web_builder
+WORKDIR /app/
+RUN yarn global add turbo
+COPY . .
+RUN turbo prune web --docker
 
-WORKDIR /app/server
-COPY ./server/package.json ./
-RUN yarn
-COPY ./server/ .
-RUN yarn build
+WORKDIR /build/
+COPY /app/out/json/ .
+COPY /app/out/yarn.lock ./yarn.lock
+RUN yarn install
+COPY /app/out/full .
+RUN turbo build --filter=web
 RUN yarn install --production
 
-WORKDIR /app/ui
-COPY ./ui/package.json ./
-RUN yarn
-COPY ./ui/ .
-RUN yarn build
+# ------------------------------------------------
 
-FROM gcr.io/distroless/nodejs20-debian11
-COPY --from=build_env /app/server /app/server
-COPY --from=build_env /app/ui/dist /app/server/public
+FROM node:latest as server_builder
+WORKDIR /app/
+RUN yarn global add turbo
+COPY . .
+RUN turbo prune server --docker
 
-WORKDIR /app/server
-EXPOSE 9513
-ENV buildsFolder=/builds/
+WORKDIR /build/
+COPY /app/out/json/ .
+COPY /app/out/yarn.lock ./yarn.lock
+RUN yarn install
+COPY /app/out/full .
+RUN turbo build --filter=server
+RUN yarn install --production
 
-CMD ["dist/server.js"]
+# ------------------------------------------------
+
+FROM gcr.io/distroless/nodejs20-debian11 as runner
+
+WORKDIR /app
+COPY --from=server_builder /build .
+COPY --from=web_builder /build/apps/web/dist ./public
+COPY ./apps/clients ./clients
+
+ENV NODE_ENV="production"
+ENV WEB_SERVER_PORT=9513
+ENV BUILDS_FOLDER="/builds"
+ENV URL=""
+
+CMD ["apps/server/dist/server.js"]
