@@ -1,4 +1,4 @@
-import * as obj from 'obj-file-parser'
+import obj from 'obj-file-parser'
 
 export function voxelize(data: string, scale = 20) {
     const objFile = new obj(data).parse()

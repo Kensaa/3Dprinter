@@ -1,18 +1,25 @@
-import * as express from 'express'
-import * as cors from 'cors'
-import * as http from 'http'
-import * as ws from 'ws'
-import * as fs from 'fs'
-import * as path from 'path'
+import express from 'express'
+import cors from 'cors'
+import http from 'http'
+import ws from 'ws'
+import fs from 'fs'
+import path from 'path'
 import { ZodError, z } from 'zod'
-import * as jimp from 'jimp'
-import 'dotenv/config'
+import jimp from 'jimp'
 import { arrayToImage, imageToArray, trim2Darray } from './utils'
 import { voxelize } from './voxelization'
 
-const WEB_SERVER_PORT = 9513
+const WEB_SERVER_PORT = parseInt(process.env.PORT ?? '9513')
 const BUILDS_FOLDER =
-    process.env.buildsFolder ?? path.join(__dirname, '..', 'builds')
+    process.env.BUILDS_FOLDER ??
+    (process.env.NODE_ENV === 'production'
+        ? '/builds'
+        : path.join(__dirname, '..', 'builds'))
+
+const URL = process.env.URL
+
+console.log('URL:', URL)
+
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
 const buildSchema = z.intersection(
@@ -418,17 +425,17 @@ let currentTask: undefined | Task
 
         res.sendStatus(200)
     })
-    const CLIENT_PATH =
+    const CLIENTS_PATH =
         process.env.NODE_ENV === 'production'
-            ? path.join(__dirname, '..', 'client/')
-            : path.join(__dirname, '..', '..', 'client/')
+            ? './clients/'
+            : path.join(__dirname, '..', '..', 'clients/')
 
-    console.log('client folder :', CLIENT_PATH)
-    expressApp.use('/clients', express.static(CLIENT_PATH))
+    console.log('clients folder :', CLIENTS_PATH)
+    expressApp.use('/clients', express.static(CLIENTS_PATH))
 
     const PUBLIC_PATH =
         process.env.NODE_ENV === 'production'
-            ? 'public/'
+            ? './public/'
             : path.join(__dirname, '..', 'public/')
 
     if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)

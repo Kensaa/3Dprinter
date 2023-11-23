@@ -1,4 +1,4 @@
-import * as jimp from 'jimp'
+import jimp from 'jimp'
 
 function startIndex(arr: number[], nullE = 0) {
     for (let i = 0; i < arr.length; i++) {

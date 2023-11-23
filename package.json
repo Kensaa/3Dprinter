@@ -1,0 +1,22 @@
+{
+  "name": "3d-printer",
+  "version": "1.0.0",
+  "description": "a minecraft 3D Printer using computercraft",
+  "private": true,
+  "author": "Kensa",
+  "license": "MIT",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "dotenv -- turbo dev",
+    "start": "dotenv -- turbo dev",
+    "build": "dotenv -- turbo build"
+  },
+  "devDependencies": {
+    "dotenv-cli": "^7.3.0",
+    "turbo": "^1.10.16"
+  },
+  "packageManager": "yarn@1.22.19"
+}
