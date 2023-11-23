@@ -10,5 +10,16 @@
         "term",
         "read"
     ],
-    "Lua.diagnostics.disable": ["lowercase-global", "undefined-field"]
+    "Lua.diagnostics.disable": ["lowercase-global", "undefined-field"],
+    "files.exclude": {
+        "**/.turbo": true,
+        "**/node_modules": true,
+        "**/dist": true,
+        "yarn.lock": true,
+
+        "apps/web/tsconfig.json": true,
+        "apps/web/tsconfig.node.json": true,
+        "apps/web/index.html": true,
+        "apps/web/src/vite-env.d.ts": true
+    }
 }
