@@ -5,10 +5,10 @@ COPY . .
 RUN turbo prune web --docker
 
 WORKDIR /build/
-RUN cp -r /app/out/json/ ./
+RUN cp -r /app/out/json/* ./
 RUN cp -r /app/out/yarn.lock ./yarn.lock
 RUN yarn install
-RUN cp -r /app/out/full/ ./
+RUN cp -r /app/out/full/* ./
 RUN turbo build --filter=web
 RUN yarn install --production
 
@@ -21,10 +21,10 @@ COPY . .
 RUN turbo prune server --docker
 
 WORKDIR /build/
-RUN cp -r /app/out/json/ ./
+RUN cp -r /app/out/json/* ./
 RUN cp -r /app/out/yarn.lock ./yarn.lock
 RUN yarn install
-RUN cp -r /app/out/full/ ./
+RUN cp -r /app/out/full/* ./
 RUN turbo build --filter=server
 RUN yarn install --production
 
