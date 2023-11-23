@@ -1,9 +1,7 @@
 node_modules
-yarn.lock
-homePos.json
 .gitignore
-preview/
-img/
+build
+builds
 dist/
 tests/
 .env
