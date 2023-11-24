@@ -380,7 +380,8 @@ let currentTask: undefined | Task
             buildName: file,
             length: queue.length,
             completedParts: 0,
-            queue
+            queue,
+            startedAt: Date.now()
         }
 
         res.sendStatus(200)

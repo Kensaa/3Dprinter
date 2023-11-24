@@ -28,6 +28,7 @@ export interface Task {
     length: number // total number of parts
     completedParts: number
     queue: BuildMessage[]
+    startedAt: number
 }
 
 export type PrinterState = 'idle' | 'building' | 'moving' | 'refueling'
