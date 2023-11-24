@@ -1,6 +1,13 @@
 {
     "extends": "tsconfig/base.json",
     "compilerOptions": {
-        "outDir": "dist/"
-    }
+        "outDir": "./dist/",
+        "rootDir": "./src/",
+        "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    },
+    "references": [
+        {
+            "path": "../../packages/printer-types"
+        }
+    ]
 }

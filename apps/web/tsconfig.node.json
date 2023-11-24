@@ -1,7 +1,13 @@
 {
     "compilerOptions": {
-        "composite": true
+        "composite": true,
+        "outDir": "./dist/"
     },
     "extends": "tsconfig/vite.json",
-    "include": ["vite.config.ts"]
+    "include": ["vite.config.ts"],
+    "references": [
+        {
+            "path": "../../packages/printer-types"
+        }
+    ]
 }
