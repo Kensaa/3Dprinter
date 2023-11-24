@@ -491,8 +491,8 @@ function getTime() {
 }
 
 async function sendPartToPrinter(printer: Printer, part: BuildMessage) {
-    console.log('sending build to ', printer.label)
-    console.log('\t.....')
+    /*console.log('sending build to ', printer.label)
+    console.log('\t.....')*/
 
     const strMsg = JSON.stringify(part)
     const msgParts = strMsg.match(/.{1,40000}/g) ?? [strMsg]
@@ -509,7 +509,7 @@ async function sendPartToPrinter(printer: Printer, part: BuildMessage) {
     await wait(100)
 
     await sendAsync(printer.ws, JSON.stringify({ type: 'sendEnd' }))
-    console.log('\tpart sent')
+    //console.log('\tpart sent')
 }
 
 function omit(obj: any, ...keys: string[]) {
