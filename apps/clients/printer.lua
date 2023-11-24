@@ -525,7 +525,6 @@ function partReception()
             elseif JSONResponse['type'] == 'sendEnd' then
                 finished = true
                 print('finished receiving data chunk')
-                io.open("data","w"):write(buildData)
                 return json.decode(buildData)
             end
         end
@@ -546,23 +545,17 @@ homeHeading = currentHeading
 checkFuel()
 
 while true do
-    if fs.exists('data') then
-        print('data exists')
-        local data = json.decode(fs.open("data","r").readAll())
-        handleData(data)
-    else
-        part = partReception()
-        
-        while (part ~= false) do
-            print('new part available')
-            handleData(part)
-            part = partReception()            
-        end
-        print('no part available')
-        setState('moving')
-        goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight)
-        headTo(homeHeading)
-        log("back to home position, waiting for order")
-        setState('idle')
+    part = partReception()
+    
+    while (part ~= false) do
+        print('new part available')
+        handleData(part)
+        part = partReception()            
     end
+    print('no part available')
+    setState('moving')
+    goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight)
+    headTo(homeHeading)
+    log("back to home position, waiting for order")
+    setState('idle')
 end
