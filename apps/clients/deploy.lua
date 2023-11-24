@@ -116,6 +116,8 @@ for k,v in pairs(requirements) do
         local totalRequired = v * num
         if amount < totalRequired then
             print('You have '..amount..' '..k..','..totalRequired..' needed')
+            me.importItem({name="computercraft:disk_drive",count=1},"up")
+            me.importItem({name="computercraft:disk",count=1},"up")
             return
         end
     end
