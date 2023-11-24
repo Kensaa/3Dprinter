@@ -37,7 +37,7 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
         }).then(res => {
             if (res.ok) {
                 hide()
-                setLocation('/printers')
+                setLocation('/dashboard')
             }
 
             res.text().then(err => {

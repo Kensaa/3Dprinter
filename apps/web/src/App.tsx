@@ -8,7 +8,7 @@ export default function App() {
             <Route path='/'>
                 <Homepage />
             </Route>
-            <Route path='/printers'>
+            <Route path='/dashboard'>
                 <Printerpage />
             </Route>
             <Route>
