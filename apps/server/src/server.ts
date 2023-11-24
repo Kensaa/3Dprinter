@@ -383,6 +383,8 @@ let currentTask: undefined | Task
             queue
         }
 
+        res.sendStatus(200)
+
         for (const printer of connectedPrinters) {
             if (printer.state !== 'idle') continue
             const msg = currentTask.queue.shift()
@@ -390,8 +392,6 @@ let currentTask: undefined | Task
             await sendPartToPrinter(printer, msg)
             await wait(200)
         }
-
-        res.sendStatus(200)
     })
     const CLIENTS_PATH =
         process.env.NODE_ENV === 'production'
