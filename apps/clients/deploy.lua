@@ -1,4 +1,4 @@
-local url = "http://localhost:9513"
+local url = "$WEB_URL$"
 local me = peripheral.wrap('bottom')
 if not me then
     print('No ME controller found below the turtle')

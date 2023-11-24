@@ -1,5 +1,5 @@
 gpsTry = 5
-local url = "localhost:9513"
+local url = "$WS_URL$"
 if not fs.exists('json.lua') then
     shell.run('wget https://raw.githubusercontent.com/rxi/json.lua/master/json.lua json.lua')
 end
@@ -76,7 +76,7 @@ function place()
     turtle.placeDown()
 end
 
-local ws, err = http.websocket('ws://'..url)
+local ws, err = http.websocket(url)
 if not err == nil then
     print(err)
     return

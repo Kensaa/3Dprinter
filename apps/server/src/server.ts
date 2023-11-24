@@ -399,7 +399,19 @@ let currentTask: undefined | Task
             : path.join(__dirname, '..', '..', 'clients/')
 
     console.log('clients folder :', CLIENTS_PATH)
-    expressApp.use('/clients', express.static(CLIENTS_PATH))
+    expressApp.get('/clients/:file', (req, res) => {
+        const file = req.params.file
+        const filepath = path.join(CLIENTS_PATH, file)
+        let fileContent = fs.readFileSync(filepath, 'utf-8')
+
+        fileContent = fileContent.replace('$WEB_URL$', URL)
+        fileContent = fileContent.replace(
+            '$WS_URL$',
+            URL.replace('http', 'ws').replace('https', 'wss')
+        )
+
+        res.status(200).send(fileContent)
+    })
 
     const PUBLIC_PATH =
         process.env.NODE_ENV === 'production'

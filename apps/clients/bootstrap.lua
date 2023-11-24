@@ -1,4 +1,4 @@
-local url = "http://localhost:9513"
+local url = "$WEB_URL$"
 
 if fs.exists('printer') then
     fs.delete('printer')
