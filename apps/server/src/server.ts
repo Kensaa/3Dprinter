@@ -394,10 +394,11 @@ let currentTask: undefined | Task
             await wait(200)
         }
     })
-    const CLIENTS_PATH =
+    const CLIENTS_PATH = path.resolve(
         process.env.NODE_ENV === 'production'
             ? './clients/'
             : path.join(__dirname, '..', '..', 'clients/')
+    )
 
     console.log('clients folder :', CLIENTS_PATH)
     expressApp.get('/clients/:file', (req, res) => {
@@ -414,10 +415,11 @@ let currentTask: undefined | Task
         res.status(200).send(fileContent)
     })
 
-    const PUBLIC_PATH =
+    const PUBLIC_PATH = path.resolve(
         process.env.NODE_ENV === 'production'
             ? './public/'
             : path.join(__dirname, '..', 'public/')
+    )
 
     if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
     console.log('public folder :', PUBLIC_PATH)
