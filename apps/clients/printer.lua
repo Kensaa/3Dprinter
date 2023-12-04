@@ -176,10 +176,23 @@ end
 
 function forward()
     checkFuel()
-    if not turtle.forward() then
-        up()
-        forward()
+    blocked, blockData = turtle.inspect()
+    if blocked then
+        if blockData.name == "computercraft:turtle_advanced" then
+            local otherID = peripheral.call("front", "getID")
+            if otherID > os.getComputerID() then
+                sleep(1)
+                forward()
+            else 
+                up()
+                forward()
+            end
+        else
+            up()
+            forward()
+        end
     else
+        turtle.forward()
         if currentHeading % 4 == 1 then
             currentPosition[1] = currentPosition[1] + 1
         elseif currentHeading % 4 == 2 then
@@ -212,22 +225,50 @@ end
 
 function up()
     checkFuel()
-    if not turtle.up() then
-        turtle.forward()
-        up()
-        backward()
+    blocked, blockData = turtle.inspectUp()
+    if blocked then
+        if blockData.name == "computercraft:turtle_advanced" then
+            local otherID = peripheral.call("top", "getID")
+            if otherID > os.getComputerID() then
+                sleep(1)
+                up()
+            else 
+                forward()
+                up()
+                backward()
+            end
+        else
+            forward()
+            up()
+            backward()
+        end
     else
+        turtle.up()
         currentPosition[2] = currentPosition[2] + 1
     end
 end
 
 function down()
     checkFuel()
-    if not turtle.down() then
-        forward()
-        down()
-        backward()
+    blocked, blockData = turtle.inspectDown()
+    if blocked then
+        if blockData.name == "computercraft:turtle_advanced" then
+            local otherID = peripheral.call("bottom", "getID")
+            if otherID > os.getComputerID() then
+                sleep(1)
+                down()
+            else 
+                forward()
+                down()
+                backward()
+            end
+        else
+            forward()
+            down()
+            backward()
+        end
     else
+        turtle.down()
         currentPosition[2] = currentPosition[2] - 1
     end
 end
