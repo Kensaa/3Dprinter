@@ -8,6 +8,7 @@ import BuildModal from '../modals/BuildModal'
 import NewModelModal from '../modals/NewModelModal'
 import NewImageModal from '../modals/NewImageModal'
 import BuildPreview from '../components/BuildPreview'
+import NewSchematicModal from '../modals/NewSchematicModal'
 
 export default function Homepage() {
     const { builds, fetchBuilds } = dataStore(state => ({
@@ -17,6 +18,7 @@ export default function Homepage() {
     const [buildModalShown, setBuildModalShown] = useState(false)
 
     const [newModelShown, setNewModelShown] = useState(false)
+    const [newSchematicShown, setNewSchematicShown] = useState(false)
     const [newImageShown, setNewImageShown] = useState(false)
     const [selectedBuild, setSelectedBuild] = useState<string>()
 
@@ -42,6 +44,7 @@ export default function Homepage() {
                             {
                                 //@ts-ignore
                                 <Button
+                                    className='mx-1'
                                     disabled={!selectedBuild}
                                     variant='outline-success'
                                     onClick={() => setBuildModalShown(true)}
@@ -52,6 +55,7 @@ export default function Homepage() {
                             {
                                 //@ts-ignore
                                 <Button
+                                    className='mx-1'
                                     variant='outline-primary'
                                     onClick={() => setNewModelShown(true)}
                                 >
@@ -61,6 +65,17 @@ export default function Homepage() {
                             {
                                 //@ts-ignore
                                 <Button
+                                    className='mx-1'
+                                    variant='outline-primary'
+                                    onClick={() => setNewSchematicShown(true)}
+                                >
+                                    Convert a Schematic
+                                </Button>
+                            }
+                            {
+                                //@ts-ignore
+                                <Button
+                                    className='mx-1'
                                     variant='outline-primary'
                                     onClick={() => setNewImageShown(true)}
                                 >
@@ -87,6 +102,10 @@ export default function Homepage() {
             <NewModelModal
                 show={newModelShown}
                 hide={() => setNewModelShown(false)}
+            />
+            <NewSchematicModal
+                show={newSchematicShown}
+                hide={() => setNewSchematicShown(false)}
             />
             <NewImageModal
                 show={newImageShown}
