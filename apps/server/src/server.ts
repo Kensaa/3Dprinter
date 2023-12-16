@@ -438,17 +438,22 @@ let currentTask: undefined | Task
                 'turnLeft',
                 'up',
                 'down',
-                'goTo'
-            ])
+                'goTo',
+                'headTo'
+            ]),
+            data: z.number().array().optional()
         })
 
-        const { printer, command } = schema.parse(req.body)
+        const { printer, command, data } = schema.parse(req.body)
         const current = printers.find(p => p.id === printer)
         if (!current) return res.status(404).send('printer not found')
         if (!current.connected)
             return res.status(404).send('printer not connected')
 
-        await sendAsync(current.ws, JSON.stringify({ type: 'remote', command }))
+        await sendAsync(
+            current.ws,
+            JSON.stringify({ type: 'remote', command, data })
+        )
         res.sendStatus(200)
     })
 

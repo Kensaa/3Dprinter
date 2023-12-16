@@ -579,6 +579,7 @@ function buildManager()
                 handleData(json.decode(buildData))
             elseif currentMessage['type'] == 'noNextPart' then
                 currentMessage = nil
+                log("no next part, going back to home position")
                 setState('moving')
                 goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight+2)
                 headTo(homeHeading)
@@ -611,8 +612,10 @@ function remoteManager()
                 elseif remoteCommand == 'goTo' then
                     local pState = currentState
                     setState('moving')
-                    goTo(currentMessage['x'],currentMessage['y'],currentMessage['z'])
+                    goTo(currentMessage['data'][1],currentMessage['data'][2],currentMessage['data'][3], currentMessage['data'][2])
                     setState(pState)
+                elseif remoteCommand == 'headTo' then
+                    headTo(currentMessage['data'][1])
                 end
                 currentMessage = nil
             end
