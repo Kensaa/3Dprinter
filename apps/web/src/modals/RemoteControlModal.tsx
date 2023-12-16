@@ -57,12 +57,12 @@ export default function RemoteControlModal({
                 </div>
                 <div className='m-1'>
                     <CommandButton
-                        name='up'
+                        name='down'
                         icon={ArrowDownToLine}
                         printer={printer}
                     />
                     <CommandButton
-                        name='down'
+                        name='up'
                         icon={ArrowUpFromLine}
                         printer={printer}
                     />
