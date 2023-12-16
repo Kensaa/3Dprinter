@@ -230,6 +230,7 @@ function forward()
     elseif currentHeading % 4 == 0 then
         currentPosition[3] = currentPosition[3] - 1
     end
+    send({type = 'setPos', pos=currentPosition})
 end
 
 function backward()
@@ -263,6 +264,7 @@ function backward()
     elseif currentHeading % 4 == 0 then
         currentPosition[3] = currentPosition[3] + 1
     end
+    send({type = 'setPos', pos=currentPosition})
 end
 
 function up()
@@ -275,6 +277,7 @@ function up()
         end
     end
     currentPosition[2] = currentPosition[2] + 1
+    send({type = 'setPos', pos=currentPosition})
 end
 
 function down()
@@ -287,6 +290,7 @@ function down()
         end
     end
     currentPosition[2] = currentPosition[2] - 1
+    send({type = 'setPos', pos=currentPosition})
 end
     
 
@@ -327,7 +331,6 @@ function goTo(targetX,targetY,targetZ, maxHeight)
             -- y-
             down()
         end
-        send({type = 'setPos', pos=currentPosition})
     end     
 end
 
