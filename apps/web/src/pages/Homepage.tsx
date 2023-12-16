@@ -42,6 +42,7 @@ export default function Homepage() {
                             {
                                 //@ts-ignore
                                 <Button
+                                    className='mx-1'
                                     disabled={!selectedBuild}
                                     variant='outline-success'
                                     onClick={() => setBuildModalShown(true)}
@@ -52,6 +53,7 @@ export default function Homepage() {
                             {
                                 //@ts-ignore
                                 <Button
+                                    className='mx-1'
                                     variant='outline-primary'
                                     onClick={() => setNewModelShown(true)}
                                 >
@@ -61,6 +63,7 @@ export default function Homepage() {
                             {
                                 //@ts-ignore
                                 <Button
+                                    className='mx-1'
                                     variant='outline-primary'
                                     onClick={() => setNewImageShown(true)}
                                 >

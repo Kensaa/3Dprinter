@@ -245,6 +245,39 @@ let currentTask: undefined | Task
         res.status(200).json(build)
     })
 
+    expressApp.post('/regeneratePreview', async (req, res, next) => {
+        const schema = z.object({
+            file: z.string()
+        })
+        let body
+        try {
+            body = schema.parse(req.body)
+        } catch (err) {
+            return next(err)
+        }
+        const { file } = body
+        let filepath = path.join(BUILDS_FOLDER, file)
+        if (!filepath.endsWith('.json')) filepath = filepath + '.json'
+        if (!fs.existsSync(filepath))
+            return res.status(404).send('file not found')
+        const strData = fs.readFileSync(filepath, 'utf-8')
+        let build: Build
+        try {
+            build = JSON.parse(strData)
+        } catch {
+            return res.status(400).send('file is not json')
+        }
+        if (!build.shape)
+            return res.status(400).send('file does not contain a "shape" field')
+        if (build.type !== 'image')
+            return res.status(400).send('file is not an image')
+        const imageArray = build.shape[0]
+        const image = await arrayToImage(imageArray)
+        build.preview = await image.getBase64Async(jimp.MIME_PNG)
+        fs.writeFileSync(filepath, JSON.stringify(build))
+        res.sendStatus(200)
+    })
+
     expressApp.post('/voxelize', async (req, res, next) => {
         const schema = z.object({
             file: z.string(),

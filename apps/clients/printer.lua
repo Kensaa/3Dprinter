@@ -174,102 +174,19 @@ function getHeading()
     end
 end
 
-function forward()
-    checkFuel()
-    blocked, blockData = turtle.inspect()
-    if blocked then
-        if blockData.name == "computercraft:turtle_advanced" then
-            local otherID = peripheral.call("front", "getID")
-            if otherID > os.getComputerID() then
-                sleep(1)
-                forward()
-            else 
-                up()
-                forward()
-            end
-        else
-            up()
-            forward()
-        end
-    else
-        turtle.forward()
-        if currentHeading % 4 == 1 then
-            currentPosition[1] = currentPosition[1] + 1
-        elseif currentHeading % 4 == 2 then
-            currentPosition[3] = currentPosition[3] + 1
-        elseif currentHeading % 4 == 3 then
-            currentPosition[1] = currentPosition[1] - 1
-        elseif currentHeading % 4 == 0 then
-            currentPosition[3] = currentPosition[3] - 1
-        end
-    end
+function isTurtle(blockData)
+    return blockData.name == "computercraft:turtle_advanced" or blockData.name == "computercraft:turtle_normal"
 end
 
-function backward()
-    checkFuel()
-    if not turtle.back() then
-        up()
-        backward()
-    else
-        if currentHeading % 4 == 1 then
-            currentPosition[1] = currentPosition[1] - 1
-        elseif currentHeading % 4 == 2 then
-            currentPosition[3] = currentPosition[3] - 1
-        elseif currentHeading % 4 == 3 then
-            currentPosition[1] = currentPosition[1] + 1
-        elseif currentHeading % 4 == 0 then
-            currentPosition[3] = currentPosition[3] + 1
-        end
-    end
-end
-
-function up()
-    checkFuel()
-    blocked, blockData = turtle.inspectUp()
-    if blocked then
-        if blockData.name == "computercraft:turtle_advanced" then
-            local otherID = peripheral.call("top", "getID")
-            if otherID > os.getComputerID() then
-                sleep(1)
-                up()
-            else 
-                forward()
-                up()
-                backward()
-            end
-        else
-            forward()
-            up()
-            backward()
-        end
-    else
-        turtle.up()
-        currentPosition[2] = currentPosition[2] + 1
-    end
-end
-
-function down()
-    checkFuel()
-    blocked, blockData = turtle.inspectDown()
-    if blocked then
-        if blockData.name == "computercraft:turtle_advanced" then
-            local otherID = peripheral.call("bottom", "getID")
-            if otherID > os.getComputerID() then
-                sleep(1)
-                down()
-            else 
-                forward()
-                down()
-                backward()
-            end
-        else
-            forward()
-            down()
-            backward()
-        end
-    else
-        turtle.down()
-        currentPosition[2] = currentPosition[2] - 1
+function headingStringToInt(heading)
+    if heading == "north" then
+        return 0
+    elseif heading == "east" then
+        return 1
+    elseif heading == "south" then
+        return 2
+    elseif heading == "west" then
+        return 3
     end
 end
 
@@ -281,6 +198,95 @@ end
 function turnLeft()
     turtle.turnLeft()
     currentHeading = currentHeading - 1
+end
+
+function forward()
+    while not turtle.forward() do
+        local blocked, blockData = turtle.inspect()
+        if isTurtle(blockData) then
+            print('is turtle')
+            local facing = headingStringToInt(blockData.state.facing)
+            if currentHeading % 4 == (facing + 2) % 4 then
+                -- the two turtles are facing each other
+                --dodge if the current turtle is the one with the higher id
+                if os.getComputerID() > peripheral.call("front", "getID") then
+                    print('im higher id')
+                    up()
+                else
+                    print('im lower id')
+                    sleep(1)
+                end
+            end
+        else
+            up()
+        end
+    end
+    if currentHeading % 4 == 1 then
+        currentPosition[1] = currentPosition[1] + 1
+    elseif currentHeading % 4 == 2 then
+        currentPosition[3] = currentPosition[3] + 1
+    elseif currentHeading % 4 == 3 then
+        currentPosition[1] = currentPosition[1] - 1
+    elseif currentHeading % 4 == 0 then
+        currentPosition[3] = currentPosition[3] - 1
+    end
+end
+
+function backward()
+    while not turtle.back() do
+        turnRight()
+        turnRight()
+        local _, blockData = turtle.inspect()
+        turnRight()
+        turnRight()
+        if isTurtle(blockData) then
+            local facing = headingStringToInt(blockData.state.facing)
+            if currentHeading % 4 == (facing + 2) % 4 then
+                -- the two turtles are facing each other
+                --dodge if the current turtle is the one with the higher id
+                if os.getComputerID() > peripheral.call("back", "getID") then
+                    backward()
+                else
+                    sleep(1)
+                end
+            end
+        else
+            backward()
+        end
+    end
+    if currentHeading % 4 == 1 then
+        currentPosition[1] = currentPosition[1] - 1
+    elseif currentHeading % 4 == 2 then
+        currentPosition[3] = currentPosition[3] - 1
+    elseif currentHeading % 4 == 3 then
+        currentPosition[1] = currentPosition[1] + 1
+    elseif currentHeading % 4 == 0 then
+        currentPosition[3] = currentPosition[3] + 1
+    end
+end
+
+function up()
+    while not turtle.up() do
+        local _, blockData = turtle.inspectUp()
+        if isTurtle(blockData) then
+            sleep(1)
+        else
+            forward()
+        end
+    end
+    currentPosition[2] = currentPosition[2] + 1
+end
+
+function down()
+    while not turtle.down() do
+        local _, blockData = turtle.inspectDown()
+        if isTurtle(blockData) then
+            sleep(1)
+        else
+            forward()
+        end
+    end
+    currentPosition[2] = currentPosition[2] - 1
 end
     
 
@@ -327,8 +333,7 @@ end
 
 function headTo(heading)
     while currentHeading % 4 ~= heading % 4 do
-        turtle.turnRight()
-        currentHeading = currentHeading + 1
+        turnRight()
     end
 end
 
@@ -528,7 +533,7 @@ function handleData(JSONData)
     log('building a '..width..'x'..depth..'x'..height..' shape at '..x..','..y..','..z)
     print('max height: '..buildMaxHeight)
     setState('moving')
-    goTo(x,y+1,z,buildMaxHeight)
+    goTo(x,y+1,z,buildMaxHeight+2)
     headTo(heading)
     setState('building')
     build(data,height,depth,width)
@@ -595,7 +600,7 @@ while true do
     end
     print('no part available')
     setState('moving')
-    goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight)
+    goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight+2)
     headTo(homeHeading)
     log("back to home position, waiting for order")
     setState('idle')
