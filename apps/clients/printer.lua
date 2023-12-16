@@ -609,7 +609,10 @@ function remoteManager()
                 elseif remoteCommand == 'turnLeft' then
                     turnLeft()
                 elseif remoteCommand == 'goTo' then
+                    local pState = currentState
+                    setState('moving')
                     goTo(currentMessage['x'],currentMessage['y'],currentMessage['z'])
+                    setState(pState)
                 end
                 currentMessage = nil
             end
