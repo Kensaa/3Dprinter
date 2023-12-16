@@ -16,7 +16,6 @@ import type {
     PrinterState,
     Printer
 } from 'printer-types'
-import { convertSchematic } from './schematic'
 
 const WEB_SERVER_PORT = parseInt(process.env.PORT ?? '9513')
 const BUILDS_FOLDER =
@@ -299,32 +298,6 @@ let currentTask: undefined | Task
             shape: output
         }
         res.status(200).json(build)
-    })
-
-    expressApp.post('/convertSchematic', async (req, res, next) => {
-        const schema = z.object({
-            schematic: z.string()
-        })
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { schematic: schematicBase64 } = body
-        const schematic = Buffer.from(schematicBase64, 'base64')
-        convertSchematic(schematic)
-            .then(shape => {
-                const build: Build = {
-                    type: 'model',
-                    shape
-                }
-
-                res.status(200).json(build)
-            })
-            .catch(err => {
-                res.status(400).send(err.message)
-            })
     })
 
     expressApp.post('/build', async (req, res) => {
