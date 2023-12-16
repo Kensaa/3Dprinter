@@ -46,6 +46,12 @@ body,
     user-select: none;
 }
 
+.medium-modal {
+    max-width: 100% !important;
+    width: 60%;
+    height: 70%;
+}
+
 .large-modal {
     max-width: 100% !important;
     width: 80%;

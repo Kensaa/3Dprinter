@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useEffect, useState } from 'react'
 import configStore from '../stores/config'
-import { Button, Modal, Form, Row, Col, Alert } from 'react-bootstrap'
+import { Modal, Form, Row, Col, Alert } from 'react-bootstrap'
+import Button from '../components/Button'
 import BuildPreview from '../components/BuildPreview'
 import { useLocation } from 'wouter'
 

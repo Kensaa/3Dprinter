@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState } from 'react'
-import { Button, Modal, Form } from 'react-bootstrap'
+import { Modal, Form } from 'react-bootstrap'
+import Button from '../components/Button'
 import { FileUploader } from 'react-drag-drop-files'
 import dataStore from '../stores/data'
 import configStore from '../stores/config'

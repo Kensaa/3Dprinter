@@ -7,7 +7,7 @@ import configStore from '../stores/config'
 import dataStore from '../stores/data'
 import { Color, InstancedMesh, Object3D } from 'three'
 import { count3DArray, rotate3DArray } from '../utils/arrayUtils'
-import { Button } from 'react-bootstrap'
+import Button from '../components/Button'
 
 interface ModelViewerProps {
     buildName: string

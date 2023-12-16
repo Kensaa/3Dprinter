@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState, useEffect } from 'react'
 import AppNavbar from '../components/AppNavbar'
 import dataStore from '../stores/data'
 import Selector from '../components/Selector'
-import { Button } from 'react-bootstrap'
+import Button from '../components/Button'
 import BuildModal from '../modals/BuildModal'
 import NewModelModal from '../modals/NewModelModal'
 import NewImageModal from '../modals/NewImageModal'
@@ -39,37 +38,28 @@ export default function Homepage() {
                             onChange={setSelectedBuild}
                         />
                         <div className='w-100 d-flex justify-content-between'>
-                            {
-                                //@ts-ignore
-                                <Button
-                                    className='mx-1'
-                                    disabled={!selectedBuild}
-                                    variant='outline-success'
-                                    onClick={() => setBuildModalShown(true)}
-                                >
-                                    Build
-                                </Button>
-                            }
-                            {
-                                //@ts-ignore
-                                <Button
-                                    className='mx-1'
-                                    variant='outline-primary'
-                                    onClick={() => setNewModelShown(true)}
-                                >
-                                    Convert a 3D model
-                                </Button>
-                            }
-                            {
-                                //@ts-ignore
-                                <Button
-                                    className='mx-1'
-                                    variant='outline-primary'
-                                    onClick={() => setNewImageShown(true)}
-                                >
-                                    Convert an image
-                                </Button>
-                            }
+                            <Button
+                                className='mx-1'
+                                disabled={!selectedBuild}
+                                variant='outline-success'
+                                onClick={() => setBuildModalShown(true)}
+                            >
+                                Build
+                            </Button>
+                            <Button
+                                className='mx-1'
+                                variant='outline-primary'
+                                onClick={() => setNewModelShown(true)}
+                            >
+                                Convert a 3D model
+                            </Button>
+                            <Button
+                                className='mx-1'
+                                variant='outline-primary'
+                                onClick={() => setNewImageShown(true)}
+                            >
+                                Convert an image
+                            </Button>
                         </div>
                     </div>
 
