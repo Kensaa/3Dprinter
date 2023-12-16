@@ -204,7 +204,6 @@ function forward()
     while not turtle.forward() do
         local blocked, blockData = turtle.inspect()
         if isTurtle(blockData) then
-            print('is turtle')
             local facing = headingStringToInt(blockData.state.facing)
             if currentHeading % 4 == (facing + 2) % 4 then
                 -- the two turtles are facing each other
