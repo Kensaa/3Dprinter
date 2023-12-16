@@ -193,9 +193,14 @@ let currentTask: undefined | Task
 
         res.status(200).json(builds)
     })
-    expressApp.post('/editBuilds', (req, res) => {
+    expressApp.post('/editBuilds', (req, res, next) => {
         const schema = z.record(z.string(), buildSchema)
-        const body = schema.parse(req.body)
+        let body
+        try {
+            body = schema.parse(req.body)
+        } catch (err) {
+            return next(err)
+        }
         for (const key of Object.keys(body)) {
             const build = body[key]
             fs.writeFileSync(
@@ -300,14 +305,20 @@ let currentTask: undefined | Task
         res.status(200).json(build)
     })
 
-    expressApp.post('/build', async (req, res) => {
+    expressApp.post('/build', async (req, res, next) => {
         const schema = z.object({
             file: z.string(),
             pos: z.array(z.number()).length(3),
             heading: z.number().gte(1).lte(4).default(1)
         })
 
-        const { file, pos, heading } = schema.parse(req.body)
+        let body
+        try {
+            body = schema.parse(req.body)
+        } catch (err) {
+            return next(err)
+        }
+        const { file, pos, heading } = body
         //const printerCount: number = 9
         const connectedPrinters = printers.filter(p => p.connected)
         const printerCount = connectedPrinters.length
@@ -428,7 +439,7 @@ let currentTask: undefined | Task
         }
     })
 
-    expressApp.post('/remote', async (req, res) => {
+    expressApp.post('/remote', async (req, res, next) => {
         const schema = z.object({
             printer: z.number(),
             command: z.enum([
@@ -443,8 +454,13 @@ let currentTask: undefined | Task
             ]),
             data: z.number().array().optional()
         })
-
-        const { printer, command, data } = schema.parse(req.body)
+        let body
+        try {
+            body = schema.parse(req.body)
+        } catch (err) {
+            return next(err)
+        }
+        const { printer, command, data } = body
         const current = printers.find(p => p.id === printer)
         if (!current) return res.status(404).send('printer not found')
         if (!current.connected)
