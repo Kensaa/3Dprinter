@@ -427,6 +427,31 @@ let currentTask: undefined | Task
             await wait(200)
         }
     })
+
+    expressApp.post('/remote', async (req, res) => {
+        const schema = z.object({
+            printer: z.number(),
+            command: z.enum([
+                'forward',
+                'backward',
+                'turnRight',
+                'turnLeft',
+                'up',
+                'down',
+                'goTo'
+            ])
+        })
+
+        const { printer, command } = schema.parse(req.body)
+        const current = printers.find(p => p.id === printer)
+        if (!current) return res.status(404).send('printer not found')
+        if (!current.connected)
+            return res.status(404).send('printer not connected')
+
+        await sendAsync(current.ws, JSON.stringify({ type: 'remote', command }))
+        res.sendStatus(200)
+    })
+
     const CLIENTS_PATH = path.resolve(
         process.env.NODE_ENV === 'production'
             ? './clients/'

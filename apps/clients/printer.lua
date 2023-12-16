@@ -379,8 +379,7 @@ function build(data, height, depth, width)
                 local row = layer[z]
                 print('row n°' .. z..', Xdir: '..Xdir)
                 send({type = 'setPos', pos=currentPosition})
-                
-    
+                              
                 if startIndexes[z] == nil and z ~= depth then
                     --last row --> don't have to take shortcut --> break everything
                     print('line is empty')
@@ -462,7 +461,6 @@ function build(data, height, depth, width)
                                 end
                             end
                         end
-    
                     end
                 end
                 progress = (y - 1  + (z - 1) / depth) / height * 100
@@ -507,7 +505,6 @@ function handleData(JSONData)
     local heightOffset = tonumber(JSONData['heightOffset'])
     local depthOffset = tonumber(JSONData['depthOffset'])
     local widthOffset = tonumber(JSONData['widthOffset'])
-    
 
     local x = tonumber(pos[1])
     local y = tonumber(pos[2])
@@ -543,42 +540,6 @@ function handleData(JSONData)
     send({type="nextPart"})
 end
 
-function partReception()
-    print('waiting for message')
-    local _, _, response, isBinary = os.pullEvent("websocket_message")
-    if isBinary then
-        print('received binary message')
-        return
-    end
-    print('received message')
-    local JSONResponse = json.decode(response)
-
-    buildData = ''
-    if(JSONResponse['type'] == 'sendStart') then
-        print('starting receiving data chunk')
-        finished = false
-        i = 0
-        while not finished do
-            local _, _, response, isBinary = os.pullEvent("websocket_message")
-            if isBinary then
-                return
-            end
-            local JSONResponse = json.decode(response)
-            if(JSONResponse['type'] == 'chunk') then
-                print('new chunk received : '..i)
-                buildData = buildData .. JSONResponse['chunk']
-                i = i + 1
-            elseif JSONResponse['type'] == 'sendEnd' then
-                finished = true
-                print('finished receiving data chunk')
-                return json.decode(buildData)
-            end
-        end
-    else
-        return false
-    end
-end
-
 currentPosition = {locate()}
 homePosition = {currentPosition[1],currentPosition[2],currentPosition[3]}
 currentState = ''
@@ -590,18 +551,71 @@ homeHeading = currentHeading
 
 checkFuel()
 
-while true do
-    part = partReception()
-    
-    while (part ~= false) do
-        print('new part available')
-        handleData(part)
-        part = partReception()            
+local currentMessage = nil
+
+function receive()
+    while true do
+        local _, _, response, isBinary = os.pullEvent("websocket_message")
+        if not isBinary then
+            currentMessage = json.decode(response)
+        end
     end
-    print('no part available')
-    setState('moving')
-    goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight+2)
-    headTo(homeHeading)
-    log("back to home position, waiting for order")
-    setState('idle')
+end
+
+function buildManager()
+    local buildData = ''
+    while true do
+        if currentMessage ~= nil then
+            if currentMessage['type'] == 'sendStart' then
+                buildData = ''
+                currentMessage = nil
+            elseif currentMessage['type'] == 'chunk' then
+                buildData = buildData .. currentMessage['chunk']
+                currentMessage = nil
+            elseif currentMessage['type'] == 'sendEnd' then
+                currentMessage = nil
+                handleData(json.decode(buildData))
+            elseif currentMessage['type'] == 'noNextPart' then
+                currentMessage = nil
+                setState('moving')
+                goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight+2)
+                headTo(homeHeading)
+                log("back to home position, waiting for order")
+                setState('idle')
+            end
+        end
+        coroutine.yield()
+    end
+end
+
+function remoteManager()
+    while true do
+        if currentMessage ~= nil then
+            if currentMessage['type'] == 'remote' then
+                local remoteCommand = currentMessage['command']
+                print('received remote command : '..remoteCommand)
+                if remoteCommand == 'forward' then
+                    forward()
+                elseif remoteCommand == 'backward' then
+                    backward()
+                elseif remoteCommand == 'up' then
+                    up()
+                elseif remoteCommand == 'down' then
+                    down()
+                elseif remoteCommand == 'turnRight' then
+                    turnRight()
+                elseif remoteCommand == 'turnLeft' then
+                    turnLeft()
+                elseif remoteCommand == 'goTo' then
+                    goTo(currentMessage['x'],currentMessage['y'],currentMessage['z'])
+                end
+                currentMessage = nil
+            end
+        end
+        coroutine.yield()
+    end
+end
+
+while true do
+    parallel.waitForAll(receive, buildManager, remoteManager)
 end
