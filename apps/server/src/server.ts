@@ -481,7 +481,8 @@ let currentTask: undefined | Task
 
     console.log('clients folder :', CLIENTS_PATH)
     expressApp.get('/clients/:file', (req, res) => {
-        const file = req.params.file
+        let file = req.params.file
+        if (!file.endsWith('.lua')) file = file + '.lua'
         const filepath = path.join(CLIENTS_PATH, file)
         let fileContent = fs.readFileSync(filepath, 'utf-8')
 
