@@ -216,7 +216,6 @@ function forward()
                         currentPosition[2] = currentPosition[2] - 1
                     end
                     
-                    up()
                 else
                     print('im lower id')
                     sleep(1)
