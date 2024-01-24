@@ -95,3 +95,8 @@ textarea textarea:focus {
     flex-direction: column;
     align-items: center;
 }
+
+.tooltip .tooltip-inner {
+    z-index: 99999;
+    color: black;
+}

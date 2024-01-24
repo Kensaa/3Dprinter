@@ -637,6 +637,12 @@ function remoteManager()
                     headTo(currentMessage['data'][1])
                 elseif remoteCommand == 'refuel' then
                     refuel()
+                elseif remoteCommand == 'emptyInventory' then
+                    for i = 1,14 do
+                        turtle.select(i)
+                        turtle.dropDown()
+                    end
+                    turtle.select(1)
                 end
                 currentMessage = nil
             end

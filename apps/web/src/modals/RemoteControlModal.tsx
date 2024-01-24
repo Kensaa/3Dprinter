@@ -8,6 +8,7 @@ import {
     Fuel,
     MoveDown,
     MoveUp,
+    PackageX,
     RotateCcw,
     RotateCw
 } from 'lucide-react'
@@ -72,6 +73,11 @@ export default function RemoteControlModal({
                     <CommandButton
                         name='refuel'
                         icon={Fuel}
+                        printer={printer}
+                    />
+                    <CommandButton
+                        name='emptyInventory'
+                        icon={PackageX}
                         printer={printer}
                     />
                 </div>

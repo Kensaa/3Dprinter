@@ -458,7 +458,8 @@ const logs: string[] = []
                 'down',
                 'goTo',
                 'headTo',
-                'refuel'
+                'refuel',
+                'emptyInventory'
             ]),
             data: z.number().array().optional()
         })
