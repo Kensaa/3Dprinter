@@ -14,8 +14,8 @@ import {
 } from 'lucide-react'
 import { useAddress } from '../stores/config'
 
-interface BuildModalProps {
-    printer: Printer
+interface RemoteControlModalProps {
+    printers: Printer[]
     show: boolean
     hide: () => void
 }
@@ -23,66 +23,69 @@ interface BuildModalProps {
 export default function RemoteControlModal({
     show,
     hide,
-    printer
-}: BuildModalProps) {
+    printers
+}: RemoteControlModalProps) {
+    const name =
+        printers.length > 1 ? 'Multiple Printer' : `"${printers[0].label}"`
+
     return (
         <Modal show={show} onHide={hide}>
             <Modal.Header closeButton>
-                <Modal.Title>Remote Controlling "{printer.label}"</Modal.Title>
+                <Modal.Title>Remote Controlling {name}</Modal.Title>
             </Modal.Header>
             <Modal.Body className='d-flex flex-column align-items-center justify-content-center'>
                 <div className='m-1'>
                     <CommandButton
                         name='forward'
                         icon={MoveUp}
-                        printer={printer}
+                        printers={printers}
                     />
                 </div>
                 <div className='m-1'>
                     <CommandButton
                         name='turnLeft'
                         icon={RotateCcw}
-                        printer={printer}
+                        printers={printers}
                     />
                     <CommandButton
                         name='turnRight'
                         icon={RotateCw}
-                        printer={printer}
+                        printers={printers}
                     />
                 </div>
                 <div className='m-1'>
                     <CommandButton
                         name='backward'
                         icon={MoveDown}
-                        printer={printer}
+                        printers={printers}
                     />
                 </div>
                 <div className='m-1'>
                     <CommandButton
                         name='down'
                         icon={ArrowDownToLine}
-                        printer={printer}
+                        printers={printers}
                     />
                     <CommandButton
                         name='up'
                         icon={ArrowUpFromLine}
-                        printer={printer}
+                        printers={printers}
                     />
                 </div>
                 <div className='mt-3'>
                     <CommandButton
                         name='refuel'
                         icon={Fuel}
-                        printer={printer}
+                        printers={printers}
                     />
                     <CommandButton
                         name='emptyInventory'
                         icon={PackageX}
-                        printer={printer}
+                        printers={printers}
                     />
                 </div>
-                <GoToForm printer={printer} />
-                <HeadToForm printer={printer} />
+                <GoToForm printers={printers} />
+                <HeadToForm printers={printers} />
             </Modal.Body>
         </Modal>
     )
@@ -91,21 +94,22 @@ export default function RemoteControlModal({
 type CommandButtonProps = {
     name: string
     icon: React.FunctionComponent
-    printer: Printer
+    printers: Printer[]
 }
 
-function CommandButton({ name, icon, printer }: CommandButtonProps) {
+function CommandButton({ name, icon, printers }: CommandButtonProps) {
     const address = useAddress()
     const action = () => {
-        // TODO : POST REQUEST
         console.log(name)
-        fetch(`${address}/remote`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ printer: printer.id, command: name })
-        })
+        for (const printer of printers) {
+            fetch(`${address}/remote`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ printer: printer.id, command: name })
+            })
+        }
     }
 
     return (
@@ -116,10 +120,10 @@ function CommandButton({ name, icon, printer }: CommandButtonProps) {
 }
 
 interface GoToFormProps {
-    printer: Printer
+    printers: Printer[]
 }
 
-function GoToForm({ printer }: GoToFormProps) {
+function GoToForm({ printers }: GoToFormProps) {
     const [x, setX] = useState<number | undefined>()
     const [y, setY] = useState<number | undefined>()
     const [z, setZ] = useState<number | undefined>()
@@ -133,18 +137,19 @@ function GoToForm({ printer }: GoToFormProps) {
         if (!(x && y && z)) {
             return
         }
-
-        fetch(`${address}/remote`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                printer: printer.id,
-                command: 'goTo',
-                data: [x, y, z]
+        for (const printer of printers) {
+            fetch(`${address}/remote`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    printer: printer.id,
+                    command: 'goTo',
+                    data: [x, y, z]
+                })
             })
-        })
+        }
     }
 
     const pasteShortcut = (e: React.ClipboardEvent) => {
@@ -199,7 +204,7 @@ function GoToForm({ printer }: GoToFormProps) {
 }
 
 const headings = ['East', 'South', 'West', 'North']
-function HeadToForm({ printer }: GoToFormProps) {
+function HeadToForm({ printers }: GoToFormProps) {
     const [heading, setHeading] = useState<number>(0)
 
     const address = useAddress()
@@ -208,18 +213,19 @@ function HeadToForm({ printer }: GoToFormProps) {
         console.log('aa')
         e.preventDefault()
         e.stopPropagation()
-
-        fetch(`${address}/remote`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                printer: printer.id,
-                command: 'headTo',
-                data: [heading + 1]
+        for (const printer of printers) {
+            fetch(`${address}/remote`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    printer: printer.id,
+                    command: 'headTo',
+                    data: [heading + 1]
+                })
             })
-        })
+        }
     }
 
     return (

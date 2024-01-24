@@ -22,6 +22,8 @@ export default function PrinterTable({
         [printers]
     )
 
+    const [controlingAllPrinters, setControllingAllPrinters] = useState(false)
+
     if (sortedPrinters.length === 0) {
         return (
             <div
@@ -53,6 +55,18 @@ export default function PrinterTable({
                     ))}
                 </tbody>
             </Table>
+            <Button
+                variant='outline-primary'
+                onClick={() => setControllingAllPrinters(true)}
+            >
+                Remote control all printers
+            </Button>
+
+            <RemoteControlModal
+                hide={() => setControllingAllPrinters(false)}
+                printers={sortedPrinters}
+                show={controlingAllPrinters}
+            />
         </>
     )
 }
@@ -89,7 +103,7 @@ function TableRow({ printer }: TableRowProps) {
             </tr>
             <RemoteControlModal
                 hide={() => setControlling(false)}
-                printer={printer}
+                printers={[printer]}
                 show={controlling}
             />
         </>
