@@ -5,6 +5,7 @@ import { Printer } from '../utils/types'
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
+    Fuel,
     MoveDown,
     MoveUp,
     RotateCcw,
@@ -64,6 +65,13 @@ export default function RemoteControlModal({
                     <CommandButton
                         name='up'
                         icon={ArrowUpFromLine}
+                        printer={printer}
+                    />
+                </div>
+                <div className='mt-3'>
+                    <CommandButton
+                        name='refuel'
+                        icon={Fuel}
                         printer={printer}
                     />
                 </div>

@@ -63,6 +63,18 @@ function checkFuel()
     end
 end
 
+function refuel()
+    currentSlot = turtle.getSelectedSlot()
+    previousState = currentState
+    setState('refueling')
+    for slot=1,14 do
+        turtle.select(slot)
+        turtle.refuel()
+    end
+    turtle.select(currentSlot)
+    setState(previousState)
+end
+
 function place()
     local slot = 0
     while turtle.getItemCount() == 0 do
@@ -621,6 +633,8 @@ function remoteManager()
                     setState(pState)
                 elseif remoteCommand == 'headTo' then
                     headTo(currentMessage['data'][1])
+                elseif remoteCommand == 'refuel' then
+                    refuel()
                 end
                 currentMessage = nil
             end

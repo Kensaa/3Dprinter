@@ -450,7 +450,8 @@ let currentTask: undefined | Task
                 'up',
                 'down',
                 'goTo',
-                'headTo'
+                'headTo',
+                'refuel'
             ]),
             data: z.number().array().optional()
         })
