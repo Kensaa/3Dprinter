@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useEffect, useState } from 'react'
-import configStore from '../stores/config'
+import { useAddress } from '../stores/config'
 import { Modal, Form, Row, Col, Alert } from 'react-bootstrap'
 import Button from '../components/Button'
 import BuildPreview from '../components/BuildPreview'
@@ -20,7 +20,7 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
     const headings = ['East', 'South', 'West', 'North']
     const [heading, setHeading] = useState(0)
 
-    const address = configStore(store => store.address)
+    const address = useAddress()
 
     const [error, setError] = useState('')
 

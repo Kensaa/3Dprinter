@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import AppNavbar from '../components/AppNavbar'
-import dataStore from '../stores/data'
+import { useBuilds } from '../stores/data'
 import Selector from '../components/Selector'
 import Button from '../components/Button'
 import BuildModal from '../modals/BuildModal'
@@ -9,10 +9,7 @@ import NewImageModal from '../modals/NewImageModal'
 import BuildPreview from '../components/BuildPreview'
 
 export default function Homepage() {
-    const { builds, fetchBuilds } = dataStore(state => ({
-        builds: state.builds,
-        fetchBuilds: state.fetchBuilds
-    }))
+    const { builds, fetchBuilds } = useBuilds()
     const [buildModalShown, setBuildModalShown] = useState(false)
 
     const [newModelShown, setNewModelShown] = useState(false)

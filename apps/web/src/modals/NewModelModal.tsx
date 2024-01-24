@@ -3,8 +3,8 @@ import { useState } from 'react'
 import { Modal, Form } from 'react-bootstrap'
 import Button from '../components/Button'
 import { FileUploader } from 'react-drag-drop-files'
-import dataStore from '../stores/data'
-import configStore from '../stores/config'
+import { useBuilds } from '../stores/data'
+import { useAddress } from '../stores/config'
 
 interface NewModelModalProps {
     show: boolean
@@ -16,8 +16,8 @@ export default function NewModelModal({ show, hide }: NewModelModalProps) {
     const [scale, setScale] = useState(20)
     const [objectFile, setObjectFile] = useState('')
 
-    const updateBuild = dataStore(state => state.updateBuild)
-    const address = configStore(store => store.address)
+    const { updateBuild } = useBuilds()
+    const address = useAddress()
 
     const handleFileUpload = (file: File) => {
         console.log(file)

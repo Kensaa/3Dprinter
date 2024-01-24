@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react'
 import { Modal, Form } from 'react-bootstrap'
 import Button from '../components/Button'
-import dataStore from '../stores/data'
+import { useBuilds } from '../stores/data'
 import { FileUploader } from 'react-drag-drop-files'
-import configStore from '../stores/config'
+import { useAddress } from '../stores/config'
 import ImageViewer from '../components/ImageViewer'
 import type { Build } from '../utils/types'
 
@@ -28,8 +28,8 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
         shape: number[][][]
     }>()
 
-    const updateBuild = dataStore(state => state.updateBuild)
-    const address = configStore(state => state.address)
+    const { updateBuild } = useBuilds()
+    const address = useAddress()
 
     const handleFileUpload = (file: File) => {
         console.log(file)

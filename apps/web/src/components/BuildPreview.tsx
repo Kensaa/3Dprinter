@@ -1,13 +1,13 @@
 import ModelViewer from './ModelViewer'
 import ImageViewer from './ImageViewer'
-import useDataStore from '../stores/data'
+import { useBuilds } from '../stores/data'
 
 interface BuildPreviewProps {
     buildName?: string
 }
 
 export default function BuildPreview({ buildName }: BuildPreviewProps) {
-    const builds = useDataStore(store => store.builds)
+    const { builds } = useBuilds()
 
     if (!buildName || !builds[buildName]) {
         return <div></div>

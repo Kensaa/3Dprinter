@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Build, Printer, Task } from '../utils/types'
-import config from './config'
+import { useConfig } from './config'
 
 interface dataStore {
     builds: Record<string, Build>
@@ -12,16 +12,16 @@ interface dataStore {
     updateBuild: (name: string, build: Build) => void
 }
 
-export default create<dataStore>((set, get) => {
+const store = create<dataStore>((set, get) => {
     const fetchBuilds = () => {
-        const { address } = config.getState()
+        const { address } = useConfig.getState()
         fetch(`${address}/builds`, { method: 'GET' })
             .then(res => res.json())
             .then(data => data as Record<string, Build>)
             .then(builds => set({ builds }))
     }
     const fetchPrinters = () => {
-        const { address } = config.getState()
+        const { address } = useConfig.getState()
         fetch(`${address}/printers`, { method: 'GET' })
             .then(res => res.json())
             .then(data => data as Printer[])
@@ -29,7 +29,7 @@ export default create<dataStore>((set, get) => {
     }
 
     const fetchCurrentTask = () => {
-        const { address } = config.getState()
+        const { address } = useConfig.getState()
         fetch(`${address}/current`, { method: 'GET' })
             .then(res => {
                 if (res.status === 404) return undefined
@@ -40,7 +40,7 @@ export default create<dataStore>((set, get) => {
     }
 
     const updateBuild = (name: string, build: Build) => {
-        const { address } = config.getState()
+        const { address } = useConfig.getState()
         const builds = get().builds
         builds[name] = build
         set({ builds })
@@ -60,9 +60,29 @@ export default create<dataStore>((set, get) => {
     return {
         builds: {},
         printers: [],
+        currentTask: undefined,
         fetchBuilds,
         fetchPrinters,
         fetchCurrentTask,
         updateBuild
     }
 })
+
+export const useData = store
+
+export const useBuilds = () =>
+    useData(state => ({
+        builds: state.builds,
+        fetchBuilds: state.fetchBuilds,
+        updateBuild: state.updateBuild
+    }))
+export const usePrinters = () =>
+    useData(state => ({
+        printers: state.printers,
+        fetchPrinters: state.fetchPrinters
+    }))
+export const useCurrentTask = () =>
+    useData(state => ({
+        currentTask: state.currentTask,
+        fetchCurrentTask: state.fetchCurrentTask
+    }))

@@ -11,7 +11,7 @@ import {
     RotateCcw,
     RotateCw
 } from 'lucide-react'
-import configStore from '../stores/config'
+import { useAddress } from '../stores/config'
 
 interface BuildModalProps {
     printer: Printer
@@ -89,7 +89,7 @@ type CommandButtonProps = {
 }
 
 function CommandButton({ name, icon, printer }: CommandButtonProps) {
-    const address = configStore(store => store.address)
+    const address = useAddress()
     const action = () => {
         // TODO : POST REQUEST
         console.log(name)
@@ -118,7 +118,7 @@ function GoToForm({ printer }: GoToFormProps) {
     const [y, setY] = useState<number | undefined>()
     const [z, setZ] = useState<number | undefined>()
 
-    const address = configStore(store => store.address)
+    const address = useAddress()
 
     const submit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -196,7 +196,7 @@ const headings = ['East', 'South', 'West', 'North']
 function HeadToForm({ printer }: GoToFormProps) {
     const [heading, setHeading] = useState<number>(0)
 
-    const address = configStore(store => store.address)
+    const address = useAddress()
 
     const submit = (e: React.FormEvent<HTMLFormElement>) => {
         console.log('aa')

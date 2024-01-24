@@ -1,17 +1,12 @@
 import AppNavbar from '../components/AppNavbar'
-import dataStore from '../stores/data'
+import { useCurrentTask, usePrinters } from '../stores/data'
 import PrinterTable from '../components/PrinterTable'
 import { useInterval } from 'usehooks-ts'
 import type { Task } from '../utils/types'
 
 export default function Printerpage() {
-    const { printers, currentTask, fetchPrinters, fetchCurrentTask } =
-        dataStore(state => ({
-            printers: state.printers,
-            currentTask: state.currentTask,
-            fetchPrinters: state.fetchPrinters,
-            fetchCurrentTask: state.fetchCurrentTask
-        }))
+    const { printers, fetchPrinters } = usePrinters()
+    const { currentTask, fetchCurrentTask } = useCurrentTask()
 
     useInterval(() => {
         fetchPrinters()

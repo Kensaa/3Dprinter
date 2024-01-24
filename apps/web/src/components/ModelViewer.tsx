@@ -3,8 +3,8 @@ import { useRef, useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
 import type { Build } from '../utils/types'
-import configStore from '../stores/config'
-import dataStore from '../stores/data'
+import { useConfig } from '../stores/config'
+import { useBuilds } from '../stores/data'
 import { Color, InstancedMesh, Object3D } from 'three'
 import { count3DArray, rotate3DArray } from '../utils/arrayUtils'
 import Button from '../components/Button'
@@ -20,11 +20,8 @@ export default function ModelViewer({
     width = '25%',
     height = '50%'
 }: ModelViewerProps) {
-    const disableRender = configStore(store => store.disableRender)
-    const { updateBuild, builds } = dataStore(store => ({
-        updateBuild: store.updateBuild,
-        builds: store.builds
-    }))
+    const disableRender = useConfig(store => store.disableRender)
+    const { updateBuild, builds } = useBuilds()
 
     const [build, setBuild] = useState<Build>()
 
