@@ -1,4 +1,6 @@
 gpsTry = 5
+blockType = "minecraft:cobblestone"
+
 local url = "$WS_URL$"
 if not fs.exists('json.lua') then
     shell.run('wget https://raw.githubusercontent.com/rxi/json.lua/master/json.lua json.lua')
@@ -77,7 +79,7 @@ end
 
 function place()
     local slot = 0
-    while turtle.getItemCount() == 0 do
+    while turtle.getItemCount() == 0 or turtle.getItemDetail().name ~= blockType do
         slot = slot + 1
         if slot == 15 then
             restock()
