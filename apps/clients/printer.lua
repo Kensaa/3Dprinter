@@ -210,6 +210,12 @@ function forward()
                 --dodge if the current turtle is the one with the higher id
                 if os.getComputerID() > peripheral.call("front", "getID") then
                     print('im higher id')
+                    if turtle.up() then
+                        currentPosition[2] = currentPosition[2] + 1
+                    elseif turtle.down() then
+                        currentPosition[2] = currentPosition[2] - 1
+                    end
+                    
                     up()
                 else
                     print('im lower id')
