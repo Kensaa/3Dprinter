@@ -1,6 +1,7 @@
 import { Switch, Route, Redirect } from 'wouter'
 import Homepage from './pages/Homepage'
 import Printerpage from './pages/Printerpage'
+import Logpage from './pages/Logpage'
 
 export default function App() {
     return (
@@ -10,6 +11,9 @@ export default function App() {
             </Route>
             <Route path='/dashboard'>
                 <Printerpage />
+            </Route>
+            <Route path='/logs'>
+                <Logpage />
             </Route>
             <Route>
                 <Redirect to='/' />

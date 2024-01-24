@@ -55,6 +55,8 @@ async function sendAsync(ws: ws.WebSocket, data: string) {
 }
 
 let currentTask: undefined | Task
+const logs: string[] = []
+
 ;(async () => {
     const expressApp = express()
     expressApp.use(express.json({ limit: '5000mb' }))
@@ -93,7 +95,12 @@ let currentTask: undefined | Task
             if (msg.type == 'log') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
-                console.log(`[${getTime()}] (${printer.label}): ${msg.message}`)
+                const logMsg = `[${getTime()}] (${printer.label}): ${
+                    msg.message
+                }`
+                console.log(logMsg)
+                logs.push(logMsg)
+                if (logs.length > 400) logs.shift()
             } else if (msg.type === 'register') {
                 const printer = printers.find(
                     p => p.id === msg.id && p.label === msg.label
@@ -472,6 +479,10 @@ let currentTask: undefined | Task
             JSON.stringify({ type: 'remote', command, data })
         )
         res.sendStatus(200)
+    })
+
+    expressApp.get('/logs', (req, res) => {
+        res.status(200).json(logs)
     })
 
     const CLIENTS_PATH = path.resolve(
