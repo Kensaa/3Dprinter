@@ -127,6 +127,7 @@ function countA(a)
     end
     return c
 end
+
 function maxA(a)
     maxI = 0
     for k,v in pairs(a) do
@@ -571,6 +572,8 @@ currentHeading = getHeading()
 homeHeading = currentHeading
 
 checkFuel()
+
+send({type = 'currentPart'})
 
 local currentMessage = nil
 

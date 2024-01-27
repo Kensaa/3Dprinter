@@ -40,7 +40,8 @@ const websocketMessageSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('setState'), state: z.string() }),
     z.object({ type: z.literal('setPos'), pos: z.array(z.number()).length(3) }),
     z.object({ type: z.literal('setProgress'), progress: z.number() }),
-    z.object({ type: z.literal('nextPart') })
+    z.object({ type: z.literal('nextPart') }),
+    z.object({ type: z.literal('currentPart') })
 ])
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -138,34 +139,47 @@ const logs: string[] = []
             } else if (msg.type === 'nextPart') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
-                if (!currentTask)
+                if (!currentTask) {
+                    printer.partIndex = undefined
                     return await sendAsync(
                         printer.ws,
                         JSON.stringify({ type: 'noNextPart' })
                     )
-
+                }
                 currentTask.completedParts++
-                if (currentTask.length === currentTask.completedParts) {
+                if (currentTask.parts.length === currentTask.completedParts) {
                     currentTask = undefined
+                    printer.partIndex = undefined
                     return await sendAsync(
                         printer.ws,
                         JSON.stringify({ type: 'noNextPart' })
                     )
                 } else {
-                    if (currentTask.queue.length === 0) {
+                    if (currentTask.nextPart === currentTask.parts.length) {
+                        printer.partIndex = undefined
                         await sendAsync(
                             printer.ws,
                             JSON.stringify({ type: 'noNextPart' })
                         )
                     } else {
-                        const nextMsg = currentTask.queue.shift()
-                        if (!nextMsg) {
+                        const nextPart =
+                            currentTask.parts[currentTask.nextPart] ?? undefined
+                        if (!nextPart) {
                             currentTask = undefined
                             return
                         }
-                        await sendPartToPrinter(printer, nextMsg)
+                        printer.partIndex = currentTask.nextPart++
+                        await sendPartToPrinter(printer, nextPart)
                     }
                 }
+            } else if (msg.type === 'currentPart') {
+                const printer = printers.find(p => p.ws === ws)
+                if (!printer) return
+                if (!currentTask) return
+                if (!printer.partIndex) return
+                const part = currentTask.parts[printer.partIndex] ?? undefined
+                if (!part) return
+                await sendPartToPrinter(printer, part)
             }
         })
     })
@@ -179,10 +193,11 @@ const logs: string[] = []
         res.status(200).json(out)
     })
 
-    expressApp.get('/current', (req, res) => {
+    expressApp.get('/currentTask', (req, res) => {
         if (!currentTask) return res.status(404).send('no current task')
-        res.status(200).json(omit(currentTask, 'queue', 'build'))
+        res.status(200).json(omit(currentTask, 'parts'))
     })
+
     expressApp.get('/builds', (req, res) => {
         const modelsNames = fs.readdirSync(BUILDS_FOLDER)
         const builds: Record<string, Build> = {}
@@ -200,6 +215,7 @@ const logs: string[] = []
 
         res.status(200).json(builds)
     })
+
     expressApp.post('/editBuilds', (req, res, next) => {
         const schema = z.record(z.string(), buildSchema)
         let body
@@ -427,21 +443,25 @@ const logs: string[] = []
         }
 
         currentTask = {
-            build,
             buildName: file,
-            length: queue.length,
             completedParts: 0,
-            queue,
-            startedAt: Date.now()
+            parts: queue,
+            nextPart: 0,
+            startedAt: Date.now(),
+
+            divisionWidth: divided[0].length,
+            divisionHeight: 1,
+            divisionDepth: divided.length
         }
 
         res.sendStatus(200)
 
         for (const printer of connectedPrinters) {
             if (printer.state !== 'idle') continue
-            const msg = currentTask.queue.shift()
-            if (!msg) break
-            await sendPartToPrinter(printer, msg)
+            const part = queue[currentTask.nextPart] ?? undefined
+            if (!part) break
+            printer.partIndex = currentTask.nextPart++
+            await sendPartToPrinter(printer, part)
             await wait(200)
         }
     })
@@ -611,6 +631,14 @@ function omit(obj: any, ...keys: string[]) {
     const newObj: any = {}
     for (const key of Object.keys(obj)) {
         if (!keys.includes(key)) newObj[key] = obj[key]
+    }
+    return newObj
+}
+
+function pick(obj: any, ...keys: string[]) {
+    const newObj: any = {}
+    for (const key of Object.keys(obj)) {
+        if (keys.includes(key)) newObj[key] = obj[key]
     }
     return newObj
 }

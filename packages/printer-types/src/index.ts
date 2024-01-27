@@ -23,12 +23,15 @@ export interface BuildMessage {
 }
 
 export interface Task {
-    build: Build
     buildName: string
-    length: number // total number of parts
     completedParts: number
-    queue: BuildMessage[]
+    nextPart: number
+    parts: BuildMessage[]
     startedAt: number
+
+    divisionWidth: number
+    divisionHeight: number
+    divisionDepth: number
 }
 
 export type PrinterState = 'idle' | 'building' | 'moving' | 'refueling'
@@ -40,4 +43,5 @@ export interface Printer {
     connected: boolean
     pos?: [number, number, number]
     progress?: number
+    partIndex?: number
 }
