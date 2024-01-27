@@ -30,7 +30,7 @@ const store = create<dataStore>((set, get) => {
 
     const fetchCurrentTask = () => {
         const { address } = useConfig.getState()
-        fetch(`${address}/current`, { method: 'GET' })
+        fetch(`${address}/currentTask`, { method: 'GET' })
             .then(res => {
                 if (res.status === 404) return undefined
                 return res.json()
