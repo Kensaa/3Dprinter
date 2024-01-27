@@ -96,6 +96,7 @@ function TableRow({ printer }: TableRowProps) {
                     <Button
                         onClick={() => setControlling(true)}
                         variant='outline-primary'
+                        disabled={!connected}
                     >
                         <Move />
                     </Button>
