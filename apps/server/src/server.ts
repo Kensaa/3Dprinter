@@ -147,7 +147,7 @@ const logs: string[] = []
                     )
                 }
                 currentTask.completedParts++
-                if (currentTask.parts.length === currentTask.completedParts) {
+                if (currentTask.partCount === currentTask.completedParts) {
                     currentTask = undefined
                     printer.partIndex = undefined
                     return await sendAsync(
@@ -155,7 +155,7 @@ const logs: string[] = []
                         JSON.stringify({ type: 'noNextPart' })
                     )
                 } else {
-                    if (currentTask.nextPart === currentTask.parts.length) {
+                    if (currentTask.nextPart === currentTask.partCount) {
                         printer.partIndex = undefined
                         await sendAsync(
                             printer.ws,
@@ -444,6 +444,7 @@ const logs: string[] = []
 
         currentTask = {
             buildName: file,
+            partCount: queue.length,
             completedParts: 0,
             parts: queue,
             nextPart: 0,
