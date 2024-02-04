@@ -86,6 +86,7 @@ export default function RemoteControlModal({
                 </div>
                 <GoToForm printers={printers} />
                 <HeadToForm printers={printers} />
+                <BuildBlockForm printers={printers} />
             </Modal.Body>
         </Modal>
     )
@@ -210,7 +211,6 @@ function HeadToForm({ printers }: GoToFormProps) {
     const address = useAddress()
 
     const submit = (e: React.FormEvent<HTMLFormElement>) => {
-        console.log('aa')
         e.preventDefault()
         e.stopPropagation()
         for (const printer of printers) {
@@ -246,6 +246,51 @@ function HeadToForm({ printers }: GoToFormProps) {
             </Form.Select>
             <Button variant='outline-primary' type='submit'>
                 Head To
+            </Button>
+        </Form>
+    )
+}
+
+function BuildBlockForm({ printers }: GoToFormProps) {
+    const [buildBlock, setBuildBlock] = useState<string>('')
+
+    const address = useAddress()
+
+    const submit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        e.stopPropagation()
+        for (const printer of printers) {
+            fetch(`${address}/remote`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    printer: printer.id,
+                    command: 'headTo',
+                    data: { buildBlock }
+                })
+            })
+        }
+    }
+
+    return (
+        <Form
+            onSubmit={submit}
+            className='d-flex flex-row justify-content-center mt-3 w-100'
+        >
+            <Form.Control
+                value={buildBlock}
+                onChange={e => setBuildBlock(e.currentTarget.value)}
+                placeholder='Block Type'
+                className='w-75 mx-1'
+            />
+            <Button
+                variant='outline-primary'
+                type='submit'
+                disabled={!buildBlock}
+            >
+                Set build block
             </Button>
         </Form>
     )

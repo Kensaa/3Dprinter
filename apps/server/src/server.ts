@@ -480,7 +480,8 @@ const logs: string[] = []
                 'goTo',
                 'headTo',
                 'refuel',
-                'emptyInventory'
+                'emptyInventory',
+                'setBuildBlock'
             ]),
             data: z.number().array().optional()
         })
