@@ -37,8 +37,8 @@ function CurrentTask({ currentTask }: { currentTask: Task | undefined }) {
         <div>
             <h4>Current Task: {currentTask.buildName}</h4>
             <h4>
-                Progress: {currentTask.completedParts} /{' '}
-                {currentTask.parts.length} parts built
+                Progress: {currentTask.completedParts} / {currentTask.partCount}{' '}
+                parts built
             </h4>
             <h4>Time Elapsed: {timeSince(currentTask.startedAt)}</h4>
         </div>
