@@ -483,7 +483,7 @@ const logs: string[] = []
                 'emptyInventory',
                 'setBuildBlock'
             ]),
-            data: z.number().array().optional()
+            data: z.number().or(z.string()).array().optional()
         })
         let body
         try {
