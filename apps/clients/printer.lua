@@ -647,7 +647,7 @@ function remoteManager()
                     end
                     turtle.select(1)
                 elseif remoteCommand == 'setBuildBlock' then
-                    buildBlock = currentMessage['data']['buildBlock']
+                    buildBlock = currentMessage['data'][1]
                 end
                 currentMessage = nil
             end
