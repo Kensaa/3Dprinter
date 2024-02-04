@@ -267,7 +267,7 @@ function BuildBlockForm({ printers }: GoToFormProps) {
                 },
                 body: JSON.stringify({
                     printer: printer.id,
-                    command: 'headTo',
+                    command: 'setBuildBlock',
                     data: [buildBlock]
                 })
             })
