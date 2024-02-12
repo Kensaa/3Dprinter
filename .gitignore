@@ -8,3 +8,4 @@ build
 .turbo
 out
 tsconfig.tsbuildinfo
+data

@@ -1,5 +1,7 @@
-gpsTry = 5
-buildBlock = "minecraft:cobblestone"
+local config = {
+    buildBlock="minecraft:cobblestone",
+    gpsTry=5
+}
 
 local url = "$WS_URL$"
 if not fs.exists('json.lua') then
@@ -79,7 +81,7 @@ end
 
 function place()
     local slot = 0
-    while turtle.getItemCount() == 0 or turtle.getItemDetail().name ~= buildBlock do
+    while turtle.getItemCount() == 0 or turtle.getItemDetail().name ~= config['buildBlock'] do
         slot = slot + 1
         if slot == 15 then
             restock()
@@ -144,7 +146,7 @@ end
 function locate()
     equipModem()
     posA = {}
-    for i = 1,gpsTry do
+    for i = 1,config['gpsTry'] do
         table.insert(posA,{gps.locate(2)})
     end
     xA = {}
@@ -646,8 +648,6 @@ function remoteManager()
                         turtle.dropDown()
                     end
                     turtle.select(1)
-                elseif remoteCommand == 'setBuildBlock' then
-                    buildBlock = currentMessage['data'][1]
                 end
                 currentMessage = nil
             end
@@ -656,6 +656,17 @@ function remoteManager()
     end
 end
 
+function configManager() 
+    while true do
+        if currentMessage ~= nil then
+            if currentMessage['type'] == 'config' then
+                config = currentMessage['config']
+            end
+        end
+        coroutine.yield()
+    end
+end
+
 while true do
-    parallel.waitForAll(receive, buildManager, remoteManager)
+    parallel.waitForAll(receive, buildManager, remoteManager, configManager)
 end

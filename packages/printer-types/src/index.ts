@@ -46,3 +46,10 @@ export interface Printer {
     progress?: number
     partIndex?: number
 }
+
+export const printerConfigSchema = z.object({
+    buildBlock: z.string(),
+    gpsTry: z.number().positive()
+})
+
+export type PrinterConfig = z.infer<typeof printerConfigSchema>

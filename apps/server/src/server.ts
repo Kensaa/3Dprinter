@@ -14,20 +14,24 @@ import type {
     BuildMessage,
     Task,
     PrinterState,
-    Printer
+    Printer,
+    PrinterConfig
 } from 'printer-types'
 
 const WEB_SERVER_PORT = parseInt(process.env.PORT ?? '9513')
-const BUILDS_FOLDER =
-    process.env.BUILDS_FOLDER ??
+const DATA_FOLDER =
+    process.env.DATA_FOLDER ??
     (process.env.NODE_ENV === 'production'
-        ? '/builds'
-        : path.join(__dirname, '..', 'builds'))
+        ? '/data'
+        : path.join(__dirname, '..', 'data'))
+const BUILDS_FOLDER = path.join(DATA_FOLDER, 'builds')
+const CONFIG_FILE = path.join(DATA_FOLDER, 'config.json')
 
 const URL = process.env.URL ?? 'http://localhost:' + WEB_SERVER_PORT
 
 console.log('URL:', URL)
 
+if (!fs.existsSync(DATA_FOLDER)) fs.mkdirSync(DATA_FOLDER)
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
 const websocketMessageSchema = z.discriminatedUnion('type', [
@@ -57,6 +61,22 @@ async function sendAsync(ws: ws.WebSocket, data: string) {
 
 let currentTask: undefined | Task
 const logs: string[] = []
+const defaultPrinterConfig: PrinterConfig = {
+    buildBlock: 'minecraft:cobblestone',
+    gpsTry: 5
+}
+let printerConfig: PrinterConfig = defaultPrinterConfig
+
+if (fs.existsSync(CONFIG_FILE)) {
+    const fileContent = fs.readFileSync(CONFIG_FILE, 'utf-8')
+    try {
+        printerConfig = JSON.parse(fileContent)
+    } catch {
+        console.error('config file is not json')
+    }
+} else {
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(printerConfig, null, 2))
+}
 
 ;(async () => {
     const expressApp = express()
@@ -124,6 +144,7 @@ const logs: string[] = []
                         printers.filter(p => p.connected).length
                     } printer available)`
                 )
+                JSON.stringify({ type: 'config', config: printerConfig })
             } else if (msg.type === 'setState') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return

@@ -37,7 +37,7 @@ COPY ./apps/clients ./clients
 
 ENV NODE_ENV="production"
 ENV WEB_SERVER_PORT=9513
-ENV BUILDS_FOLDER="/builds"
+ENV DATA_FOLDER="/data"
 ENV URL=""
 
 CMD ["apps/server/dist/server.js"]
