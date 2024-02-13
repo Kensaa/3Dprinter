@@ -239,12 +239,10 @@ if (fs.existsSync(CONFIG_FILE)) {
 
     expressApp.post('/editBuilds', (req, res, next) => {
         const schema = z.record(z.string(), buildSchema)
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const body = parseResult.data
+
         for (const key of Object.keys(body)) {
             const build = body[key]
             fs.writeFileSync(
@@ -267,13 +265,10 @@ if (fs.existsSync(CONFIG_FILE)) {
             horizontalMirror: z.boolean().default(false),
             verticalMirror: z.boolean().default(false)
         })
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { image: imageString, ...options } = body
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { image: imageString, ...options } = parseResult.data
+
         let image
         try {
             image = await jimp.read(Buffer.from(imageString, 'base64'))
@@ -298,13 +293,9 @@ if (fs.existsSync(CONFIG_FILE)) {
         const schema = z.object({
             file: z.string()
         })
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { file } = body
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { file } = parseResult.data
         let filepath = path.join(BUILDS_FOLDER, file)
         if (!filepath.endsWith('.json')) filepath = filepath + '.json'
         if (!fs.existsSync(filepath))
@@ -333,13 +324,10 @@ if (fs.existsSync(CONFIG_FILE)) {
             scale: z.number().positive().default(1)
         })
 
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { file: fileBase64, scale } = body
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { file: fileBase64, scale } = parseResult.data
+
         const file = Buffer.from(fileBase64, 'base64').toString('utf-8')
         const output = voxelize(file, scale)
         const build: Build = {
@@ -355,15 +343,10 @@ if (fs.existsSync(CONFIG_FILE)) {
             pos: z.array(z.number()).length(3),
             heading: z.number().gte(1).lte(4).default(1)
         })
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { file, pos, heading } = parseResult.data
 
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { file, pos, heading } = body
-        //const printerCount: number = 9
         const connectedPrinters = printers.filter(p => p.connected)
         const printerCount = connectedPrinters.length
         if (!file) return res.status(500).send('missing field "file"')
@@ -506,13 +489,10 @@ if (fs.existsSync(CONFIG_FILE)) {
             ]),
             data: z.number().or(z.string()).array().optional()
         })
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { printer, command, data } = body
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { printer, command, data } = parseResult.data
+
         const current = printers.find(p => p.id === printer)
         if (!current) return res.status(404).send('printer not found')
         if (!current.connected)
