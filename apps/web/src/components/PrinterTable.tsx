@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Spinner, Table } from 'react-bootstrap'
+import { Table } from 'react-bootstrap'
 import type { Printer } from '../utils/types'
 import RemoteControlModal from '../modals/RemoteControlModal'
 import { Move } from 'lucide-react'
 import Button from './Button'
+import LoadingSpinner from './LoadingSpinner'
 
 interface PrinterTableProps {
     printers?: Printer[]
@@ -24,14 +25,7 @@ export default function PrinterTable({
     }, [printers])
 
     if (!sortedPrinters) {
-        return (
-            <div
-                style={{ width, height }}
-                className='d-flex justify-content-center align-items-center border'
-            >
-                <Spinner animation='border' />
-            </div>
-        )
+        return <LoadingSpinner style={{ width, height }} />
     }
 
     return (
