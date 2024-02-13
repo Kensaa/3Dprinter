@@ -215,7 +215,7 @@ if (fs.existsSync(CONFIG_FILE)) {
     })
 
     expressApp.get('/currentTask', (req, res) => {
-        if (!currentTask) return res.status(204)
+        if (!currentTask) return res.sendStatus(204)
         res.status(200).json(omit(currentTask, 'parts'))
     })
 
