@@ -7,7 +7,7 @@ import { Move } from 'lucide-react'
 import Button from './Button'
 
 interface PrinterTableProps {
-    printers: Printer[]
+    printers?: Printer[]
     width?: string
     height?: string
 }
@@ -17,14 +17,14 @@ export default function PrinterTable({
     width = '100%',
     height = '30%'
 }: PrinterTableProps) {
-    const sortedPrinters = useMemo(
-        () => printers.sort((a, b) => a.id - b.id),
-        [printers]
-    )
+    const sortedPrinters = useMemo(() => {
+        if (!printers) return undefined
+        return printers.sort((a, b) => a.id - b.id)
+    }, [printers])
 
     const [controlingAllPrinters, setControllingAllPrinters] = useState(false)
 
-    if (sortedPrinters.length === 0) {
+    if (!sortedPrinters) {
         return (
             <div
                 style={{ width, height }}

@@ -25,6 +25,10 @@ export default function RemoteControlModal({
     hide,
     printers
 }: RemoteControlModalProps) {
+    if (printers.length === 0) {
+        hide()
+        return null
+    }
     const name =
         printers.length > 1 ? 'Multiple Printer' : `"${printers[0].label}"`
 
