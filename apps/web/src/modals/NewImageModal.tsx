@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState, useEffect } from 'react'
 import { Modal, Form } from 'react-bootstrap'
 import Button from '../components/Button'
@@ -168,10 +167,7 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
                             />
                         </Form.Group>
                         <div className='d-flex justify-content-center'>
-                            {
-                                //@ts-ignore
-                                <Button type='submit'>Convert</Button>
-                            }
+                            <Button type='submit'>Convert</Button>
                         </div>
                     </Form>
                     {build ? (

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useState } from 'react'
 import { Modal, Form } from 'react-bootstrap'
 import Button from '../components/Button'
@@ -83,10 +82,7 @@ export default function NewModelModal({ show, hide }: NewModelModalProps) {
                     </Form.Group>
 
                     <div className='d-flex justify-content-center'>
-                        {
-                            //@ts-ignore
-                            <Button type='submit'>Convert</Button>
-                        }
+                        <Button type='submit'>Convert</Button>
                     </div>
                 </Form>
             </Modal.Body>
