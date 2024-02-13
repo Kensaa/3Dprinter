@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useMemo, useState } from 'react'
 import { Spinner, Table } from 'react-bootstrap'
 import type { Printer } from '../utils/types'
@@ -17,12 +16,12 @@ export default function PrinterTable({
     width = '100%',
     height = '30%'
 }: PrinterTableProps) {
+    const [controlingAllPrinters, setControllingAllPrinters] = useState(false)
+
     const sortedPrinters = useMemo(() => {
         if (!printers) return undefined
         return printers.sort((a, b) => a.id - b.id)
     }, [printers])
-
-    const [controlingAllPrinters, setControllingAllPrinters] = useState(false)
 
     if (!sortedPrinters) {
         return (
@@ -57,6 +56,7 @@ export default function PrinterTable({
             </Table>
             <Button
                 variant='outline-primary'
+                disabled={sortedPrinters.length === 0}
                 onClick={() => setControllingAllPrinters(true)}
             >
                 Remote control all printers
