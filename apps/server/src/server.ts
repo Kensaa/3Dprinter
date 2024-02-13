@@ -8,7 +8,7 @@ import { ZodError, z } from 'zod'
 import jimp from 'jimp'
 import { arrayToImage, imageToArray, trim2Darray } from './utils'
 import { voxelize } from './voxelization'
-import { buildSchema } from 'printer-types'
+import { buildSchema, printerConfigSchema } from 'printer-types'
 import type {
     Build,
     BuildMessage,
@@ -527,6 +527,20 @@ if (fs.existsSync(CONFIG_FILE)) {
 
     expressApp.get('/logs', (req, res) => {
         res.status(200).json(logs)
+    })
+
+    expressApp.get('/config', (req, res) => {
+        res.status(200).json(printerConfig)
+    })
+
+    expressApp.post('/config', (req, res, next) => {
+        const parseResult = printerConfigSchema.partial().safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const body = parseResult.data
+
+        printerConfig = { ...printerConfig, ...body }
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(printerConfig, null, 2))
+        res.sendStatus(200)
     })
 
     const CLIENTS_PATH = path.resolve(
