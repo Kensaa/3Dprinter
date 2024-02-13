@@ -22,6 +22,5 @@
         "apps/web/tsconfig.node.json": true,
         "apps/web/index.html": true,
         "apps/web/src/vite-env.d.ts": true
-    },
-    "typescript.tsdk": "node_modules\\typescript\\lib"
+    }
 }
