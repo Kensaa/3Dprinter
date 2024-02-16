@@ -63,7 +63,9 @@ let currentTask: undefined | Task
 const logs: string[] = []
 const defaultPrinterConfig: PrinterConfig = {
     buildBlock: 'minecraft:cobblestone',
-    gpsTry: 5
+    gpsTry: 5,
+    refuelPosition: [0, 0, 0],
+    restockPosition: [0, 0, 0]
 }
 let printerConfig: PrinterConfig = defaultPrinterConfig
 
@@ -144,7 +146,10 @@ if (fs.existsSync(CONFIG_FILE)) {
                         printers.filter(p => p.connected).length
                     } printer available)`
                 )
-                JSON.stringify({ type: 'config', config: printerConfig })
+                await sendAsync(
+                    ws,
+                    JSON.stringify({ type: 'config', config: printerConfig })
+                )
             } else if (msg.type === 'setState') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
