@@ -661,6 +661,7 @@ function configManager()
         if currentMessage ~= nil then
             if currentMessage['type'] == 'config' then
                 config = currentMessage['config']
+                currentMessage = nil
             end
         end
         coroutine.yield()

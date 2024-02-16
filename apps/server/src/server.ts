@@ -513,13 +513,21 @@ if (fs.existsSync(CONFIG_FILE)) {
         res.status(200).json(printerConfig)
     })
 
-    expressApp.post('/config', (req, res, next) => {
+    expressApp.post('/config', async (req, res, next) => {
         const parseResult = printerConfigSchema.partial().safeParse(req.body)
         if (!parseResult.success) return next(parseResult.error)
         const body = parseResult.data
 
         printerConfig = { ...printerConfig, ...body }
         fs.writeFileSync(CONFIG_FILE, JSON.stringify(printerConfig, null, 2))
+
+        for (const printer of printers) {
+            await sendAsync(
+                printer.ws,
+                JSON.stringify({ type: 'config', config: printerConfig })
+            )
+        }
+
         res.sendStatus(200)
     })
 
