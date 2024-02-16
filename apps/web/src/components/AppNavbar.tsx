@@ -19,6 +19,11 @@ export default function AppNavbar() {
                         Logs
                     </Nav.Link>
                 </Nav>
+                <Nav>
+                    <Nav.Link as={Link} to='/config'>
+                        Config
+                    </Nav.Link>
+                </Nav>
                 <Nav className='me-auto' />
             </Container>
         </Navbar>

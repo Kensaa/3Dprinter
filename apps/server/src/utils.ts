@@ -4,13 +4,13 @@ function startIndex(arr: number[], nullE = 0) {
     for (let i = 0; i < arr.length; i++) {
         if (arr[i] !== nullE) return i
     }
-    return Infinity
+    return 0
 }
 function endIndex(arr: number[], nullE = 0) {
     for (let i = arr.length - 1; i >= 0; i--) {
         if (arr[i] !== nullE) return i
     }
-    return -Infinity
+    return arr.length
 }
 
 export function trim2Darray(arr: number[][], nullE = 0) {

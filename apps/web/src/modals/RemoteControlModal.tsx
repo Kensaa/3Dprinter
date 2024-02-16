@@ -1,4 +1,4 @@
-import { createElement, useState } from 'react'
+import { createElement, useEffect, useState } from 'react'
 import { Form, Modal } from 'react-bootstrap'
 import Button from '../components/Button'
 import { Printer } from '../utils/types'
@@ -25,8 +25,17 @@ export default function RemoteControlModal({
     hide,
     printers
 }: RemoteControlModalProps) {
-    const name =
-        printers.length > 1 ? 'Multiple Printer' : `"${printers[0].label}"`
+    const [name, setName] = useState('')
+
+    useEffect(() => {
+        if (printers.length === 0) {
+            hide()
+        } else {
+            setName(
+                printers.length > 1 ? 'Multiple Printers' : printers[0].label
+            )
+        }
+    }, [printers, hide])
 
     return (
         <Modal show={show} onHide={hide}>

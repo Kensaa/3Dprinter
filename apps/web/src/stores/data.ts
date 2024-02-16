@@ -4,7 +4,7 @@ import { useConfig } from './config'
 
 interface dataStore {
     builds: Record<string, Build>
-    printers: Printer[]
+    printers?: Printer[]
     currentTask?: Task
     fetchBuilds: () => void
     fetchPrinters: () => void
@@ -32,7 +32,7 @@ const store = create<dataStore>((set, get) => {
         const { address } = useConfig.getState()
         fetch(`${address}/currentTask`, { method: 'GET' })
             .then(res => {
-                if (res.status === 404) return undefined
+                if (res.status === 204) return undefined
                 return res.json()
             })
             .then(data => data as Task | undefined)
@@ -59,7 +59,7 @@ const store = create<dataStore>((set, get) => {
 
     return {
         builds: {},
-        printers: [],
+        printers: undefined,
         currentTask: undefined,
         fetchBuilds,
         fetchPrinters,

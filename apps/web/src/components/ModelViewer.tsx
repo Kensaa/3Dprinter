@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useRef, useState, useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
@@ -48,64 +47,55 @@ export default function ModelViewer({
                 <axesHelper args={[50]} />
             </Canvas>
             <div className='w-100 d-flex justify-content-center mt-3'>
-                {
-                    //@ts-ignore
-                    <Button
-                        onClick={() => {
-                            const newBuild = { ...build }
-                            newBuild.shape = rotate3DArray(
-                                build.shape,
-                                true,
-                                false,
-                                false
-                            )
-                            updateBuild(buildName, newBuild)
-                            setBuild(newBuild)
-                        }}
-                        variant='outline-primary'
-                    >
-                        Rotate X (Red Axis)
-                    </Button>
-                }
-                {
-                    //@ts-ignore
-                    <Button
-                        onClick={() => {
-                            const newBuild = { ...build }
-                            newBuild.shape = rotate3DArray(
-                                build.shape,
-                                false,
-                                true,
-                                false
-                            )
-                            updateBuild(buildName, newBuild)
-                            setBuild(newBuild)
-                        }}
-                        variant='outline-primary'
-                        className='mx-2'
-                    >
-                        Rotate Y (Green Axis)
-                    </Button>
-                }
-                {
-                    //@ts-ignore
-                    <Button
-                        onClick={() => {
-                            const newBuild = { ...build }
-                            newBuild.shape = rotate3DArray(
-                                build.shape,
-                                false,
-                                false,
-                                true
-                            )
-                            updateBuild(buildName, newBuild)
-                            setBuild(newBuild)
-                        }}
-                        variant='outline-primary'
-                    >
-                        Rotate Z (Blue Axis)
-                    </Button>
-                }
+                <Button
+                    onClick={() => {
+                        const newBuild = { ...build }
+                        newBuild.shape = rotate3DArray(
+                            build.shape,
+                            true,
+                            false,
+                            false
+                        )
+                        updateBuild(buildName, newBuild)
+                        setBuild(newBuild)
+                    }}
+                    variant='outline-primary'
+                >
+                    Rotate X (Red Axis)
+                </Button>
+                <Button
+                    onClick={() => {
+                        const newBuild = { ...build }
+                        newBuild.shape = rotate3DArray(
+                            build.shape,
+                            false,
+                            true,
+                            false
+                        )
+                        updateBuild(buildName, newBuild)
+                        setBuild(newBuild)
+                    }}
+                    variant='outline-primary'
+                    className='mx-2'
+                >
+                    Rotate Y (Green Axis)
+                </Button>
+                <Button
+                    onClick={() => {
+                        const newBuild = { ...build }
+                        newBuild.shape = rotate3DArray(
+                            build.shape,
+                            false,
+                            false,
+                            true
+                        )
+                        updateBuild(buildName, newBuild)
+                        setBuild(newBuild)
+                    }}
+                    variant='outline-primary'
+                >
+                    Rotate Z (Blue Axis)
+                </Button>
             </div>
         </div>
     )
@@ -164,7 +154,6 @@ function Mesh({ build, count }: MeshProps) {
     }, [build])
 
     return (
-        //@ts-ignore
         <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>
             <boxGeometry args={[1, 1, 1]}></boxGeometry>
             <meshBasicMaterial />

@@ -8,26 +8,30 @@ import { ZodError, z } from 'zod'
 import jimp from 'jimp'
 import { arrayToImage, imageToArray, trim2Darray } from './utils'
 import { voxelize } from './voxelization'
-import { buildSchema } from 'printer-types'
+import { buildSchema, printerConfigSchema } from 'printer-types'
 import type {
     Build,
     BuildMessage,
     Task,
     PrinterState,
-    Printer
+    Printer,
+    PrinterConfig
 } from 'printer-types'
 
 const WEB_SERVER_PORT = parseInt(process.env.PORT ?? '9513')
-const BUILDS_FOLDER =
-    process.env.BUILDS_FOLDER ??
+const DATA_FOLDER =
+    process.env.DATA_FOLDER ??
     (process.env.NODE_ENV === 'production'
-        ? '/builds'
-        : path.join(__dirname, '..', 'builds'))
+        ? '/data'
+        : path.join(__dirname, '..', 'data'))
+const BUILDS_FOLDER = path.join(DATA_FOLDER, 'builds')
+const CONFIG_FILE = path.join(DATA_FOLDER, 'config.json')
 
 const URL = process.env.URL ?? 'http://localhost:' + WEB_SERVER_PORT
 
 console.log('URL:', URL)
 
+if (!fs.existsSync(DATA_FOLDER)) fs.mkdirSync(DATA_FOLDER)
 if (!fs.existsSync(BUILDS_FOLDER)) fs.mkdirSync(BUILDS_FOLDER)
 
 const websocketMessageSchema = z.discriminatedUnion('type', [
@@ -57,6 +61,22 @@ async function sendAsync(ws: ws.WebSocket, data: string) {
 
 let currentTask: undefined | Task
 const logs: string[] = []
+const defaultPrinterConfig: PrinterConfig = {
+    buildBlock: 'minecraft:cobblestone',
+    gpsTry: 5
+}
+let printerConfig: PrinterConfig = defaultPrinterConfig
+
+if (fs.existsSync(CONFIG_FILE)) {
+    const fileContent = fs.readFileSync(CONFIG_FILE, 'utf-8')
+    try {
+        printerConfig = JSON.parse(fileContent)
+    } catch {
+        console.error('config file is not json')
+    }
+} else {
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(printerConfig, null, 2))
+}
 
 ;(async () => {
     const expressApp = express()
@@ -124,6 +144,7 @@ const logs: string[] = []
                         printers.filter(p => p.connected).length
                     } printer available)`
                 )
+                JSON.stringify({ type: 'config', config: printerConfig })
             } else if (msg.type === 'setState') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
@@ -194,7 +215,7 @@ const logs: string[] = []
     })
 
     expressApp.get('/currentTask', (req, res) => {
-        if (!currentTask) return res.status(404).send('no current task')
+        if (!currentTask) return res.sendStatus(204)
         res.status(200).json(omit(currentTask, 'parts'))
     })
 
@@ -218,12 +239,10 @@ const logs: string[] = []
 
     expressApp.post('/editBuilds', (req, res, next) => {
         const schema = z.record(z.string(), buildSchema)
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const body = parseResult.data
+
         for (const key of Object.keys(body)) {
             const build = body[key]
             fs.writeFileSync(
@@ -246,13 +265,10 @@ const logs: string[] = []
             horizontalMirror: z.boolean().default(false),
             verticalMirror: z.boolean().default(false)
         })
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { image: imageString, ...options } = body
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { image: imageString, ...options } = parseResult.data
+
         let image
         try {
             image = await jimp.read(Buffer.from(imageString, 'base64'))
@@ -277,13 +293,9 @@ const logs: string[] = []
         const schema = z.object({
             file: z.string()
         })
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { file } = body
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { file } = parseResult.data
         let filepath = path.join(BUILDS_FOLDER, file)
         if (!filepath.endsWith('.json')) filepath = filepath + '.json'
         if (!fs.existsSync(filepath))
@@ -312,13 +324,10 @@ const logs: string[] = []
             scale: z.number().positive().default(1)
         })
 
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { file: fileBase64, scale } = body
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { file: fileBase64, scale } = parseResult.data
+
         const file = Buffer.from(fileBase64, 'base64').toString('utf-8')
         const output = voxelize(file, scale)
         const build: Build = {
@@ -334,15 +343,10 @@ const logs: string[] = []
             pos: z.array(z.number()).length(3),
             heading: z.number().gte(1).lte(4).default(1)
         })
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { file, pos, heading } = parseResult.data
 
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { file, pos, heading } = body
-        //const printerCount: number = 9
         const connectedPrinters = printers.filter(p => p.connected)
         const printerCount = connectedPrinters.length
         if (!file) return res.status(500).send('missing field "file"')
@@ -485,13 +489,10 @@ const logs: string[] = []
             ]),
             data: z.number().or(z.string()).array().optional()
         })
-        let body
-        try {
-            body = schema.parse(req.body)
-        } catch (err) {
-            return next(err)
-        }
-        const { printer, command, data } = body
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { printer, command, data } = parseResult.data
+
         const current = printers.find(p => p.id === printer)
         if (!current) return res.status(404).send('printer not found')
         if (!current.connected)
@@ -506,6 +507,28 @@ const logs: string[] = []
 
     expressApp.get('/logs', (req, res) => {
         res.status(200).json(logs)
+    })
+
+    expressApp.get('/config', (req, res) => {
+        res.status(200).json(printerConfig)
+    })
+
+    expressApp.post('/config', async (req, res, next) => {
+        const parseResult = printerConfigSchema.partial().safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const body = parseResult.data
+
+        printerConfig = { ...printerConfig, ...body }
+        fs.writeFileSync(CONFIG_FILE, JSON.stringify(printerConfig, null, 2))
+
+        for (const printer of printers) {
+            await sendAsync(
+                printer.ws,
+                JSON.stringify({ type: 'config', config: printerConfig })
+            )
+        }
+
+        res.sendStatus(200)
     })
 
     const CLIENTS_PATH = path.resolve(

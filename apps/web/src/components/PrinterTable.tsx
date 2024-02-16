@@ -1,13 +1,13 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useMemo, useState } from 'react'
-import { Spinner, Table } from 'react-bootstrap'
+import { Table } from 'react-bootstrap'
 import type { Printer } from '../utils/types'
 import RemoteControlModal from '../modals/RemoteControlModal'
 import { Move } from 'lucide-react'
 import Button from './Button'
+import LoadingSpinner from './LoadingSpinner'
 
 interface PrinterTableProps {
-    printers: Printer[]
+    printers?: Printer[]
     width?: string
     height?: string
 }
@@ -17,22 +17,15 @@ export default function PrinterTable({
     width = '100%',
     height = '30%'
 }: PrinterTableProps) {
-    const sortedPrinters = useMemo(
-        () => printers.sort((a, b) => a.id - b.id),
-        [printers]
-    )
-
     const [controlingAllPrinters, setControllingAllPrinters] = useState(false)
 
-    if (sortedPrinters.length === 0) {
-        return (
-            <div
-                style={{ width, height }}
-                className='d-flex justify-content-center align-items-center border'
-            >
-                <Spinner animation='border' />
-            </div>
-        )
+    const sortedPrinters = useMemo(() => {
+        if (!printers) return undefined
+        return printers.sort((a, b) => a.id - b.id)
+    }, [printers])
+
+    if (!sortedPrinters) {
+        return <LoadingSpinner style={{ width, height }} />
     }
 
     return (
@@ -57,6 +50,7 @@ export default function PrinterTable({
             </Table>
             <Button
                 variant='outline-primary'
+                disabled={sortedPrinters.length === 0}
                 onClick={() => setControllingAllPrinters(true)}
             >
                 Remote control all printers

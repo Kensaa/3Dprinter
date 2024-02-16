@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
-import { ListGroup, Spinner } from 'react-bootstrap'
+import { ListGroup } from 'react-bootstrap'
+import LoadingSpinner from './LoadingSpinner'
 
 interface SelectorProps {
     elements: { name: string; type: string }[]
@@ -18,14 +19,7 @@ export default function Selector({
     const [selectedElement, setSelectedElement] = useState(-1)
 
     if (!elements) {
-        return (
-            <div
-                style={{ width, height }}
-                className='d-flex justify-content-center align-items-center border'
-            >
-                <Spinner animation='border' />
-            </div>
-        )
+        return <LoadingSpinner style={{ width, height }} />
     }
 
     const itemClicked = (index: number) => {

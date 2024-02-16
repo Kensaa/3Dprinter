@@ -42,7 +42,7 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
             }
 
             res.text().then(err => {
-                setError(`an error has occured ${err} (${res.status}) `)
+                setError(`an error has occured: ${err} (${res.status}) `)
             })
         })
     }
