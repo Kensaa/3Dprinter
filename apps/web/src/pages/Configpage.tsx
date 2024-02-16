@@ -58,7 +58,7 @@ export default function Configpage() {
                                 {error}
                             </Alert>
                         )}
-                        <h1>WIP</h1>
+                        <h1>Config Editor</h1>
                         <AceEditor
                             mode='json5'
                             theme='github'
