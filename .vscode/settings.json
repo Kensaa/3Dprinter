@@ -9,7 +9,8 @@
         "peripheral",
         "term",
         "read",
-        "parallel"
+        "parallel",
+        "textutils"
     ],
     "Lua.diagnostics.disable": ["lowercase-global", "undefined-field"],
     "files.exclude": {

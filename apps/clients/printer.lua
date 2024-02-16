@@ -661,6 +661,8 @@ function configManager()
         if currentMessage ~= nil then
             if currentMessage['type'] == 'config' then
                 config = currentMessage['config']
+                print('received new config')
+                print(textutils.serialize(config))
                 currentMessage = nil
             end
         end
