@@ -49,7 +49,9 @@ export interface Printer {
 
 export const printerConfigSchema = z.object({
     buildBlock: z.string(),
-    gpsTry: z.number().positive()
+    gpsTry: z.number().positive(),
+    refuelPosition: z.tuple([z.number(), z.number(), z.number()]),
+    restockPosition: z.tuple([z.number(), z.number(), z.number()])
 })
 
 export type PrinterConfig = z.infer<typeof printerConfigSchema>
