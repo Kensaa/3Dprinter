@@ -3,6 +3,7 @@ import { useCurrentTask, usePrinters } from '../stores/data'
 import PrinterTable from '../components/PrinterTable'
 import { useInterval } from 'usehooks-ts'
 import type { Task } from '../utils/types'
+import ProgressViewer from '../components/ProgressViewer'
 
 export default function Printerpage() {
     const { printers, fetchPrinters } = usePrinters()
@@ -34,13 +35,14 @@ function CurrentTask({ currentTask }: { currentTask: Task | undefined }) {
     }
 
     return (
-        <div>
+        <div className='w-100 d-flex flex-column justify-content-center align-items-center'>
             <h4>Current Task: {currentTask.buildName}</h4>
             <h4>
-                Progress: {currentTask.completedParts} / {currentTask.partCount}{' '}
-                parts built
+                Progress: {currentTask.completedParts.length} /{' '}
+                {currentTask.partCount} parts built
             </h4>
             <h4>Time Elapsed: {timeSince(currentTask.startedAt)}</h4>
+            <ProgressViewer width='100%' height='300px' />
         </div>
     )
 }
