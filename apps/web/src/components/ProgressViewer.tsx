@@ -1,9 +1,8 @@
-import { useRef, useEffect } from 'react'
+import { useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { CameraControls } from '@react-three/drei'
+import { CameraControls, Edges, Stage } from '@react-three/drei'
 import type { Task } from '../utils/types'
 import { useCurrentTask } from '../stores/data'
-import { Color, InstancedMesh, Object3D } from 'three'
 import LoadingSpinner from './LoadingSpinner'
 
 export interface ProgressViewerProps {
@@ -21,8 +20,7 @@ export default function ProgressViewer({
         <div style={{ width, height }} className='border'>
             {currentTask ? (
                 <Canvas>
-                    <ambientLight />
-                    <Mesh task={currentTask} />
+                    <Stage>{createCubes(currentTask)}</Stage>
                     <CameraControls />
                 </Canvas>
             ) : (
@@ -32,56 +30,40 @@ export default function ProgressViewer({
     )
 }
 
-interface MeshProps {
-    task: Task
+function createCubes(task: Task) {
+    const cubes = []
+    for (let i = 0; i < task.partCount; i++) {
+        const position = task.partsPositions[i]
+        let color = 0x111111
+        if (task.currentlyBuildingParts.includes(i)) {
+            // yellow
+            color = 0xffff00
+        } else if (task.completedParts.includes(i)) {
+            // green
+            color = 0x00ff00
+        }
+        cubes.push(<Box position={position} color={color} />)
+    }
+    return cubes
 }
 
-function Mesh({ task }: MeshProps) {
-    const meshRef = useRef<InstancedMesh>(null)
-
-    useEffect(() => {
-        if (meshRef == null) return
-        if (meshRef.current == null) return
-
-        const tempObject = new Object3D()
-
-        const height = task.divisionHeight
-        const depth = task.divisionDepth
-        const width = task.divisionWidth
-
-        for (let i = 0; i < task.partCount; i++) {
-            const [x, y, z] = task.partsPositions[i]
-            tempObject.position.set(
-                x - width / 2,
-                y - height / 2,
-                z - depth / 2
-            )
-            tempObject.updateMatrix()
-
-            meshRef.current.setMatrixAt(i, tempObject.matrix)
-
-            if (task.currentlyBuildingParts.includes(i)) {
-                // yellow
-                meshRef.current.setColorAt(i, new Color(1, 1, 0))
-            } else if (task.completedParts.includes(i)) {
-                // green
-                meshRef.current.setColorAt(i, new Color(0, 1, 0))
-            } else {
-                // gray
-                meshRef.current.setColorAt(i, new Color(0.1, 0.1, 0.1))
-            }
-        }
-
-        meshRef.current.instanceMatrix.needsUpdate = true
-    }, [task])
-
+interface BoxProps {
+    position: [number, number, number]
+    color?: number
+}
+function Box({ position, color = 0x515151 }: BoxProps) {
+    const meshRef = useRef(null)
     return (
-        <instancedMesh
-            ref={meshRef}
-            args={[undefined, undefined, task.partCount]}
-        >
-            <boxGeometry args={[1, 1, 1]}></boxGeometry>
-            <meshBasicMaterial />
-        </instancedMesh>
+        <mesh position={position} ref={meshRef}>
+            {[...Array(6)].map((_, index) => (
+                <meshStandardMaterial
+                    key={index}
+                    color={color}
+                    attach={`material-${index}`}
+                />
+            ))}
+            <boxGeometry args={[1, 1, 1]} />
+            <Edges />
+        </mesh>
     )
 }
