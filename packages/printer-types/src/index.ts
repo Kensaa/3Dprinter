@@ -25,9 +25,11 @@ export interface BuildMessage {
 export interface Task {
     buildName: string
     partCount: number
-    completedParts: number
-    nextPart: number
     parts: BuildMessage[]
+    partsPositions: [number, number, number][]
+    currentlyBuildingParts: number[]
+    completedParts: number[]
+    nextPart: number
     startedAt: number
 
     divisionWidth: number

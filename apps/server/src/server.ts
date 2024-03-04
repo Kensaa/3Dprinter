@@ -172,8 +172,15 @@ if (fs.existsSync(CONFIG_FILE)) {
                         JSON.stringify({ type: 'noNextPart' })
                     )
                 }
-                currentTask.completedParts++
-                if (currentTask.partCount === currentTask.completedParts) {
+
+                currentTask.completedParts.push(printer.partIndex!)
+                currentTask.currentlyBuildingParts =
+                    currentTask.currentlyBuildingParts.filter(
+                        e => e !== printer.partIndex
+                    )
+                if (
+                    currentTask.partCount === currentTask.completedParts.length
+                ) {
                     currentTask = undefined
                     printer.partIndex = undefined
                     return await sendAsync(
@@ -195,6 +202,9 @@ if (fs.existsSync(CONFIG_FILE)) {
                             return
                         }
                         printer.partIndex = currentTask.nextPart++
+                        currentTask.currentlyBuildingParts.push(
+                            printer.partIndex
+                        )
                         await sendPartToPrinter(printer, nextPart)
                     }
                 }
@@ -398,6 +408,7 @@ if (fs.existsSync(CONFIG_FILE)) {
         console.log('parts : ', divided.length * divided[0].length)
 
         const queue: BuildMessage[] = []
+        const partsPositions: [number, number, number][] = []
         for (let partRow = 0; partRow < divided.length; partRow++) {
             for (let partCol = 0; partCol < divided[0].length; partCol++) {
                 const part = divided[partRow][partCol]
@@ -448,14 +459,17 @@ if (fs.existsSync(CONFIG_FILE)) {
                 }
 
                 queue.push(msg)
+                partsPositions.push([partRow, 0, partCol])
             }
         }
 
         currentTask = {
             buildName: file,
-            partCount: queue.length,
-            completedParts: 0,
             parts: queue,
+            partsPositions,
+            partCount: queue.length,
+            currentlyBuildingParts: [],
+            completedParts: [],
             nextPart: 0,
             startedAt: Date.now(),
 
@@ -471,6 +485,7 @@ if (fs.existsSync(CONFIG_FILE)) {
             const part = queue[currentTask.nextPart] ?? undefined
             if (!part) break
             printer.partIndex = currentTask.nextPart++
+            currentTask.currentlyBuildingParts.push(printer.partIndex)
             await sendPartToPrinter(printer, part)
             await wait(200)
         }
