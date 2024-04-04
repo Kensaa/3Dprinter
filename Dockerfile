@@ -23,6 +23,8 @@ RUN turbo prune server --docker
 
 WORKDIR /build/
 RUN cp -r /app/out/json/* .
+# copy manually the compression package beacuse turbo prune doesn't work with it (because it's rust)
+COPY ./packages/compression/ ./packages/compression/ 
 RUN yarn install
 RUN cp -r /app/out/full/* .
 RUN turbo build --filter=server
