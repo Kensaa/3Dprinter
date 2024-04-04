@@ -19,7 +19,7 @@ export default function Printerpage() {
             <AppNavbar />
             <div className='content'>
                 <CurrentTask currentTask={currentTask} />
-                <PrinterTable printers={printers} />
+                <PrinterTable printers={printers} currentTask={currentTask} />
             </div>
         </div>
     )

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Table } from 'react-bootstrap'
-import type { Printer } from '../utils/types'
+import type { Printer, Task } from '../utils/types'
 import RemoteControlModal from '../modals/RemoteControlModal'
 import { Move } from 'lucide-react'
 import Button from './Button'
@@ -8,12 +8,14 @@ import LoadingSpinner from './LoadingSpinner'
 
 interface PrinterTableProps {
     printers?: Printer[]
+    currentTask?: Task
     width?: string
     height?: string
 }
 
 export default function PrinterTable({
     printers,
+    currentTask,
     width = '100%',
     height = '30%'
 }: PrinterTableProps) {
@@ -21,8 +23,18 @@ export default function PrinterTable({
 
     const sortedPrinters = useMemo(() => {
         if (!printers) return undefined
-        return printers.sort((a, b) => a.id - b.id)
-    }, [printers])
+        printers.sort((a, b) => a.id - b.id)
+        if (currentTask) {
+            printers.sort((a, b) => {
+                const aState =
+                    a.state !== 'idle' ? (a.state === 'building' ? 2 : 1) : 0
+                const bState =
+                    b.state !== 'idle' ? (b.state === 'building' ? 2 : 1) : 0
+                return bState - aState
+            })
+        }
+        return printers
+    }, [printers, currentTask])
 
     if (!sortedPrinters) {
         return <LoadingSpinner style={{ width, height }} />
