@@ -23,5 +23,6 @@
         "apps/web/tsconfig.node.json": true,
         "apps/web/index.html": true,
         "apps/web/src/vite-env.d.ts": true
-    }
+    },
+    "rust-analyzer.linkedProjects": ["packages/compression/Cargo.toml"]
 }
