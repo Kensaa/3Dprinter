@@ -9,3 +9,4 @@ build
 out
 tsconfig.tsbuildinfo
 data
+apps/test
