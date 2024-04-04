@@ -15,7 +15,7 @@ export default function NewModelModal({ show, hide }: NewModelModalProps) {
     const [scale, setScale] = useState(20)
     const [objectFile, setObjectFile] = useState('')
 
-    const { updateBuild } = useBuilds()
+    const { setBuild } = useBuilds()
     const address = useAddress()
 
     const handleFileUpload = (file: File) => {
@@ -37,14 +37,14 @@ export default function NewModelModal({ show, hide }: NewModelModalProps) {
         event.stopPropagation()
         fetch(`${address}/voxelize`, {
             method: 'POST',
-            body: JSON.stringify({ file: objectFile, scale }),
+            body: JSON.stringify({ file: objectFile, scale, name }),
             headers: {
                 'Content-Type': 'application/json'
             }
         })
             .then(res => res.json())
             .then(build => {
-                updateBuild(name, build)
+                setBuild(name, build)
                 hide()
             })
     }

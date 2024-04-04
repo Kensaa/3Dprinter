@@ -1,3 +1,5 @@
+import { inflate, deflate } from 'pako'
+
 export const edit3DArray = (
     arr: (typeof element)[][][],
     x: number,
@@ -216,4 +218,62 @@ export function rotate3DArray(
         }
     }
     return newArr
+}
+
+const BYTE_PER_PIXEL = 1
+const BYTE_SIZE_VALUE = 2
+
+export function array3DToString(arr: number[][][]) {
+    const height = arr.length
+    const depth = arr[0].length
+    const width = arr[0][0].length
+
+    const buffer = Buffer.alloc(
+        height * depth * width * BYTE_PER_PIXEL + 3 * BYTE_SIZE_VALUE
+    )
+    // const buffer = Buffer.alloc(10 + 3 * 4)
+    let offset = 0
+    buffer.writeUintBE(height, offset, BYTE_SIZE_VALUE)
+    offset += BYTE_SIZE_VALUE
+    buffer.writeUintBE(depth, offset, BYTE_SIZE_VALUE)
+    offset += BYTE_SIZE_VALUE
+    buffer.writeUintBE(width, offset, BYTE_SIZE_VALUE)
+    offset += BYTE_SIZE_VALUE
+
+    for (let y = 0; y < height; y++) {
+        for (let z = 0; z < depth; z++) {
+            for (let x = 0; x < width; x++) {
+                buffer.writeUintBE(arr[y][z][x], offset, BYTE_PER_PIXEL)
+                offset += BYTE_PER_PIXEL
+            }
+        }
+    }
+    const compressed = Buffer.from(deflate(buffer, { level: 8 }))
+    return compressed.toString('base64')
+}
+
+export function stringToArray3D(str: string) {
+    const buffer = Buffer.from(str, 'base64')
+    const decompressed = Buffer.from(inflate(buffer))
+    let offset = 0
+    const height = decompressed.readUIntBE(offset, BYTE_SIZE_VALUE)
+    offset += BYTE_SIZE_VALUE
+    const depth = decompressed.readUIntBE(offset, BYTE_SIZE_VALUE)
+    offset += BYTE_SIZE_VALUE
+    const width = decompressed.readUIntBE(offset, BYTE_SIZE_VALUE)
+    offset += BYTE_SIZE_VALUE
+    const output: number[][][] = []
+    for (let y = 0; y < height; y++) {
+        output.push([])
+        for (let z = 0; z < depth; z++) {
+            output[y].push([])
+            for (let x = 0; x < width; x++) {
+                output[y][z].push(
+                    decompressed.readUIntBE(offset, BYTE_PER_PIXEL)
+                )
+                offset += BYTE_PER_PIXEL
+            }
+        }
+    }
+    return output
 }

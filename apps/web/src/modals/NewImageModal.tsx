@@ -5,7 +5,7 @@ import { useBuilds } from '../stores/data'
 import { FileUploader } from 'react-drag-drop-files'
 import { useAddress } from '../stores/config'
 import ImageViewer from '../components/ImageViewer'
-import type { Build } from '../utils/types'
+import type { CompressedBuild } from '../utils/types'
 
 interface NewImageModalProps {
     show: boolean
@@ -21,13 +21,9 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
     const [horizontalMirror, setHorizontalMirror] = useState(false)
     const [verticalMirror, setVerticalMirror] = useState(false)
 
-    const [build, setBuild] = useState<{
-        type: 'image'
-        preview: string
-        shape: number[][][]
-    }>()
+    const [preview, setPreview] = useState<string>('')
 
-    const { updateBuild } = useBuilds()
+    const { setBuild } = useBuilds()
     const address = useAddress()
 
     const handleFileUpload = (file: File) => {
@@ -48,15 +44,36 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
     const submit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         event.stopPropagation()
-        if (!build) return
-        updateBuild(name, build)
-        hide()
+
+        if (!image) return
+        if (!name) return
+        fetch(`${address}/convertImageToBuild`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                image,
+                name,
+                threshold,
+                inverted,
+                scale,
+                horizontalMirror,
+                verticalMirror
+            })
+        })
+            .then(res => res.json())
+            .then(res => {
+                const buildname = name.endsWith('.json')
+                    ? name.substring(0, name.length - 5)
+                    : name
+                setBuild(buildname, res as CompressedBuild)
+                hide()
+            })
     }
 
     useEffect(() => {
         const updatePreview = () => {
             if (!image) return
-            fetch(`${address}/convertImage`, {
+            fetch(`${address}/convertImageToPreview`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -70,12 +87,11 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
             })
                 .then(res => res.json())
                 .then(res => {
-                    const build = res as Build
-                    if (build.type !== 'image') return
-                    setBuild(build)
+                    if (!res.preview) return
+                    setPreview(res.preview)
                 })
         }
-        // this is a debounced useEffect, updatePreview will only be called if the deps of the hook weren't updated in the last 0ms
+        // this is a debounced useEffect, updatePreview will only be called if the deps of the hook weren't updated in the last 70ms
         const timeout = setTimeout(updatePreview, 70)
         return () => clearTimeout(timeout)
     }, [
@@ -167,16 +183,18 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
                             />
                         </Form.Group>
                         <div className='d-flex justify-content-center'>
-                            <Button type='submit'>Convert</Button>
+                            <Button disabled={!image || !name} type='submit'>
+                                Convert
+                            </Button>
                         </div>
                     </Form>
-                    {build ? (
+                    {preview && (
                         <ImageViewer
-                            image={build.preview}
+                            image={preview}
                             width='50%'
                             maxHeight='80%'
                         />
-                    ) : undefined}
+                    )}
                 </div>
             </Modal.Body>
         </Modal>
