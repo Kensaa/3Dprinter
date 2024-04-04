@@ -49,4 +49,4 @@ ENV WEB_SERVER_PORT=9513
 ENV DATA_FOLDER="/data"
 ENV URL=""
 
-CMD ["node apps/server/dist/server.js"]
+CMD ["node","apps/server/dist/server.js"]
