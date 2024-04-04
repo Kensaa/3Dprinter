@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
 import type { Build } from '../utils/types'
@@ -10,24 +10,24 @@ import Button from '../components/Button'
 
 interface ModelViewerProps {
     buildName: string
+    build: Build
     width?: string
     height?: string
 }
 
 export default function ModelViewer({
     buildName,
+    build: initialBuild,
     width = '25%',
     height = '50%'
 }: ModelViewerProps) {
     const disableRender = useConfig(store => store.disableRender)
-    const { updateBuild, builds } = useBuilds()
+    const { updateBuild } = useBuilds()
 
-    const [build, setBuild] = useState<Build>()
+    const [build, setBuild] = useState<Build>(initialBuild)
+    const elementCount = useMemo(() => count3DArray(build.shape), [build])
 
-    useEffect(() => {
-        setBuild(builds[buildName])
-    }, [builds, buildName])
-
+    // what ?
     if (build === undefined) {
         return (
             <div
@@ -38,11 +38,14 @@ export default function ModelViewer({
     }
     if (disableRender) return <></>
 
+    // THING TO CHANGE HERE
+    // don't push the build to the server each time we rotate it, add a "save/apply" button
+
     return (
         <div style={{ width, height }} className='border'>
             <Canvas>
                 <ambientLight />
-                <Mesh build={build} count={count3DArray(build.shape)} />
+                <Mesh build={build} count={elementCount} />
                 <CameraControls />
                 <axesHelper args={[50]} />
             </Canvas>

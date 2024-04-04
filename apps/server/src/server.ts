@@ -6,11 +6,22 @@ import fs from 'fs'
 import path from 'path'
 import { ZodError, z } from 'zod'
 import jimp from 'jimp'
-import { arrayToImage, imageToArray, trim2Darray } from './utils'
+import {
+    arrayToImage,
+    imageToArray,
+    trim2Darray,
+    array3DToString,
+    stringToArray3D
+} from './utils'
 import { voxelize } from './voxelization'
-import { buildSchema, printerConfigSchema } from 'printer-types'
+import {
+    buildSchema,
+    compressedBuildSchema,
+    printerConfigSchema
+} from 'printer-types'
 import type {
     Build,
+    CompressedBuild,
     BuildMessage,
     Task,
     PrinterState,
@@ -236,7 +247,7 @@ if (fs.existsSync(CONFIG_FILE)) {
 
     expressApp.get('/builds', (req, res) => {
         const modelsNames = fs.readdirSync(BUILDS_FOLDER)
-        const builds: Record<string, Build> = {}
+        const builds: Record<string, CompressedBuild> = {}
         for (const name of modelsNames) {
             const strData = fs.readFileSync(
                 path.join(BUILDS_FOLDER, name),
@@ -253,17 +264,16 @@ if (fs.existsSync(CONFIG_FILE)) {
     })
 
     expressApp.post('/editBuilds', (req, res, next) => {
-        const schema = z.record(z.string(), buildSchema)
+        const schema = z.record(z.string(), compressedBuildSchema)
         const parseResult = schema.safeParse(req.body)
         if (!parseResult.success) return next(parseResult.error)
         const body = parseResult.data
 
-        for (const key of Object.keys(body)) {
-            const build = body[key]
+        for (const [name, build] of Object.entries(body)) {
             fs.writeFileSync(
                 path.join(
                     BUILDS_FOLDER,
-                    key.endsWith('.json') ? key : key + '.json'
+                    name.endsWith('.json') ? name : name + '.json'
                 ),
                 JSON.stringify(build)
             )
@@ -271,9 +281,39 @@ if (fs.existsSync(CONFIG_FILE)) {
         res.sendStatus(200)
     })
 
-    expressApp.post('/convertImage', async (req, res, next) => {
+    expressApp.post('/convertImageToPreview', async (req, res, next) => {
         const schema = z.object({
             image: z.string(),
+            threshold: z.number().positive().default(50),
+            inverted: z.boolean().default(true),
+            scale: z.number().positive().default(1),
+            horizontalMirror: z.boolean().default(false),
+            verticalMirror: z.boolean().default(false)
+        })
+
+        const parseResult = schema.safeParse(req.body)
+        if (!parseResult.success) return next(parseResult.error)
+        const { image: imageString, ...options } = parseResult.data
+
+        let image
+        try {
+            image = await jimp.read(Buffer.from(imageString, 'base64'))
+        } catch {
+            return res.sendStatus(400)
+        }
+        const imageArray = imageToArray(image, options)
+        trim2Darray(imageArray)
+        const preview = await arrayToImage(imageArray).getBase64Async(
+            jimp.MIME_PNG
+        )
+
+        res.status(200).json({ preview })
+    })
+
+    expressApp.post('/convertImageToBuild', async (req, res, next) => {
+        const schema = z.object({
+            image: z.string(),
+            name: z.string(),
             threshold: z.number().positive().default(50),
             inverted: z.boolean().default(true),
             scale: z.number().positive().default(1),
@@ -292,14 +332,26 @@ if (fs.existsSync(CONFIG_FILE)) {
         }
         const imageArray = imageToArray(image, options)
         trim2Darray(imageArray)
+        const preview = await arrayToImage(imageArray).getBase64Async(
+            jimp.MIME_PNG
+        )
 
-        const build: Build = {
+        const compressedShape = array3DToString([imageArray])
+
+        const build: CompressedBuild = {
             type: 'image',
-            shape: [imageArray],
-            preview: await arrayToImage(imageArray).getBase64Async(
-                jimp.MIME_PNG
-            )
+            shape: compressedShape,
+            preview: preview
         }
+
+        const filename = options.name.endsWith('.json')
+            ? options.name
+            : options.name + '.json'
+
+        fs.writeFileSync(
+            path.join(BUILDS_FOLDER, filename),
+            JSON.stringify(build)
+        )
 
         res.status(200).json(build)
     })
@@ -316,7 +368,7 @@ if (fs.existsSync(CONFIG_FILE)) {
         if (!fs.existsSync(filepath))
             return res.status(404).send('file not found')
         const strData = fs.readFileSync(filepath, 'utf-8')
-        let build: Build
+        let build: CompressedBuild
         try {
             build = JSON.parse(strData)
         } catch {
@@ -326,8 +378,9 @@ if (fs.existsSync(CONFIG_FILE)) {
             return res.status(400).send('file does not contain a "shape" field')
         if (build.type !== 'image')
             return res.status(400).send('file is not an image')
-        const imageArray = build.shape[0]
-        const image = await arrayToImage(imageArray)
+
+        const imageArray = stringToArray3D(build.shape)
+        const image = arrayToImage(imageArray[0])
         build.preview = await image.getBase64Async(jimp.MIME_PNG)
         fs.writeFileSync(filepath, JSON.stringify(build))
         res.sendStatus(200)
@@ -336,19 +389,26 @@ if (fs.existsSync(CONFIG_FILE)) {
     expressApp.post('/voxelize', async (req, res, next) => {
         const schema = z.object({
             file: z.string(),
+            name: z.string(),
             scale: z.number().positive().default(1)
         })
 
         const parseResult = schema.safeParse(req.body)
         if (!parseResult.success) return next(parseResult.error)
-        const { file: fileBase64, scale } = parseResult.data
+        const { file: fileBase64, scale, name } = parseResult.data
 
         const file = Buffer.from(fileBase64, 'base64').toString('utf-8')
         const output = voxelize(file, scale)
-        const build: Build = {
+        const compressedShape = array3DToString(output)
+        const build: CompressedBuild = {
             type: 'model',
-            shape: output
+            shape: compressedShape
         }
+        const filename = name.endsWith('.json') ? name : name + '.json'
+        fs.writeFileSync(
+            path.join(BUILDS_FOLDER, filename),
+            JSON.stringify(build)
+        )
         res.status(200).json(build)
     })
 
@@ -375,9 +435,11 @@ if (fs.existsSync(CONFIG_FILE)) {
         if (!fs.existsSync(filepath))
             return res.status(404).send('file not found')
         if (printerCount === 0) return res.status(404).send('no printer found')
-        let build
+        let build: CompressedBuild
         try {
-            build = JSON.parse(fs.readFileSync(filepath, 'utf-8')) as Build
+            build = JSON.parse(
+                fs.readFileSync(filepath, 'utf-8')
+            ) as CompressedBuild
         } catch {
             return res.status(400).send('file is not json')
         }
@@ -386,7 +448,7 @@ if (fs.existsSync(CONFIG_FILE)) {
         if (currentTask)
             return res.status(400).send('a build is already running')
 
-        const { shape } = build
+        const shape = stringToArray3D(build.shape)
         const height = shape.length // z
         const depth = shape[0].length // y
         const width = shape[0][0].length // x

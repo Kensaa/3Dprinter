@@ -1,14 +1,23 @@
 import { z } from 'zod'
 import type { WebSocket } from 'ws'
 
+export const buildMetadataSchema = z.discriminatedUnion('type', [
+    z.object({ type: z.literal('model') }),
+    z.object({ type: z.literal('image'), preview: z.string() })
+])
+
 export const buildSchema = z.intersection(
-    z.discriminatedUnion('type', [
-        z.object({ type: z.literal('model') }),
-        z.object({ type: z.literal('image'), preview: z.string() })
-    ]),
+    buildMetadataSchema,
     z.object({ shape: z.number().array().array().array() })
 )
+
+export const compressedBuildSchema = z.intersection(
+    buildMetadataSchema,
+    z.object({ shape: z.string() })
+)
+
 export type Build = z.infer<typeof buildSchema>
+export type CompressedBuild = z.infer<typeof compressedBuildSchema>
 
 export interface BuildMessage {
     pos: [number, number, number]

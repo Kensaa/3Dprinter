@@ -59,11 +59,12 @@ export default function Homepage() {
                             </Button>
                         </div>
                     </div>
-
-                    <div className='w-50 h-100 unselectable'>
-                        <h4>Preview</h4>
-                        <BuildPreview buildName={selectedBuild} />
-                    </div>
+                    {selectedBuild && (
+                        <div className='w-50 h-100 unselectable'>
+                            <h4>Preview</h4>
+                            <BuildPreview buildName={selectedBuild} />
+                        </div>
+                    )}
                 </div>
             </div>
             {selectedBuild && (
