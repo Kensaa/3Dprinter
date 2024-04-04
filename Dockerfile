@@ -17,7 +17,12 @@ FROM node:latest as server_builder
 WORKDIR /app/
 RUN yarn global add turbo
 RUN apt update
-RUN apt install cargo -y
+RUN apt-get install -y \
+    build-essential \
+    curl
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
+
 COPY . .
 RUN turbo prune server --docker
 
