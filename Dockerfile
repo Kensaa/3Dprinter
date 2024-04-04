@@ -16,6 +16,7 @@ RUN yarn install --production
 FROM node:latest as server_builder
 WORKDIR /app/
 RUN yarn global add turbo
+RUN apt update
 RUN apt install cargo -y
 COPY . .
 RUN turbo prune server --docker
