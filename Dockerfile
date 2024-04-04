@@ -37,7 +37,7 @@ RUN yarn install --production
 
 # ------------------------------------------------
 
-FROM gcr.io/distroless/nodejs20-debian11 as runner
+FROM node:alpine as runner
 
 WORKDIR /app
 COPY --from=server_builder /build .
@@ -49,4 +49,4 @@ ENV WEB_SERVER_PORT=9513
 ENV DATA_FOLDER="/data"
 ENV URL=""
 
-CMD ["apps/server/dist/server.js"]
+CMD ["node apps/server/dist/server.js"]
