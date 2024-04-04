@@ -1,4 +1,4 @@
-FROM node:latest as web_builder
+FROM node:alpine as web_builder
 WORKDIR /app/
 RUN yarn global add turbo
 COPY . .
@@ -13,7 +13,7 @@ RUN yarn install --production
 
 # ------------------------------------------------
 
-FROM node:latest as server_builder
+FROM node:alpine as server_builder
 WORKDIR /app/
 RUN yarn global add turbo cargo-cp-artifact
 RUN apt update
