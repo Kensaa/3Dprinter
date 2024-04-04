@@ -15,7 +15,7 @@ RUN yarn install --production
 
 FROM node:latest as server_builder
 WORKDIR /app/
-RUN yarn global add turbo
+RUN yarn global add turbo cargo-cp-artifact
 RUN apt update
 RUN apt-get install -y \
     build-essential \
