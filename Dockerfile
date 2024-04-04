@@ -21,7 +21,7 @@ RUN apt-get install -y \
     build-essential \
     curl
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-RUN echo 'source $HOME/.cargo/env' >> $HOME/.bashrc
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 COPY . .
 RUN turbo prune server --docker
