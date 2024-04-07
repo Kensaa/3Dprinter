@@ -297,6 +297,14 @@ function configManager()
     end
 end
 
+function positionManager()
+    while true do
+        local pos = { drone.getDronePosition() }
+        send({ type = 'setPos', pos = pos })
+        sleep(3)
+    end
+end
+
 while true do
-    parallel.waitForAll(receive, buildManager, remoteManager, configManager)
+    parallel.waitForAll(receive, buildManager, remoteManager, configManager, positionManager)
 end
