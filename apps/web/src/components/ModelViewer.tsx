@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { CameraControls } from '@react-three/drei'
+import { CameraControls, Html } from '@react-three/drei'
 import type { Build } from '../utils/types'
 import { useConfig } from '../stores/config'
 import { useBuilds } from '../stores/data'
@@ -25,6 +25,10 @@ export default function ModelViewer({
     const { updateBuild } = useBuilds()
 
     const [build, setBuild] = useState<Build>(initialBuild)
+
+    useEffect(() => {
+        setBuild(initialBuild)
+    }, [buildName, initialBuild])
     const elementCount = useMemo(() => count3DArray(build.shape), [build])
 
     // what ?
@@ -45,6 +49,10 @@ export default function ModelViewer({
         <div style={{ width, height }} className='border'>
             <Canvas>
                 <ambientLight />
+                <Panel>
+                    <h4>{buildName}</h4>
+                    <p>{blockCountString(elementCount)}</p>
+                </Panel>
                 <Mesh build={build} count={elementCount} />
                 <CameraControls />
                 <axesHelper args={[50]} />
@@ -162,4 +170,27 @@ function Mesh({ build, count }: MeshProps) {
             <meshBasicMaterial />
         </instancedMesh>
     )
+}
+
+interface PanelProps {}
+function Panel({ children }: React.PropsWithChildren<PanelProps>) {
+    return (
+        <Html calculatePosition={() => [0, 0, 0]} wrapperClass='panel-wrapper'>
+            <div className='panel'>{children}</div>
+        </Html>
+    )
+}
+
+function blockCountString(number: number) {
+    // add spaces every 3 digits
+    const numberString = number.toString()
+    const len = numberString.length
+    let result = ''
+    for (let i = len - 1; i >= 0; i--) {
+        if ((len - i - 1) % 3 === 0) {
+            result = ' ' + result
+        }
+        result = numberString[i] + result
+    }
+    return `${result} block${number === 1 ? '' : 's'}`
 }
