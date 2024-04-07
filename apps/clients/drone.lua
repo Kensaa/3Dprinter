@@ -144,6 +144,8 @@ function build(data, x, y, z, height, depth, width, heading)
                     getItem(config['restockPosition'], config['buildBlock'], maxBuildBatch)
                     count = 0
                 end
+                progress = (yi - 1 + (zi - 1) / depth) / height * 100
+                send({ type = 'setProgress', progress = progress })
             end
         end
     end
