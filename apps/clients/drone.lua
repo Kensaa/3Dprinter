@@ -1,11 +1,11 @@
 local drone = peripheral.wrap("top")
-drone.setSides(true,true,true,true,true,true)
+drone.setSides(true, true, true, true, true, true)
 
 local config = {
-    buildBlock="minecraft:cobblestone",
-    gpsTry=5,
-    refuelPosition={0,0,0},
-    restockPosition={0,0,0}
+    buildBlock = "minecraft:cobblestone",
+    gpsTry = 5,
+    refuelPosition = { 0, 0, 0 },
+    restockPosition = { 0, 0, 0 }
 }
 
 local maxBuildBatch = 2000
@@ -24,19 +24,19 @@ function waitForAction()
 end
 
 function getItem(position, item, count)
-    print('getting '..count..' '..item..' at '..position[1]..','..position[2]..','..position[3])
+    print('getting ' .. count .. ' ' .. item .. ' at ' .. position[1] .. ',' .. position[2] .. ',' .. position[3])
     drone.abortAction()
     drone.clearArea()
     drone.clearWhitelistItemFilter()
 
-    drone.addArea(position[1],position[2],position[3])
+    drone.addArea(position[1], position[2], position[3])
     drone.setUseCount(true)
     drone.setCount(count)
     drone.addWhitelistItemFilter(item, false, false)
     drone.setUseMaxActions(true)
     drone.setMaxActions(1)
     drone.setAction('inventory_import')
-    
+
     waitForAction()
 
     drone.abortAction()
@@ -51,8 +51,6 @@ function refuel()
         print('waiting for refuel')
         sleep(1)
     end
-
-
 end
 
 local ws, err = http.websocket(url)
@@ -66,39 +64,38 @@ function send(data)
 end
 
 function log(message)
-    send({type = 'log', message = message})
+    send({ type = 'log', message = message })
 end
 
 function setState(state)
     if currentState ~= state then
         currentState = state
-        send({type = 'setState', state=state})
+        send({ type = 'setState', state = state })
     end
 end
 
 -- register the client (to associate a websocket with a label and an id on the server)
-send({type = 'register', label = os.getComputerLabel(), id = os.getComputerID()})
+send({ type = 'register', label = os.getComputerLabel(), id = os.getComputerID() })
 
 
-    
+
 function goTo(pos)
     drone.abortAction()
     drone.clearArea()
-    drone.addArea(pos[1],pos[2],pos[3])
+    drone.addArea(pos[1], pos[2], pos[3])
     drone.setAction('goto')
     waitForAction()
     drone.abortAction()
     drone.clearArea()
 end
 
-
---TODO
 function build(data, x, y, z, height, depth, width, heading)
+    print("build is at " .. x .. ',' .. y .. ',' .. z)
 
     function buildArea()
         drone.abortAction()
         drone.clearWhitelistItemFilter()
-        drone.addWhitelistItemFilter(config['buildBlock'],false,false)
+        drone.addWhitelistItemFilter(config['buildBlock'], false, false)
 
         drone.setAction('place')
         waitForAction()
@@ -111,27 +108,30 @@ function build(data, x, y, z, height, depth, width, heading)
     getItem(config['restockPosition'], config['buildBlock'], maxBuildBatch)
 
     count = 0
-    for yi = 1,height do
-        for zi=1,depth do
-            for xi=1,width do
+    for yi = 1, height do
+        for zi = 1, depth do
+            for xi = 1, width do
                 if tonumber(data[yi][zi][xi]) == 1 then
                     local currentX = x
-                    local currentY = y+yi
+                    local currentY = y + yi - 1
                     local currentZ = z
                     if heading == 1 then
-                        currentX = currentX + xi
-                        currentZ = currentZ + zi
+                        currentX = currentX + xi - 1
+                        currentZ = currentZ + zi - 1
                     elseif heading == 2 then
-                        currentX = currentX - zi
-                        currentZ = currentZ + xi
+                        currentX = currentX - zi - 1
+                        currentZ = currentZ + xi - 1
                     elseif heading == 3 then
-                        currentX = currentX - xi
-                        currentZ = currentZ - zi
+                        currentX = currentX - xi - 1
+                        currentZ = currentZ - zi - 1
                     elseif heading == 4 then
-                        currentX = currentX + zi
-                        currentZ = currentZ - xi
+                        currentX = currentX + zi - 1
+                        currentZ = currentZ - xi - 1
                     end
-                    drone.addArea(currentX,currentY,currentZ)
+                    if count == 0 then
+                        print("first block at " .. currentX .. ',' .. currentY .. ',' .. currentZ)
+                    end
+                    drone.addArea(currentX, currentY, currentZ)
                     count = count + 1
                 end
 
@@ -145,10 +145,9 @@ function build(data, x, y, z, height, depth, width, heading)
                     count = 0
                 end
             end
-        end 
+        end
     end
     buildArea()
-
 end
 
 --TODO
@@ -173,7 +172,7 @@ function handleData(JSONData)
     -- ['East', 'South', 'West', 'North']
 
     if heading == 1 then
-        x = x + widthOffset 
+        x = x + widthOffset
         z = z + depthOffset
     elseif heading == 2 then
         x = x - depthOffset
@@ -186,24 +185,24 @@ function handleData(JSONData)
         z = z - widthOffset
     end
 
-    log('building a '..width..'x'..depth..'x'..height..' shape at '..x..','..y..','..z)
+    log('building a ' .. width .. 'x' .. depth .. 'x' .. height .. ' shape at ' .. x .. ',' .. y .. ',' .. z)
     --print('current config : ', textutils.serialize(config))
     setState('moving')
     setState('building')
-    build(data,x,y,z,height,depth,width,heading)
+    build(data, x, y, z, height, depth, width, heading)
     fs.delete('data')
     log("finished building, asking for next part")
-    send({type = 'setProgress', progress=0.0})
-    send({type="nextPart"})
+    send({ type = 'setProgress', progress = 0.0 })
+    send({ type = "nextPart" })
 end
 
-homePosition = {drone.getDronePosition()}
+homePosition = { drone.getDronePosition() }
 
 currentState = ''
 setState('idle')
-send({type = 'setPos', pos=homePosition})
+send({ type = 'setPos', pos = homePosition })
 
-send({type = 'currentPart'})
+send({ type = 'currentPart' })
 
 local currentMessage = nil
 
@@ -248,7 +247,7 @@ function remoteManager()
         if currentMessage ~= nil then
             if currentMessage['type'] == 'remote' then
                 local remoteCommand = currentMessage['command']
-                print('received remote command : '..remoteCommand)
+                print('received remote command : ' .. remoteCommand)
                 if remoteCommand == 'forward' then
                     forward()
                 elseif remoteCommand == 'backward' then
@@ -271,7 +270,7 @@ function remoteManager()
                 elseif remoteCommand == 'refuel' then
                     refuel()
                 elseif remoteCommand == 'emptyInventory' then
-                    for i = 1,14 do
+                    for i = 1, 14 do
                         turtle.select(i)
                         turtle.dropDown()
                     end

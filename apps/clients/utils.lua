@@ -9,7 +9,7 @@ while true do
         local num = tonumber(read())
         for i = 1, num do
             turtle.forward()
-            peripheral.call("bottom","reboot")
+            peripheral.call("bottom", "reboot")
         end
         turtle.turnLeft()
         turtle.turnLeft()
@@ -23,7 +23,7 @@ while true do
         local num = tonumber(read())
         for i = 1, num do
             turtle.forward()
-            peripheral.call("bottom","shutdown")
+            peripheral.call("bottom", "shutdown")
         end
         turtle.turnLeft()
         turtle.turnLeft()
@@ -32,7 +32,6 @@ while true do
         end
         turtle.turnLeft()
         turtle.turnLeft()
-
     elseif input == 3 then
         break
     else

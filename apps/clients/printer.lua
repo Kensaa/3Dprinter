@@ -1,6 +1,6 @@
 local config = {
-    buildBlock="minecraft:cobblestone",
-    gpsTry=5
+    buildBlock = "minecraft:cobblestone",
+    gpsTry = 5
 }
 
 local url = "$WS_URL$"
@@ -9,7 +9,7 @@ if not fs.exists('json.lua') then
 end
 sleep(1)
 json = require "json"
--- Setup : 
+-- Setup :
 -- equip chunk loader from advanced peripheral to the left
 -- equip either a pickaxe or a advanced wireless modem to the right and place the other into the 15th slot
 -- place the block enderchest in the last slot
@@ -39,7 +39,7 @@ function restock()
     turtle.select(16)
     turtle.placeUp()
     turtle.select(1)
-    for i = 1,14 do 
+    for i = 1, 14 do
         turtle.suckUp()
     end
     turtle.select(16)
@@ -55,7 +55,7 @@ function checkFuel()
         print('please add fuel and press enter')
         setState('refueling')
         read()
-        for slot=1,14 do
+        for slot = 1, 14 do
             turtle.select(slot)
             turtle.refuel()
         end
@@ -71,7 +71,7 @@ function refuel()
     currentSlot = turtle.getSelectedSlot()
     previousState = currentState
     setState('refueling')
-    for slot=1,14 do
+    for slot = 1, 14 do
         turtle.select(slot)
         turtle.refuel()
     end
@@ -103,22 +103,22 @@ function send(data)
 end
 
 function log(message)
-    send({type = 'log', message = message})
+    send({ type = 'log', message = message })
 end
 
 function setState(state)
     if currentState ~= state then
         currentState = state
-        send({type = 'setState', state=state})
+        send({ type = 'setState', state = state })
     end
 end
 
 -- register the client (to associate a websocket with a label and an id on the server)
-send({type = 'register', label = os.getComputerLabel(), id = os.getComputerID()})
+send({ type = 'register', label = os.getComputerLabel(), id = os.getComputerID() })
 
 function countA(a)
     c = {}
-    for k,v in pairs(a) do
+    for k, v in pairs(a) do
         if not (v ~= v) then
             if c[v] ~= nil then
                 c[v] = c[v] + 1
@@ -132,7 +132,7 @@ end
 
 function maxA(a)
     maxI = 0
-    for k,v in pairs(a) do
+    for k, v in pairs(a) do
         if a[maxI] == nil then
             maxI = k
         end
@@ -146,13 +146,13 @@ end
 function locate()
     equipModem()
     posA = {}
-    for i = 1,config['gpsTry'] do
-        table.insert(posA,{gps.locate(2)})
+    for i = 1, config['gpsTry'] do
+        table.insert(posA, { gps.locate(2) })
     end
     xA = {}
     yA = {}
     zA = {}
-    for k,v in pairs(posA) do
+    for k, v in pairs(posA) do
         table.insert(xA, v[1])
         table.insert(yA, v[2])
         table.insert(zA, v[3])
@@ -163,7 +163,7 @@ function locate()
     x = maxA(cntX)
     y = maxA(cntY)
     z = maxA(cntZ)
-    -- marchera pas en 0 0 0 
+    -- marchera pas en 0 0 0
     if x == 0 and y == 0 and z == 0 then
         return locate()
     end
@@ -171,9 +171,9 @@ function locate()
 end
 
 function getHeading()
-    local before = {locate()}
+    local before = { locate() }
     turtle.forward()
-    local after = {locate()}
+    local after = { locate() }
     turtle.back()
     if after[1] > before[1] then
         -- x+
@@ -187,7 +187,8 @@ function getHeading()
     elseif after[3] < before[3] then
         -- z-
         return 4
-    else return -1
+    else
+        return -1
     end
 end
 
@@ -232,7 +233,6 @@ function forward()
                     elseif turtle.down() then
                         currentPosition[2] = currentPosition[2] - 1
                     end
-                    
                 else
                     print('im lower id')
                     sleep(1)
@@ -251,7 +251,7 @@ function forward()
     elseif currentHeading % 4 == 0 then
         currentPosition[3] = currentPosition[3] - 1
     end
-    send({type = 'setPos', pos=currentPosition})
+    send({ type = 'setPos', pos = currentPosition })
 end
 
 function backward()
@@ -285,7 +285,7 @@ function backward()
     elseif currentHeading % 4 == 0 then
         currentPosition[3] = currentPosition[3] + 1
     end
-    send({type = 'setPos', pos=currentPosition})
+    send({ type = 'setPos', pos = currentPosition })
 end
 
 function up()
@@ -298,7 +298,7 @@ function up()
         end
     end
     currentPosition[2] = currentPosition[2] + 1
-    send({type = 'setPos', pos=currentPosition})
+    send({ type = 'setPos', pos = currentPosition })
 end
 
 function down()
@@ -311,11 +311,10 @@ function down()
         end
     end
     currentPosition[2] = currentPosition[2] - 1
-    send({type = 'setPos', pos=currentPosition})
+    send({ type = 'setPos', pos = currentPosition })
 end
-    
 
-function goTo(targetX,targetY,targetZ, maxHeight)
+function goTo(targetX, targetY, targetZ, maxHeight)
     maxHeight = maxHeight or 310
     print(currentHeading)
     if currentHeading == -1 then
@@ -352,7 +351,7 @@ function goTo(targetX,targetY,targetZ, maxHeight)
             -- y-
             down()
         end
-    end     
+    end
 end
 
 function headTo(heading)
@@ -362,16 +361,16 @@ function headTo(heading)
 end
 
 function build(data, height, depth, width)
-    for y = 1,height do
-        print("layer n°"..y)
+    for y = 1, height do
+        print("layer n°" .. y)
         local layer = data[y]
         local startIndexes = {}
         local endIndexes = {}
 
         -- if the layer is empty, we don't have to do anything
         local layerEmpty = true
-        for z = 1,depth do
-            for x = 1,width do
+        for z = 1, depth do
+            for x = 1, width do
                 if tonumber(layer[z][x]) == 1 then
                     layerEmpty = false
                 end
@@ -384,26 +383,26 @@ function build(data, height, depth, width)
             end
         else
             print('layer is not empty')
-            for z = 1,depth do
-                for x = width,1,-1 do
+            for z = 1, depth do
+                for x = width, 1, -1 do
                     if tonumber(layer[z][x]) == 1 then
                         startIndexes[z] = x
                     end
                 end
-                for x = 1,width do
+                for x = 1, width do
                     if tonumber(layer[z][x]) == 1 then
                         endIndexes[z] = x
                     end
                 end
             end
-    
-            local Xdir = 0 -- 0 = left to right | 1 = right to left
+
+            local Xdir = 0   -- 0 = left to right | 1 = right to left
             local startX = 1 -- index from which to start on next row (default to 1 to start the first row at the start)
-            for z = 1,depth do
+            for z = 1, depth do
                 local row = layer[z]
-                print('row n°' .. z..', Xdir: '..Xdir)
-                send({type = 'setPos', pos=currentPosition})
-                              
+                print('row n°' .. z .. ', Xdir: ' .. Xdir)
+                send({ type = 'setPos', pos = currentPosition })
+
                 if startIndexes[z] == nil and z ~= depth then
                     --last row --> don't have to take shortcut --> break everything
                     print('line is empty')
@@ -422,19 +421,19 @@ function build(data, height, depth, width)
                     firstPass = true
                     for x = startX, width do
                         index = x
-                        
+
                         if Xdir == 1 then
-                            index = width-x+1
+                            index = width - x + 1
                         end
                         if not firstPass then
                             forward()
-                        else 
+                        else
                             firstPass = false
                         end
                         if tonumber(row[index]) == 1 then
                             place()
                         end
-                        
+
                         -- end of line
                         if x == width then
                             print("end of line")
@@ -456,11 +455,12 @@ function build(data, height, depth, width)
                         else
                             -- shortcut
                             if Xdir == 0 then
-                                if endIndexes[z] ~= nil and x >= endIndexes[z] then -- if further than last on current line
-                                    if endIndexes[z+1] ~= nil and x >= endIndexes[z+1] then -- if further than last on next line
+                                if endIndexes[z] ~= nil and x >= endIndexes[z] then             -- if further than last on current line
+                                    if endIndexes[z + 1] ~= nil and x >= endIndexes[z + 1] then -- if further than last on next line
                                         -- shortcut available
-                                        startX = width-x+1 -- set next start to where the shortcut places us
-                                        Xdir = 1 -- we change direction (obviously)
+                                        startX = width - x +
+                                        1                                                       -- set next start to where the shortcut places us
+                                        Xdir = 1                                                -- we change direction (obviously)
                                         print("turning earlier to the right")
                                         turnRight()
                                         forward()
@@ -469,12 +469,13 @@ function build(data, height, depth, width)
                                     end
                                 end
                             else
-                                i = width-x+1
-                                if startIndexes[z] ~= nil and i <= startIndexes[z] then -- if further than first on current line
-                                    if startIndexes[z+1] ~= nil and i <= startIndexes[z+1] then -- if further than first on next line
+                                i = width - x + 1
+                                if startIndexes[z] ~= nil and i <= startIndexes[z] then             -- if further than first on current line
+                                    if startIndexes[z + 1] ~= nil and i <= startIndexes[z + 1] then -- if further than first on next line
                                         -- shortcut available
-                                        startX = i -- set next start to where the shortcut places us
-                                        Xdir = 0 -- we change direction (obviously)
+                                        startX =
+                                        i                                                           -- set next start to where the shortcut places us
+                                        Xdir = 0                                                    -- we change direction (obviously)
                                         print("turning earlier to the left")
                                         --backward()
                                         turnLeft()
@@ -487,8 +488,8 @@ function build(data, height, depth, width)
                         end
                     end
                 end
-                progress = (y - 1  + (z - 1) / depth) / height * 100
-                send({type = 'setProgress', progress=progress})
+                progress = (y - 1 + (z - 1) / depth) / height * 100
+                send({ type = 'setProgress', progress = progress })
             end
             -- end of layer
             if y ~= height then -- if it's the last layer, no need to go back to the start
@@ -496,8 +497,8 @@ function build(data, height, depth, width)
                     --oposite side as start
                     turnRight()
                     turnRight()
-        
-                    for i = 1,width-1 do
+
+                    for i = 1, width - 1 do
                         forward()
                     end
                     turnRight()
@@ -505,7 +506,7 @@ function build(data, height, depth, width)
                     --same side as start
                     turnRight()
                 end
-                for i = 1,depth-1 do
+                for i = 1, depth - 1 do
                     forward()
                 end
                 turnRight()
@@ -513,7 +514,7 @@ function build(data, height, depth, width)
             end
         end
     end
-    send({type = 'setProgress', progress=100.0})
+    send({ type = 'setProgress', progress = 100.0 })
     up()
     up()
 end
@@ -537,7 +538,7 @@ function handleData(JSONData)
     y = y + heightOffset
 
     if heading == 1 then
-        x = x + widthOffset 
+        x = x + widthOffset
         z = z + depthOffset
     elseif heading == 2 then
         x = x - depthOffset
@@ -550,32 +551,32 @@ function handleData(JSONData)
         z = z - widthOffset
     end
 
-    buildMaxHeight = height+y+1
-    log('building a '..width..'x'..depth..'x'..height..' shape at '..x..','..y..','..z)
-    print('max height: '..buildMaxHeight)
+    buildMaxHeight = height + y + 1
+    log('building a ' .. width .. 'x' .. depth .. 'x' .. height .. ' shape at ' .. x .. ',' .. y .. ',' .. z)
+    print('max height: ' .. buildMaxHeight)
     setState('moving')
-    goTo(x,y+1,z,buildMaxHeight+2)
+    goTo(x, y + 1, z, buildMaxHeight + 2)
     headTo(heading)
     setState('building')
-    build(data,height,depth,width)
+    build(data, height, depth, width)
     fs.delete('data')
     log("finished building, asking for next part")
-    send({type = 'setProgress', progress=0.0})
-    send({type="nextPart"})
+    send({ type = 'setProgress', progress = 0.0 })
+    send({ type = "nextPart" })
 end
 
-currentPosition = {locate()}
-homePosition = {currentPosition[1],currentPosition[2],currentPosition[3]}
+currentPosition = { locate() }
+homePosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
 currentState = ''
 setState('idle')
-send({type = 'setPos', pos=currentPosition})
+send({ type = 'setPos', pos = currentPosition })
 
 currentHeading = getHeading()
 homeHeading = currentHeading
 
 checkFuel()
 
-send({type = 'currentPart'})
+send({ type = 'currentPart' })
 
 local currentMessage = nil
 
@@ -605,7 +606,7 @@ function buildManager()
                 currentMessage = nil
                 log("no next part, going back to home position")
                 setState('moving')
-                goTo(homePosition[1],homePosition[2],homePosition[3],buildMaxHeight+2)
+                goTo(homePosition[1], homePosition[2], homePosition[3], buildMaxHeight + 2)
                 headTo(homeHeading)
                 log("back to home position, waiting for order")
                 setState('idle')
@@ -620,7 +621,7 @@ function remoteManager()
         if currentMessage ~= nil then
             if currentMessage['type'] == 'remote' then
                 local remoteCommand = currentMessage['command']
-                print('received remote command : '..remoteCommand)
+                print('received remote command : ' .. remoteCommand)
                 if remoteCommand == 'forward' then
                     forward()
                 elseif remoteCommand == 'backward' then
@@ -636,14 +637,15 @@ function remoteManager()
                 elseif remoteCommand == 'goTo' then
                     local pState = currentState
                     setState('moving')
-                    goTo(currentMessage['data'][1],currentMessage['data'][2],currentMessage['data'][3], currentMessage['data'][2])
+                    goTo(currentMessage['data'][1], currentMessage['data'][2], currentMessage['data'][3],
+                        currentMessage['data'][2])
                     setState(pState)
                 elseif remoteCommand == 'headTo' then
                     headTo(currentMessage['data'][1])
                 elseif remoteCommand == 'refuel' then
                     refuel()
                 elseif remoteCommand == 'emptyInventory' then
-                    for i = 1,14 do
+                    for i = 1, 14 do
                         turtle.select(i)
                         turtle.dropDown()
                     end
@@ -656,7 +658,7 @@ function remoteManager()
     end
 end
 
-function configManager() 
+function configManager()
     while true do
         if currentMessage ~= nil then
             if currentMessage['type'] == 'config' then
