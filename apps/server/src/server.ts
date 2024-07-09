@@ -224,11 +224,11 @@ if (fs.existsSync(CONFIG_FILE)) {
                 }
             } else if (msg.type === 'currentPart') {
                 const printer = printers.find(p => p.ws === ws)
-                if (!printer) return
-                if (!currentTask) return
-                if (!printer.partIndex) return
+                if (!printer) return console.log('printer not found')
+                if (!currentTask) return console.log('no current task')
+                if (!printer.partIndex) return console.log('no part index')
                 const part = currentTask.parts[printer.partIndex] ?? undefined
-                if (!part) return
+                if (!part) return console.log('part not found')
                 await sendPartToPrinter(printer, part)
             }
         })
