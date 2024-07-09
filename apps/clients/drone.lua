@@ -5,11 +5,10 @@ local config = {
     buildBlock = "minecraft:cobblestone",
     gpsTry = 5,
     minPressure = 2,
+    maxBuildBatch = 500,
     refuelPosition = { 0, 0, 0 },
     restockPosition = { 0, 0, 0 }
 }
-
-local maxBuildBatch = 2000
 
 local url = "$WS_URL$"
 if not fs.exists('json.lua') then
@@ -106,7 +105,7 @@ function build(data, x, y, z, height, depth, width, heading)
     end
 
     refuel()
-    getItem(config['restockPosition'], config['buildBlock'], maxBuildBatch)
+    getItem(config['restockPosition'], config['buildBlock'], config['maxBuildBatch'])
 
     count = 0
     for yi = 1, height do
@@ -136,13 +135,13 @@ function build(data, x, y, z, height, depth, width, heading)
                     count = count + 1
                 end
 
-                if count == maxBuildBatch then
+                if count == config['maxBuildBatch'] then
                     print('max count reached')
                     -- build current
                     buildArea()
                     -- restock
                     refuel()
-                    getItem(config['restockPosition'], config['buildBlock'], maxBuildBatch)
+                    getItem(config['restockPosition'], config['buildBlock'], config['maxBuildBatch'])
                     count = 0
                 end
                 progress = (yi - 1 + (zi - 1) / depth) / height * 100

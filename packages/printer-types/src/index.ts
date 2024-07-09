@@ -66,6 +66,7 @@ export const printerConfigSchema = z.object({
     buildBlock: z.string(),
     gpsTry: z.number().positive(),
     minPressure: z.number().positive(),
+    maxBuildBatch: z.number().positive(),
     refuelPosition: z.tuple([z.number(), z.number(), z.number()]),
     restockPosition: z.tuple([z.number(), z.number(), z.number()])
 })
