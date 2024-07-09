@@ -4,6 +4,7 @@ drone.setSides(true, true, true, true, true, true)
 local config = {
     buildBlock = "minecraft:cobblestone",
     gpsTry = 5,
+    minPressure = 2,
     refuelPosition = { 0, 0, 0 },
     restockPosition = { 0, 0, 0 }
 }
