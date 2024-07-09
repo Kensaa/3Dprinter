@@ -48,7 +48,7 @@ end
 
 function refuel()
     goTo(config['refuelPosition'])
-    while drone.getDronePressure() < 9.8 do
+    while drone.getDronePressure() < config['minPressure'] do
         print('waiting for refuel')
         sleep(1)
     end
