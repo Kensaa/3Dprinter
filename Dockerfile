@@ -1,6 +1,6 @@
 FROM node:latest as web_builder
 WORKDIR /app/
-RUN yarn global add turbo
+RUN yarn global add turbo@1.10.16
 COPY . .
 RUN turbo prune web --docker
 
@@ -15,7 +15,7 @@ RUN yarn install --production
 
 FROM node:latest as server_builder
 WORKDIR /app/
-RUN yarn global add turbo cargo-cp-artifact
+RUN yarn global add turbo@1.10.16 cargo-cp-artifact
 RUN apt update
 RUN apt-get install -y \
     build-essential \
