@@ -308,7 +308,9 @@ if (fs.existsSync(CONFIG_FILE)) {
             jimp.MIME_PNG
         )
 
-        res.status(200).json({ preview })
+        const blockCount = count2DArray(imageArray, 1)
+
+        res.status(200).json({ preview, blockCount })
     })
 
     expressApp.post('/convertImageToBuild', async (req, res, next) => {

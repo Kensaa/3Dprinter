@@ -22,6 +22,7 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
     const [verticalMirror, setVerticalMirror] = useState(false)
 
     const [preview, setPreview] = useState<string>('')
+    const [blockCount, setBlockCount] = useState<number>(0)
 
     const { setBuild } = useBuilds()
     const address = useAddress()
@@ -87,8 +88,9 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
             })
                 .then(res => res.json())
                 .then(res => {
-                    if (!res.preview) return
+                    if (!res.preview || !res.blockCount) return
                     setPreview(res.preview)
+                    setBlockCount(res.blockCount)
                 })
         }
         // this is a debounced useEffect, updatePreview will only be called if the deps of the hook weren't updated in the last 70ms
@@ -191,6 +193,7 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
                     {preview && (
                         <ImageViewer
                             image={preview}
+                            blockCount={blockCount}
                             width='50%'
                             maxHeight='80%'
                         />
