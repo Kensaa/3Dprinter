@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { getImageDimensions } from '../utils/utils'
+import { blockCountString, getImageDimensions } from '../utils/utils'
 
 interface ImageViewerProps {
     image: string
+    blockCount: number
     width?: string
     height?: string
     maxWidth?: string
@@ -11,6 +12,7 @@ interface ImageViewerProps {
 
 export default function ImageViewer({
     image,
+    blockCount,
     width,
     height,
     maxWidth,
@@ -30,6 +32,7 @@ export default function ImageViewer({
         >
             <img className='w-100 h-100 border' src={image} />
             <h1>{dims}</h1>
+            <h5>{blockCount && blockCountString(blockCount)}</h5>
         </div>
     )
 }

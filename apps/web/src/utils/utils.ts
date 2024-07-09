@@ -21,3 +21,17 @@ export const getImageDimensions = (image: string) => {
         i.src = image
     })
 }
+
+export function blockCountString(number: number) {
+    // add spaces every 3 digits
+    const numberString = number.toString()
+    const len = numberString.length
+    let result = ''
+    for (let i = len - 1; i >= 0; i--) {
+        if ((len - i - 1) % 3 === 0) {
+            result = ' ' + result
+        }
+        result = numberString[i] + result
+    }
+    return `${result} block${number === 1 ? '' : 's'}`
+}

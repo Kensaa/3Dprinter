@@ -35,7 +35,12 @@ export default function BuildPreview({ buildName }: BuildPreviewProps) {
                     height='100%'
                 />
             ) : (
-                <ImageViewer image={build.preview} width='100%' height='100%' />
+                <ImageViewer
+                    image={build.preview}
+                    blockCount={build.blockCount}
+                    width='100%'
+                    height='100%'
+                />
             )}
         </>
     )

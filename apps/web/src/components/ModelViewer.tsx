@@ -7,6 +7,7 @@ import { useBuilds } from '../stores/data'
 import { Color, InstancedMesh, Object3D } from 'three'
 import { count3DArray, rotate3DArray } from '../utils/arrayUtils'
 import Button from '../components/Button'
+import { blockCountString } from '../utils/utils'
 
 interface ModelViewerProps {
     buildName: string
@@ -179,18 +180,4 @@ function Panel({ children }: React.PropsWithChildren<PanelProps>) {
             <div className='panel'>{children}</div>
         </Html>
     )
-}
-
-function blockCountString(number: number) {
-    // add spaces every 3 digits
-    const numberString = number.toString()
-    const len = numberString.length
-    let result = ''
-    for (let i = len - 1; i >= 0; i--) {
-        if ((len - i - 1) % 3 === 0) {
-            result = ' ' + result
-        }
-        result = numberString[i] + result
-    }
-    return `${result} block${number === 1 ? '' : 's'}`
 }

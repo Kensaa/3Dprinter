@@ -3,7 +3,11 @@ import type { WebSocket } from 'ws'
 
 export const buildMetadataSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('model') }),
-    z.object({ type: z.literal('image'), preview: z.string() })
+    z.object({
+        type: z.literal('image'),
+        preview: z.string(),
+        blockCount: z.number()
+    })
 ])
 
 export const buildSchema = z.intersection(

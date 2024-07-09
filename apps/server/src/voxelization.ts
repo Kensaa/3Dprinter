@@ -17,6 +17,7 @@ export function voxelize(data: string, scale = 20) {
         vertice.map((coord, index) => coord - mins[index])
     )
 
+    // To change, stop scaling each dimension independently, scale all dimensions by the same factor to preserve aspect ratio, otherwise the model will always be a square
     const maxs = [
         max(translatedVertices.map(vertice => vertice[0])),
         max(translatedVertices.map(vertice => vertice[1])),

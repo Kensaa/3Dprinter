@@ -44,6 +44,16 @@ export function trim2Darray(arr: number[][], nullE = 0) {
     }
 }
 
+export function count2DArray(arr: number[][], value = 1) {
+    let count = 0
+    for (let y = 0; y < arr.length; y++) {
+        for (let x = 0; x < arr[y].length; x++) {
+            if (arr[y][x] === value) count++
+        }
+    }
+    return count
+}
+
 export interface ImageToArrayOptions {
     threshold: number
     inverted: boolean

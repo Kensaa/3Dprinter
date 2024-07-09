@@ -11,7 +11,8 @@ import {
     imageToArray,
     trim2Darray,
     array3DToString,
-    stringToArray3D
+    stringToArray3D,
+    count2DArray
 } from './utils'
 import { voxelize } from './voxelization'
 import {
@@ -336,12 +337,15 @@ if (fs.existsSync(CONFIG_FILE)) {
             jimp.MIME_PNG
         )
 
+        const blockCount = count2DArray(imageArray, 1)
+
         const compressedShape = array3DToString([imageArray])
 
         const build: CompressedBuild = {
             type: 'image',
             shape: compressedShape,
-            preview: preview
+            preview: preview,
+            blockCount
         }
 
         const filename = options.name.endsWith('.json')
