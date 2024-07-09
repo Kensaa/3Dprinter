@@ -76,8 +76,8 @@ const logs: string[] = []
 const defaultPrinterConfig: PrinterConfig = {
     buildBlock: 'minecraft:cobblestone',
     gpsTry: 5,
-    minPressure: 2,
-    maxBuildBatch:500,
+    minPressure: 4,
+    maxBuildBatch: 500,
     refuelPosition: [0, 0, 0],
     restockPosition: [0, 0, 0]
 }
