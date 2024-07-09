@@ -92,7 +92,9 @@ function TableRow({ printer }: TableRowProps) {
                 <td>{label}</td>
                 <td>{capitalise(state)}</td>
                 <td>{connected ? 'Connected' : 'Disconnected'}</td>
-                <td>{pos ? pos.join(' ') : 'Unknown'}</td>
+                <td>
+                    {pos ? pos.map(p => p.toFixed(1)).join(' ') : 'Unknown'}
+                </td>
                 <td>
                     {progress !== undefined
                         ? progress.toFixed(2) + '%'
