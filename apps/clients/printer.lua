@@ -114,7 +114,7 @@ function setState(state)
 end
 
 -- register the client (to associate a websocket with a label and an id on the server)
-send({ type = 'register', label = os.getComputerLabel(), id = os.getComputerID() })
+send({ type = 'register', label = os.getComputerLabel() or "unnamed printer", id = os.getComputerID() })
 
 function countA(a)
     c = {}
@@ -459,8 +459,8 @@ function build(data, height, depth, width)
                                     if endIndexes[z + 1] ~= nil and x >= endIndexes[z + 1] then -- if further than last on next line
                                         -- shortcut available
                                         startX = width - x +
-                                        1                                                       -- set next start to where the shortcut places us
-                                        Xdir = 1                                                -- we change direction (obviously)
+                                            1    -- set next start to where the shortcut places us
+                                        Xdir = 1 -- we change direction (obviously)
                                         print("turning earlier to the right")
                                         turnRight()
                                         forward()
@@ -474,8 +474,8 @@ function build(data, height, depth, width)
                                     if startIndexes[z + 1] ~= nil and i <= startIndexes[z + 1] then -- if further than first on next line
                                         -- shortcut available
                                         startX =
-                                        i                                                           -- set next start to where the shortcut places us
-                                        Xdir = 0                                                    -- we change direction (obviously)
+                                            i    -- set next start to where the shortcut places us
+                                        Xdir = 0 -- we change direction (obviously)
                                         print("turning earlier to the left")
                                         --backward()
                                         turnLeft()
