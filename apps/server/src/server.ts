@@ -575,7 +575,7 @@ if (fs.existsSync(CONFIG_FILE)) {
                 'headTo',
                 'refuel',
                 'emptyInventory',
-                'setBuildBlock'
+                'pause'
             ]),
             data: z.number().or(z.string()).array().optional()
         })
