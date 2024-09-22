@@ -146,6 +146,11 @@ function build(data, x, y, z, height, depth, width, heading)
                     getItem(config['restockPosition'], config['buildBlock'], config['maxBuildBatch'])
                     count = 0
                 end
+
+                while paused do
+                    print("paused")
+                    sleep(1)
+                end
             end
         end
     end
@@ -198,6 +203,7 @@ function handleData(JSONData)
     send({ type = "nextPart" })
 end
 
+paused = false
 homePosition = { drone.getDronePosition() }
 
 currentState = ''
@@ -277,6 +283,8 @@ function remoteManager()
                         turtle.dropDown()
                     end
                     turtle.select(1)
+                elseif remoteCommand == 'pause' then
+                    paused = not paused
                 end
                 currentMessage = nil
             end
