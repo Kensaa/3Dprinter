@@ -311,7 +311,9 @@ function positionManager()
     while true do
         local pos = { drone.getDronePosition() }
         send({ type = 'setPos', pos = pos })
-        sleep(3)
+        local pressure = drone.getDronePressure()
+        send({ type = 'setFuel', fuel = pressure })
+        sleep(1)
     end
 end
 

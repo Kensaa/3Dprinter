@@ -55,6 +55,7 @@ const websocketMessageSchema = z.discriminatedUnion('type', [
     }),
     z.object({ type: z.literal('setState'), state: z.string() }),
     z.object({ type: z.literal('setPos'), pos: z.array(z.number()).length(3) }),
+    z.object({ type: z.literal('setFuel'), fuel: z.number() }),
     z.object({ type: z.literal('setProgress'), progress: z.number() }),
     z.object({ type: z.literal('nextPart') }),
     z.object({ type: z.literal('currentPart') })
@@ -172,6 +173,10 @@ if (fs.existsSync(CONFIG_FILE)) {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return
                 printer.pos = msg.pos as [number, number, number]
+            } else if (msg.type === 'setFuel') {
+                const printer = printers.find(p => p.ws === ws)
+                if (!printer) return
+                printer.fuel = msg.fuel
             } else if (msg.type === 'setProgress') {
                 const printer = printers.find(p => p.ws === ws)
                 if (!printer) return

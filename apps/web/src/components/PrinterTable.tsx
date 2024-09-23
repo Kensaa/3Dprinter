@@ -50,6 +50,7 @@ export default function PrinterTable({
                         <th>State</th>
                         <th>Connected</th>
                         <th>Position</th>
+                        <th>Fuel</th>
                         <th>Progress</th>
                         <th>Control</th>
                     </tr>
@@ -84,7 +85,7 @@ interface TableRowProps {
 function TableRow({ printer }: TableRowProps) {
     const [controlling, setControlling] = useState(false)
 
-    const { id, label, state, connected, pos, progress } = printer
+    const { id, label, state, connected, pos, progress, fuel } = printer
     return (
         <>
             <tr className=''>
@@ -95,6 +96,7 @@ function TableRow({ printer }: TableRowProps) {
                 <td>
                     {pos ? pos.map(p => Math.round(p)).join(' ') : 'Unknown'}
                 </td>
+                <td>{fuel !== undefined ? fuel.toFixed(2) : 'Unknown'}</td>
                 <td>
                     {progress !== undefined
                         ? progress.toFixed(2) + '%'

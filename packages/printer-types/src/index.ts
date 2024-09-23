@@ -58,6 +58,7 @@ export interface Printer {
     state: PrinterState
     connected: boolean
     pos?: [number, number, number]
+    fuel?: number
     progress?: number
     partIndex?: number
 }

@@ -251,7 +251,6 @@ function forward()
     elseif currentHeading % 4 == 0 then
         currentPosition[3] = currentPosition[3] - 1
     end
-    send({ type = 'setPos', pos = currentPosition })
 end
 
 function backward()
@@ -285,7 +284,6 @@ function backward()
     elseif currentHeading % 4 == 0 then
         currentPosition[3] = currentPosition[3] + 1
     end
-    send({ type = 'setPos', pos = currentPosition })
 end
 
 function up()
@@ -298,7 +296,6 @@ function up()
         end
     end
     currentPosition[2] = currentPosition[2] + 1
-    send({ type = 'setPos', pos = currentPosition })
 end
 
 function down()
@@ -311,7 +308,6 @@ function down()
         end
     end
     currentPosition[2] = currentPosition[2] - 1
-    send({ type = 'setPos', pos = currentPosition })
 end
 
 function goTo(targetX, targetY, targetZ, maxHeight)
@@ -407,7 +403,6 @@ function build(data, height, depth, width)
                 if not paused then
                     local row = layer[z]
                     print('row n°' .. z .. ', Xdir: ' .. Xdir)
-                    send({ type = 'setPos', pos = currentPosition })
 
                     if startIndexes[z] == nil and z ~= depth then
                         --last row --> don't have to take shortcut --> break everything
@@ -682,6 +677,13 @@ function configManager()
             end
         end
         coroutine.yield()
+    end
+end
+
+function dataManager()
+    while true do
+        send({ type = 'setPos', pos = currentPosition })
+        sleep(1)
     end
 end
 
