@@ -93,7 +93,7 @@ function TableRow({ printer }: TableRowProps) {
                 <td>{capitalise(state)}</td>
                 <td>{connected ? 'Connected' : 'Disconnected'}</td>
                 <td>
-                    {pos ? pos.map(p => p.toFixed(1)).join(' ') : 'Unknown'}
+                    {pos ? pos.map(p => Math.round(p)).join(' ') : 'Unknown'}
                 </td>
                 <td>
                     {progress !== undefined
