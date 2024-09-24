@@ -209,6 +209,7 @@ homePosition = { drone.getDronePosition() }
 currentState = ''
 setState('idle')
 send({ type = 'setPos', pos = homePosition })
+send({ type = "config" })
 
 send({ type = 'currentPart' })
 

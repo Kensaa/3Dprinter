@@ -58,7 +58,8 @@ const websocketMessageSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('setFuel'), fuel: z.number() }),
     z.object({ type: z.literal('setProgress'), progress: z.number() }),
     z.object({ type: z.literal('nextPart') }),
-    z.object({ type: z.literal('currentPart') })
+    z.object({ type: z.literal('currentPart') }),
+    z.object({ type: z.literal('config') })
 ])
 
 const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
@@ -235,6 +236,11 @@ if (fs.existsSync(CONFIG_FILE)) {
                 const part = currentTask.parts[printer.partIndex] ?? undefined
                 if (!part) return console.log('part not found')
                 await sendPartToPrinter(printer, part)
+            } else if (msg.type === 'config') {
+                await sendAsync(
+                    ws,
+                    JSON.stringify({ type: 'config', config: printerConfig })
+                )
             }
         })
     })

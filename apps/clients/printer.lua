@@ -576,6 +576,7 @@ homePosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
 currentState = ''
 setState('idle')
 send({ type = 'setPos', pos = currentPosition })
+send({ type = "config" })
 
 currentHeading = getHeading()
 homeHeading = currentHeading
