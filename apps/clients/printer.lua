@@ -40,14 +40,18 @@ function restock(amount)
     turtle.select(16)
     turtle.placeUp()
     turtle.select(1)
-    for _ = 1, slotsToFill do
+    for i = 1, slotsToFill do
+        turtle.select(i)
         if (turtle.getItemCount() == 0) then
             turtle.suckUp()
         end
         turtle.suckUp()
     end
     if slotsToFill < 14 then
-        turtle.suckUp(amount % 64)
+        turtle.select(slotsToFill + 1)
+        if (turtle.getItemCount() == 0) then
+            turtle.suckUp(amount % 64)
+        end
     end
     turtle.select(16)
     turtle.digUp()
