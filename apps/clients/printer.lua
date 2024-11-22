@@ -34,13 +34,17 @@ function equipModem()
     turtle.select(1)
 end
 
-function restock()
+function restock(amount)
+    local slotsToFill = math.min(14, math.floor(amount / 64))
     equipPickaxe()
     turtle.select(16)
     turtle.placeUp()
     turtle.select(1)
-    for i = 1, 14 do
+    for _ = 1, slotsToFill do
         turtle.suckUp()
+    end
+    if slotsToFill < 14 then
+        turtle.suckUp(amount % 64)
     end
     turtle.select(16)
     turtle.digUp()
@@ -84,12 +88,13 @@ function place()
     while turtle.getItemCount() == 0 or turtle.getItemDetail().name ~= config['buildBlock'] do
         slot = slot + 1
         if slot == 15 then
-            restock()
+            restock(blockToPlace)
             slot = 1
         end
         turtle.select(slot)
     end
     turtle.placeDown()
+    blockToPlace = blockToPlace - 1
 end
 
 local ws, err = http.websocket(url)
@@ -540,6 +545,8 @@ function handleData(JSONData)
     local y = tonumber(pos[2])
     local z = tonumber(pos[3])
 
+    blockToPlace = tonumber(JSONData['blockCount'])
+
     y = y + heightOffset
 
     if heading == 1 then
@@ -574,6 +581,7 @@ paused = false
 currentPosition = { locate() }
 homePosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
 currentState = ''
+blockToPlace = 0 -- number of block left to place
 setState('idle')
 send({ type = 'setPos', pos = currentPosition })
 send({ type = "config" })

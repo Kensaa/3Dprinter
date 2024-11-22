@@ -12,7 +12,8 @@ import {
     trim2Darray,
     array3DToString,
     stringToArray3D,
-    count2DArray
+    count2DArray,
+    count3DArray
 } from './utils'
 import { voxelize } from './voxelization'
 import {
@@ -526,10 +527,14 @@ if (fs.existsSync(CONFIG_FILE)) {
                 const depthOffset = calcDepthOffset(divided, partRow)
                 const widthOffset = calcWidthOffset(divided, partCol)
 
+                // count the number of blocks in the part
+                const blockCount = count3DArray(part, 1)
+
                 const msg: BuildMessage = {
                     pos: pos as [number, number, number],
                     heading,
                     data: part,
+                    blockCount,
                     height: partHeight,
                     depth: partDepth,
                     width: partWidth,

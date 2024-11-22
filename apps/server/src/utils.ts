@@ -54,6 +54,18 @@ export function count2DArray(arr: number[][], value = 1) {
     return count
 }
 
+export function count3DArray(arr: number[][][], value = 1) {
+    let count = 0
+    for (let y = 0; y < arr.length; y++) {
+        for (let z = 0; z < arr[y].length; z++) {
+            for (let x = 0; x < arr[y][z].length; x++) {
+                if (arr[y][z][x] === value) count++
+            }
+        }
+    }
+    return count
+}
+
 export interface ImageToArrayOptions {
     threshold: number
     inverted: boolean

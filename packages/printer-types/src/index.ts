@@ -27,6 +27,7 @@ export interface BuildMessage {
     pos: [number, number, number]
     heading: number
     data: number[][][]
+    blockCount: number
     height: number
     depth: number
     width: number
