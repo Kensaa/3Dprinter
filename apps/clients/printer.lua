@@ -41,6 +41,9 @@ function restock(amount)
     turtle.placeUp()
     turtle.select(1)
     for _ = 1, slotsToFill do
+        if (turtle.getItemCount() == 0) then
+            turtle.suckUp()
+        end
         turtle.suckUp()
     end
     if slotsToFill < 14 then
@@ -92,6 +95,7 @@ function place()
             slot = 1
         end
         turtle.select(slot)
+        coroutine.yield()
     end
     turtle.placeDown()
     blockToPlace = blockToPlace - 1
