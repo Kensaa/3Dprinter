@@ -700,6 +700,7 @@ end
 function dataManager()
     while true do
         send({ type = 'setPos', pos = currentPosition })
+        send({ type = 'setFuel', fuel = turtle.getFuelLevel() })
         sleep(1)
     end
 end
