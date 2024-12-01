@@ -675,6 +675,8 @@ function remoteManager()
                     turtle.select(1)
                 elseif remoteCommand == 'pause' then
                     paused = not paused
+                elseif remoteCommand == 'reboot' then
+                    os.reboot()
                 end
                 currentMessage = nil
             end

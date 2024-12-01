@@ -591,7 +591,8 @@ if (fs.existsSync(CONFIG_FILE)) {
                 'headTo',
                 'refuel',
                 'emptyInventory',
-                'pause'
+                'pause',
+                'reboot'
             ]),
             data: z.number().or(z.string()).array().optional()
         })

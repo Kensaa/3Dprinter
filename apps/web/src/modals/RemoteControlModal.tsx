@@ -10,6 +10,7 @@ import {
     MoveUp,
     PackageX,
     Pause,
+    Power,
     RotateCcw,
     RotateCw
 } from 'lucide-react'
@@ -98,6 +99,11 @@ export default function RemoteControlModal({
                     <CommandButton
                         name='pause'
                         icon={Pause}
+                        printers={printers}
+                    />
+                    <CommandButton
+                        name='reboot'
+                        icon={Power}
                         printers={printers}
                     />
                 </div>
