@@ -184,3 +184,59 @@ export function stringToArray3D(str: string) {
     }
     return output
 }
+
+/**
+ * divide a 3D array in parts of dimension (xsize,ysize,zsize)
+ * @param arr input array
+ * @param xsize x size of the divided parts
+ * @param ysize z size of the divided parts
+ * @param zsize z size of the divided parts
+ * @returns a 3D array where each cell is another 3D array
+ */
+export function divide3D(
+    arr: number[][][],
+    xsize: number,
+    ysize: number,
+    zsize: number
+) {
+    const result: number[][][][][][] = []
+    for (let i = 0; i < arr.length / zsize; i++) {
+        result.push([])
+        for (let j = 0; j < arr[0].length / ysize; j++) {
+            result[i].push([])
+        }
+    }
+
+    for (let dz = 0; dz < arr.length; dz += zsize) {
+        for (let dy = 0; dy < arr[dz].length; dy += ysize) {
+            for (let dx = 0; dx < arr[dz][dy].length; dx += xsize) {
+                result[dz / zsize][dy / ysize][dx / xsize] = arr
+                    .slice(dz, dz + zsize)
+                    .map(e => e.slice(dy, dy + ysize))
+                    .map(e1 => e1.map(e2 => e2.slice(dx, dx + xsize)))
+            }
+        }
+    }
+
+    return result
+}
+
+/**
+ * return the current time as a string
+ * @returns the current time
+ */
+export function getTime() {
+    const date = new Date()
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    const seconds = date.getSeconds().toString().padStart(2, '0')
+    return `${hours}:${minutes}:${seconds}`
+}
+
+export function omit(obj: any, ...keys: string[]) {
+    const newObj: any = {}
+    for (const key of Object.keys(obj)) {
+        if (!keys.includes(key)) newObj[key] = obj[key]
+    }
+    return newObj
+}
