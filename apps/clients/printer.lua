@@ -589,16 +589,11 @@ currentPosition = { locate() }
 homePosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
 currentState = ''
 blockToPlace = 0 -- number of block left to place
-setState('idle')
-send({ type = 'setPos', pos = currentPosition })
-send({ type = "config" })
 
 currentHeading = getHeading()
 homeHeading = currentHeading
 
 checkFuel()
-
-send({ type = 'currentPart' })
 
 local currentMessage = nil
 
@@ -690,7 +685,7 @@ function configManager()
             if currentMessage['type'] == 'config' then
                 config = currentMessage['config']
                 print('received new config')
-                print(textutils.serialize(config))
+                -- print(textutils.serialize(config))
                 currentMessage = nil
             end
         end
@@ -706,6 +701,14 @@ function dataManager()
     end
 end
 
+function init()
+    setState('idle')
+    send({ type = 'setPos', pos = currentPosition })
+    send({ type = "config" })
+    sleep(0.2)
+    send({ type = 'currentPart' })
+end
+
 while true do
-    parallel.waitForAll(receive, buildManager, remoteManager, configManager)
+    parallel.waitForAll(receive, buildManager, remoteManager, configManager, init)
 end
