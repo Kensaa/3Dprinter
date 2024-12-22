@@ -42,9 +42,6 @@ const websocketMessageSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('config') })
 ])
 
-const printers: Printer[] = []
-let currentTask: undefined | Task
-const logs: string[] = []
 const defaultPrinterConfig: PrinterConfig = {
     buildBlock: 'minecraft:cobblestone',
     gpsTry: 5,
@@ -79,9 +76,9 @@ if (fs.existsSync(CONFIG_FILE)) {
     )
 
     const instances: Instances = {
-        printers,
-        currentTask,
-        logs,
+        printers: [],
+        currentTask: undefined,
+        logs: [],
         printerConfig,
         env: {
             WEB_SERVER_PORT,
@@ -95,14 +92,14 @@ if (fs.existsSync(CONFIG_FILE)) {
 
     wsServer.on('connection', ws => {
         ws.on('close', () => {
-            const current = printers.find(p => p.ws === ws)
+            const current = instances.printers.find(p => p.ws === ws)
             if (current) {
                 current.connected = false
                 console.log(
                     `"${
                         current.label
                     }" disconnected, total connected printers: ${
-                        printers.filter(p => p.connected).length
+                        instances.printers.filter(p => p.connected).length
                     }`
                 )
             }
@@ -115,16 +112,16 @@ if (fs.existsSync(CONFIG_FILE)) {
             if (!parseResult.success) return
             const msg = { ...parseResult.data }
             if (msg.type == 'log') {
-                const printer = printers.find(p => p.ws === ws)
+                const printer = instances.printers.find(p => p.ws === ws)
                 if (!printer) return
                 const logMsg = `[${getTime()}] (${printer.label}): ${
                     msg.message
                 }`
                 console.log(logMsg)
-                logs.push(logMsg)
-                if (logs.length > 400) logs.shift()
+                instances.logs.push(logMsg)
+                if (instances.logs.length > 400) instances.logs.shift()
             } else if (msg.type === 'register') {
-                const printer = printers.find(
+                const printer = instances.printers.find(
                     p => p.id === msg.id && p.label === msg.label
                 )
                 if (printer) {
@@ -132,7 +129,7 @@ if (fs.existsSync(CONFIG_FILE)) {
                     printer.connected = true
                     printer.state = 'idle'
                 } else {
-                    printers.push({
+                    instances.printers.push({
                         ws,
                         label: msg.label,
                         id: msg.id,
@@ -142,7 +139,7 @@ if (fs.existsSync(CONFIG_FILE)) {
                 }
                 console.log(
                     `registered "${msg.label}" (${msg.id}) (${
-                        printers.filter(p => p.connected).length
+                        instances.printers.filter(p => p.connected).length
                     } printer available)`
                 )
                 await sendAsync(
@@ -150,25 +147,25 @@ if (fs.existsSync(CONFIG_FILE)) {
                     JSON.stringify({ type: 'config', config: printerConfig })
                 )
             } else if (msg.type === 'setState') {
-                const printer = printers.find(p => p.ws === ws)
+                const printer = instances.printers.find(p => p.ws === ws)
                 if (!printer) return
                 printer.state = msg.state as PrinterState
             } else if (msg.type === 'setPos') {
-                const printer = printers.find(p => p.ws === ws)
+                const printer = instances.printers.find(p => p.ws === ws)
                 if (!printer) return
                 printer.pos = msg.pos as [number, number, number]
             } else if (msg.type === 'setFuel') {
-                const printer = printers.find(p => p.ws === ws)
+                const printer = instances.printers.find(p => p.ws === ws)
                 if (!printer) return
                 printer.fuel = msg.fuel
             } else if (msg.type === 'setProgress') {
-                const printer = printers.find(p => p.ws === ws)
+                const printer = instances.printers.find(p => p.ws === ws)
                 if (!printer) return
                 printer.progress = msg.progress
             } else if (msg.type === 'nextPart') {
-                const printer = printers.find(p => p.ws === ws)
+                const printer = instances.printers.find(p => p.ws === ws)
                 if (!printer) return
-                if (!currentTask) {
+                if (!instances.currentTask) {
                     printer.partIndex = undefined
                     return await sendAsync(
                         printer.ws,
@@ -176,22 +173,26 @@ if (fs.existsSync(CONFIG_FILE)) {
                     )
                 }
 
-                currentTask.completedParts.push(printer.partIndex!)
-                currentTask.currentlyBuildingParts =
-                    currentTask.currentlyBuildingParts.filter(
+                instances.currentTask.completedParts.push(printer.partIndex!)
+                instances.currentTask.currentlyBuildingParts =
+                    instances.currentTask.currentlyBuildingParts.filter(
                         e => e !== printer.partIndex
                     )
                 if (
-                    currentTask.partCount === currentTask.completedParts.length
+                    instances.currentTask.partCount ===
+                    instances.currentTask.completedParts.length
                 ) {
-                    currentTask = undefined
+                    instances.currentTask = undefined
                     printer.partIndex = undefined
                     return await sendAsync(
                         printer.ws,
                         JSON.stringify({ type: 'noNextPart' })
                     )
                 } else {
-                    if (currentTask.nextPart === currentTask.partCount) {
+                    if (
+                        instances.currentTask.nextPart ===
+                        instances.currentTask.partCount
+                    ) {
                         printer.partIndex = undefined
                         await sendAsync(
                             printer.ws,
@@ -199,24 +200,28 @@ if (fs.existsSync(CONFIG_FILE)) {
                         )
                     } else {
                         const nextPart =
-                            currentTask.parts[currentTask.nextPart] ?? undefined
+                            instances.currentTask.parts[
+                                instances.currentTask.nextPart
+                            ] ?? undefined
                         if (!nextPart) {
-                            currentTask = undefined
+                            instances.currentTask = undefined
                             return
                         }
-                        printer.partIndex = currentTask.nextPart++
-                        currentTask.currentlyBuildingParts.push(
+                        printer.partIndex = instances.currentTask.nextPart++
+                        instances.currentTask.currentlyBuildingParts.push(
                             printer.partIndex
                         )
                         await sendPartToPrinter(printer, nextPart)
                     }
                 }
             } else if (msg.type === 'currentPart') {
-                const printer = printers.find(p => p.ws === ws)
+                const printer = instances.printers.find(p => p.ws === ws)
                 if (!printer) return console.log('printer not found')
-                if (!currentTask) return console.log('no current task')
+                if (!instances.currentTask)
+                    return console.log('no current task')
                 if (!printer.partIndex) return console.log('no part index')
-                const part = currentTask.parts[printer.partIndex] ?? undefined
+                const part =
+                    instances.currentTask.parts[printer.partIndex] ?? undefined
                 if (!part) return console.log('part not found')
                 await sendPartToPrinter(printer, part)
             } else if (msg.type === 'config') {
