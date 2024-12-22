@@ -1,5 +1,7 @@
 import jimp from 'jimp'
 import { compressBufferToBuffer, decompressBufferToBuffer } from 'compression'
+import type { WebSocket } from 'ws'
+import { BuildMessage, Printer } from 'printer-types'
 
 const BYTE_PER_PIXEL = 1
 const BYTE_SIZE_VALUE = 2
@@ -239,4 +241,35 @@ export function omit(obj: any, ...keys: string[]) {
         if (!keys.includes(key)) newObj[key] = obj[key]
     }
     return newObj
+}
+
+export async function wait(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+export async function sendAsync(ws: WebSocket, data: string) {
+    return new Promise<void>((resolve, reject) => {
+        ws.send(data, err => {
+            if (err) reject(err)
+            else resolve()
+        })
+    })
+}
+
+export async function sendPartToPrinter(printer: Printer, part: BuildMessage) {
+    const strMsg = JSON.stringify(part)
+    const msgParts = strMsg.match(/.{1,40000}/g) ?? [strMsg]
+
+    await sendAsync(printer.ws, JSON.stringify({ type: 'sendStart' }))
+    await wait(100)
+    for (const chunk of msgParts) {
+        await sendAsync(
+            printer.ws,
+            JSON.stringify({ type: 'chunk', chunk: chunk })
+        )
+        await wait(50)
+    }
+    await wait(100)
+
+    await sendAsync(printer.ws, JSON.stringify({ type: 'sendEnd' }))
 }

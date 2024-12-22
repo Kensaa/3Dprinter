@@ -35,7 +35,7 @@ export default function NewModelModal({ show, hide }: NewModelModalProps) {
     const submit = (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         event.stopPropagation()
-        fetch(`${address}/voxelize`, {
+        fetch(`${address}/3d/voxelize`, {
             method: 'POST',
             body: JSON.stringify({ file: objectFile, scale, name }),
             headers: {

@@ -99,7 +99,6 @@ function place()
             slot = 1
         end
         turtle.select(slot)
-        coroutine.yield()
     end
     turtle.placeDown()
     blockToPlace = blockToPlace - 1

@@ -48,7 +48,7 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
 
         if (!image) return
         if (!name) return
-        fetch(`${address}/convertImageToBuild`, {
+        fetch(`${address}/img/imageToBuild`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -74,7 +74,7 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
     useEffect(() => {
         const updatePreview = () => {
             if (!image) return
-            fetch(`${address}/convertImageToPreview`, {
+            fetch(`${address}/img/imageToPreview`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
