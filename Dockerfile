@@ -7,6 +7,8 @@ COPY . .
 RUN turbo prune web --docker
 
 WORKDIR /build/
+COPY .yarnrc.yml .yarnrc.yml
+
 RUN cp -r /app/out/json/* .
 RUN yarn install
 RUN cp -r /app/out/full/* .
@@ -30,6 +32,8 @@ COPY . .
 RUN turbo prune server --docker
 
 WORKDIR /build/
+COPY .yarnrc.yml .yarnrc.yml
+
 RUN cp -r /app/out/json/* .
 # copy manually the compression package beacuse turbo prune doesn't work with it (because it's rust)
 COPY ./packages/compression/ ./packages/compression/ 

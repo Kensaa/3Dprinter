@@ -22,7 +22,7 @@
         "compression": "*",
         "cors": "^2.8.5",
         "express": "^4.18.2",
-        "express-api-router": "git@github.com:Kensaa/express-api-router.git",
+        "express-api-router": "https://github.com/Kensaa/express-api-router.git",
         "jimp": "^0.22.10",
         "obj-file-parser": "^0.6.2",
         "printer-types": "*",

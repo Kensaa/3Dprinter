@@ -11,7 +11,6 @@ __metadata:
   dependencies:
     dotenv-cli: "npm:^7.3.0"
     turbo: "npm:^1.10.16"
-    typescript: "npm:^5.0.2"
   languageName: unknown
   linkType: soft
 
@@ -2979,9 +2978,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express-api-router@git@github.com:Kensaa/express-api-router.git":
+"express-api-router@https://github.com/Kensaa/express-api-router.git":
   version: 1.0.7
-  resolution: "express-api-router@git@github.com:Kensaa/express-api-router.git#commit=2f6f94549f6c35fc50d2c2352dce0df8e622f748"
+  resolution: "express-api-router@https://github.com/Kensaa/express-api-router.git#commit=2f6f94549f6c35fc50d2c2352dce0df8e622f748"
   dependencies:
     cookie-parser: "npm:^1.4.7"
     express: "npm:^4.19.2"
@@ -5301,11 +5300,12 @@ __metadata:
     compression: "npm:*"
     cors: "npm:^2.8.5"
     express: "npm:^4.18.2"
-    express-api-router: "git@github.com:Kensaa/express-api-router.git"
+    express-api-router: "https://github.com/Kensaa/express-api-router.git"
     jimp: "npm:^0.22.10"
     obj-file-parser: "npm:^0.6.2"
     printer-types: "npm:*"
     tsconfig: "npm:*"
+    typescript: "npm:^5.0.2"
     ws: "npm:^8.13.0"
     zod: "npm:^3.21.4"
   languageName: unknown
@@ -6113,6 +6113,7 @@ __metadata:
     sass: "npm:^1.65.1"
     three: "npm:^0.155.0"
     tsconfig: "npm:*"
+    typescript: "npm:^5.0.2"
     usehooks-ts: "npm:^2.9.1"
     vite: "npm:^4.4.5"
     wouter: "npm:^2.11.0"
