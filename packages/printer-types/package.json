@@ -7,7 +7,7 @@
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "dependencies": {
-        "zod": "^3.22.4"
+        "zod": "^3.23.8"
     },
     "devDependencies": {
         "@types/ws": "^8.5.5",

@@ -23,45 +23,62 @@ export const compressedBuildSchema = z.intersection(
 export type Build = z.infer<typeof buildSchema>
 export type CompressedBuild = z.infer<typeof compressedBuildSchema>
 
-export interface BuildMessage {
-    pos: [number, number, number]
-    heading: number
-    data: number[][][]
-    blockCount: number
-    height: number
-    depth: number
-    width: number
-    heightOffset: number
-    depthOffset: number
-    widthOffset: number
-}
+export const buildMessageSchema = z.object({
+    pos: z.tuple([z.number(), z.number(), z.number()]),
+    heading: z.number(),
+    data: z.number().array().array().array(),
+    blockCount: z.number(),
+    height: z.number(),
+    depth: z.number(),
+    width: z.number(),
+    heightOffset: z.number(),
+    depthOffset: z.number(),
+    widthOffset: z.number()
+})
 
-export interface Task {
-    buildName: string
-    partCount: number
-    parts: BuildMessage[]
-    partsPositions: [number, number, number][]
-    currentlyBuildingParts: number[]
-    completedParts: number[]
-    nextPart: number
-    startedAt: number
+export type BuildMessage = z.infer<typeof buildMessageSchema>
 
-    divisionWidth: number
-    divisionHeight: number
-    divisionDepth: number
-}
+export const taskSchema = z.object({
+    buildName: z.string(),
+    partCount: z.number(),
+    parts: buildMessageSchema.array(),
+    partsPositions: z.tuple([z.number(), z.number(), z.number()]).array(),
+    currentlyBuildingParts: z.number().array(),
+    completedParts: z.number().array(),
+    nextPart: z.number(),
+    startedAt: z.number(),
 
-export type PrinterState = 'idle' | 'building' | 'moving' | 'refueling'
-export interface Printer {
+    divisionWidth: z.number(),
+    divisionHeight: z.number(),
+    divisionDepth: z.number()
+})
+
+export type Task = z.infer<typeof taskSchema>
+
+export const printerStateSchema = z.enum([
+    'idle',
+    'building',
+    'moving',
+    'refueling'
+])
+export type PrinterState = z.infer<typeof printerStateSchema>
+
+// Schema for the printer info sent by api
+export const printerSchema = z.object({
+    id: z.number(),
+    label: z.string(),
+    state: printerStateSchema,
+    connected: z.boolean(),
+    pos: z.tuple([z.number(), z.number(), z.number()]).optional(),
+    fuel: z.number().optional(),
+    progress: z.number().optional(),
+    partIndex: z.number().optional()
+})
+
+// Type of the printer stored on the server
+export type Printer = z.infer<typeof printerSchema> & {
+    // printer also stores a instance of a websocket
     ws: WebSocket
-    id: number
-    label: string
-    state: PrinterState
-    connected: boolean
-    pos?: [number, number, number]
-    fuel?: number
-    progress?: number
-    partIndex?: number
 }
 
 export const printerConfigSchema = z.object({

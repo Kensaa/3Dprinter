@@ -66,7 +66,7 @@ const store = create<dataStore>((set, get) => {
             shape: array3DToString(build.shape)
         }
         setBuild(name, compressedBuild)
-        fetch(`${address}/editBuilds`, {
+        fetch(`${address}/builds`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
