@@ -28,7 +28,6 @@ export default function RemoteControlModal({
     printers
 }: RemoteControlModalProps) {
     const name = useMemo(() => {
-        console.log(printers)
         if (printers.length === 0) {
             return
         } else if (printers.length === 1) {
