@@ -75,7 +75,7 @@ function setState(state)
 end
 
 -- register the client (to associate a websocket with a label and an id on the server)
-send({ type = 'register', label = os.getComputerLabel(), id = os.getComputerID() })
+send({ type = 'register', label = os.getComputerLabel() or "unnamed drone", id = os.getComputerID() })
 
 
 
