@@ -4,6 +4,7 @@ import PrinterTable from '../components/PrinterTable'
 import { useInterval } from 'usehooks-ts'
 import type { Task } from '../utils/types'
 import ProgressViewer from '../components/ProgressViewer'
+import Button from '../components/Button'
 
 export default function Printerpage() {
     const { printers, fetchPrinters } = usePrinters()
@@ -20,6 +21,30 @@ export default function Printerpage() {
             <div className='content'>
                 <CurrentTask currentTask={currentTask} />
                 <PrinterTable printers={printers} currentTask={currentTask} />
+                <div className='my-5'>
+                    <Button
+                        className='mx-1'
+                        variant='outline-secondary'
+                        onClick={() => {
+                            navigator.clipboard.writeText(
+                                `wget ${document.location.protocol}//${document.location.host}/clients/turtle.lua startup`
+                            )
+                        }}
+                    >
+                        Copy turtle install command
+                    </Button>
+                    <Button
+                        className='mx-1'
+                        variant='outline-secondary'
+                        onClick={() => {
+                            navigator.clipboard.writeText(
+                                `wget ${document.location.protocol}//${document.location.host}/clients/drone.lua startup`
+                            )
+                        }}
+                    >
+                        Copy drone install command
+                    </Button>
+                </div>
             </div>
         </div>
     )

@@ -28,7 +28,14 @@ export default function RemoteControlModal({
     printers
 }: RemoteControlModalProps) {
     const name = useMemo(() => {
-        return printers.length > 1 ? 'Multiple Printers' : printers[0].label
+        console.log(printers)
+        if (printers.length === 0) {
+            return
+        } else if (printers.length === 1) {
+            printers[0].label
+        } else {
+            return 'Multiple Printers'
+        }
     }, [printers])
 
     return (
