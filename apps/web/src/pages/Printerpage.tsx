@@ -60,14 +60,16 @@ function CurrentTask({ currentTask }: { currentTask: Task | undefined }) {
     }
 
     return (
-        <div className='w-100 d-flex flex-column justify-content-center align-items-center'>
-            <h4>Current Task: {currentTask.buildName}</h4>
-            <h4>
-                Progress: {currentTask.completedParts.length} /{' '}
-                {currentTask.partCount} parts built
-            </h4>
-            <h4>Time Elapsed: {timeSince(currentTask.startedAt)}</h4>
-            <ProgressViewer width='100%' height='300px' />
+        <div className='w-100 d-flex flex-row justify-content-center align-items-center sticky-header border-bottom'>
+            <div className='w-25 d-flex flex-column justify-content-center align-items-center'>
+                <h4>Current Task: {currentTask.buildName}</h4>
+                <h4>
+                    Progress: {currentTask.completedParts.length} /{' '}
+                    {currentTask.partCount} parts built
+                </h4>
+                <h4>Time Elapsed: {timeSince(currentTask.startedAt)}</h4>
+            </div>
+            <ProgressViewer width='75%' height='100%' />
         </div>
     )
 }

@@ -17,11 +17,11 @@ export default function ProgressViewer({
     const { currentTask } = useCurrentTask()
 
     return (
-        <div style={{ width, height }} className='border'>
+        <div style={{ width, height }}>
             {currentTask ? (
                 <Canvas>
                     <Stage>{createCubes(currentTask)}</Stage>
-                    <CameraControls />
+                    <CameraControls dollySpeed={0} />
                 </Canvas>
             ) : (
                 <LoadingSpinner style={{ width: '100%', height: '100%' }} />
@@ -42,7 +42,7 @@ function createCubes(task: Task) {
             // green
             color = 0x00ff00
         }
-        cubes.push(<Box position={position} color={color} />)
+        cubes.push(<Box key={i} position={position} color={color} />)
     }
     return cubes
 }
