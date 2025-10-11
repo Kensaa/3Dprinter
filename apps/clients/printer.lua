@@ -40,6 +40,20 @@ function restock(amount)
     turtle.select(16)
     turtle.placeUp()
     turtle.select(1)
+
+    local firstItem = nil
+    for k, v in pairs(peripheral.call("top", "list") or {}) do
+        firstItem = v.name
+        break
+    end
+    while firstItem ~= config['buildBlock'] do
+        for k, v in pairs(peripheral.call("top", "list") or {}) do
+            firstItem = v.name
+            break
+        end
+        sleep(1)
+    end
+
     for i = 1, slotsToFill do
         turtle.select(i)
         if (turtle.getItemCount() == 0) then
@@ -571,7 +585,9 @@ function handleData(JSONData)
     end
 
     buildMaxHeight = height + y + 1
-    log('building a ' .. width .. 'x' .. depth .. 'x' .. height .. ' shape at ' .. x .. ',' .. y .. ',' .. z)
+    log('building a ' ..
+    width .. 'x' .. depth .. 'x' .. height .. ' shape at ' .. x .. ',' .. y .. ',' .. z .. ' (' ..
+    blockToPlace .. ' blocks)')
     print('max height: ' .. buildMaxHeight)
     setState('moving')
     goTo(x, y + 1, z, buildMaxHeight + 2)
