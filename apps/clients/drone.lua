@@ -92,22 +92,36 @@ end
 function build(data, x, y, z, height, depth, width, heading)
     print("build is at " .. x .. ',' .. y .. ',' .. z)
 
+    -- returns true or false depending if area build was cancelled
     function buildArea()
         drone.abortAction()
         drone.clearWhitelistItemFilter()
         drone.addWhitelistItemFilter(config['buildBlock'], false, false)
-
         drone.setAction('place')
-        waitForAction()
-        print('area built')
+        sleep(1)
+        while not drone.isActionDone() do
+            if drone.getDronePressure() < 1 then
+                print("cancelling area...")
+                -- drone is almost empty, cancel area and refill
+                drone.abortAction()
+                drone.clearWhitelistItemFilter()
+                refuel()
+                drone.abortAction()
+                return false
+            end
+            sleep(0.05)
+        end
         drone.abortAction()
         drone.clearWhitelistItemFilter()
+
+        return true
     end
 
     refuel()
     getItem(config['restockPosition'], config['buildBlock'], config['maxBuildBatch'])
 
-    count = 0
+    local count = 0
+    local currentlyBuilding = {}
     for yi = 1, height do
         for zi = 1, depth do
             for xi = 1, width do
@@ -131,20 +145,35 @@ function build(data, x, y, z, height, depth, width, heading)
                     if count == 0 then
                         print("first block at " .. currentX .. ',' .. currentY .. ',' .. currentZ)
                     end
-                    drone.addArea(currentX, currentY, currentZ)
+                    -- drone.addArea(currentX, currentY, currentZ)
+                    table.insert(currentlyBuilding, { currentX, currentY, currentZ })
                     count = count + 1
                 end
 
                 if count == config['maxBuildBatch'] then
-                    print('max count reached')
+                    print('max count reached (' .. count .. ', ' .. #currentlyBuilding .. ')')
                     -- build current
-                    buildArea()
+                    local isAreaBuilt = false
+                    while not isAreaBuilt do
+                        drone.clearArea()
+                        for _, block in pairs(currentlyBuilding) do
+                            -- print(textutils.serialize(block))
+                            drone.addArea(block[1], block[2], block[3])
+                        end
+                        sleep(1)
+                        isAreaBuilt = buildArea()
+                        if not isAreaBuilt then
+                            print('area was cancelled, rebuilding it')
+                        end
+                    end
+                    print('area built')
                     progress = (yi - 1 + (zi - 1) / depth) / height * 100
                     send({ type = 'setProgress', progress = progress })
                     -- restock
                     refuel()
                     getItem(config['restockPosition'], config['buildBlock'], config['maxBuildBatch'])
                     count = 0
+                    currentlyBuilding = {}
                 end
 
                 while paused do
