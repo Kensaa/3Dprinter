@@ -31,7 +31,7 @@ export default function RemoteControlModal({
         if (printers.length === 0) {
             return
         } else if (printers.length === 1) {
-            printers[0].label
+            return printers[0].label
         } else {
             return 'Multiple Printers'
         }

@@ -5,9 +5,9 @@ import type { Build } from '../utils/types'
 import { useConfig } from '../stores/config'
 import { useBuilds } from '../stores/data'
 import { Color, InstancedMesh, Object3D } from 'three'
-import { count3DArray, rotate3DArray } from '../utils/arrayUtils'
 import Button from '../components/Button'
 import { blockCountString } from '../utils/utils'
+import { count3DArray, rotate3DArray } from 'utils'
 
 interface ModelViewerProps {
     buildName: string
@@ -31,7 +31,7 @@ export default function ModelViewer({
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setBuild(initialBuild)
     }, [buildName, initialBuild])
-    const elementCount = useMemo(() => count3DArray(build.shape), [build])
+    const elementCount = useMemo(() => count3DArray(build.shape, 1), [build])
 
     // what ?
     if (build === undefined) {
@@ -67,7 +67,8 @@ export default function ModelViewer({
                             build.shape,
                             true,
                             false,
-                            false
+                            false,
+                            0
                         )
                         updateBuild(buildName, newBuild)
                         setBuild(newBuild)
@@ -83,7 +84,8 @@ export default function ModelViewer({
                             build.shape,
                             false,
                             true,
-                            false
+                            false,
+                            0
                         )
                         updateBuild(buildName, newBuild)
                         setBuild(newBuild)
@@ -100,7 +102,8 @@ export default function ModelViewer({
                             build.shape,
                             false,
                             false,
-                            true
+                            true,
+                            0
                         )
                         updateBuild(buildName, newBuild)
                         setBuild(newBuild)

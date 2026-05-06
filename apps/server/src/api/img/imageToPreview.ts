@@ -1,13 +1,9 @@
 import { z } from 'zod'
 import { APIRouter } from '../../api'
 import { Jimp, JimpMime } from 'jimp'
-import {
-    arrayToImage,
-    count2DArray,
-    imageToArray,
-    trim2Darray
-} from '../../utils'
+import { arrayToImage, imageToArray } from '../../utils'
 import { HTTPError } from 'express-api-router'
+import { count2DArray, trim2Darray } from 'utils'
 
 export function imageToPreviewHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -36,7 +32,7 @@ export function imageToPreviewHandler(router: APIRouter) {
                 throw new HTTPError(400, 'failed to read image')
             }
             const imageArray = imageToArray(image, req.body)
-            trim2Darray(imageArray)
+            trim2Darray(imageArray, 0)
             const preview = await arrayToImage(imageArray).getBase64(
                 JimpMime.png
             )

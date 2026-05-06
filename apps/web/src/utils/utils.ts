@@ -1,3 +1,5 @@
+import { deflate, inflate, type DeflateFunctionOptions } from 'pako'
+
 export const blobToBase64 = async (blob: Blob) => {
     return new Promise<string>((onSuccess, onError) => {
         try {
@@ -34,4 +36,12 @@ export function blockCountString(number: number) {
         result = numberString[i] + result
     }
     return `${result} block${number === 1 ? '' : 's'}`
+}
+
+export function decompress(data: ArrayBuffer): ArrayBuffer {
+    return inflate(data).buffer
+}
+export function compress(data: ArrayBuffer, level: number): ArrayBuffer {
+    return deflate(data, { level: level as DeflateFunctionOptions['level'] })
+        .buffer
 }

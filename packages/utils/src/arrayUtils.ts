@@ -1,21 +1,24 @@
-import { inflate, deflate } from 'pako'
-
-export const edit3DArray = (
-    arr: (typeof element)[][][],
+export function edit3DArray<T>(
+    arr: T[][][],
     x: number,
     y: number,
     z: number,
-    element: number
-) => {
+    element: T,
+    nullElement: T
+) {
     if (y < 0) {
         const count = -y
         for (let i = 0; i < count; i++) {
-            arr.unshift(generate2DArray(arr[0][0].length, arr[0].length))
+            arr.unshift(
+                generate2DArray(arr[0][0].length, arr[0].length, nullElement)
+            )
         }
     } else if (y > arr.length - 1) {
         const count = y - (arr.length - 1)
         for (let i = 0; i < count; i++) {
-            arr.push(generate2DArray(arr[0][0].length, arr[0].length))
+            arr.push(
+                generate2DArray(arr[0][0].length, arr[0].length, nullElement)
+            )
         }
     }
 
@@ -23,14 +26,14 @@ export const edit3DArray = (
         const count = -z
         for (let i = 0; i < arr.length; i++) {
             for (let j = 0; j < count; j++) {
-                arr[i].unshift(generate1DArray(arr[0][0].length))
+                arr[i].unshift(generate1DArray(arr[0][0].length, nullElement))
             }
         }
     } else if (z > arr[0].length - 1) {
         const count = z - (arr[0].length - 1)
         for (let i = 0; i < arr.length; i++) {
             for (let j = 0; j < count; j++) {
-                arr[i].push(generate1DArray(arr[0][0].length))
+                arr[i].push(generate1DArray(arr[0][0].length, nullElement))
             }
         }
     }
@@ -40,7 +43,7 @@ export const edit3DArray = (
         for (let i = 0; i < arr.length; i++) {
             for (let j = 0; j < arr[0].length; j++) {
                 for (let k = 0; k < count; k++) {
-                    arr[i][j].unshift(0)
+                    arr[i][j].unshift(nullElement)
                 }
             }
         }
@@ -49,7 +52,7 @@ export const edit3DArray = (
         for (let i = 0; i < arr.length; i++) {
             for (let j = 0; j < arr[0].length; j++) {
                 for (let k = 0; k < count; k++) {
-                    arr[i][j].push(0)
+                    arr[i][j].push(nullElement)
                 }
             }
         }
@@ -59,46 +62,74 @@ export const edit3DArray = (
     return arr
 }
 
-function generate1DArray(width: number, element = 0) {
-    return new Array(width).fill(element) as (typeof element)[]
+function generate1DArray<T>(width: number, element: T): T[] {
+    return new Array(width).fill(element)
 }
 
-function generate2DArray(width: number, height: number, element = 0) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    return new Array(height).fill(0).map(_ => generate1DArray(width, element))
+function generate2DArray<T>(width: number, height: number, element: T): T[][] {
+    return new Array(height)
+        .fill(undefined)
+        .map(_ => generate1DArray(width, element))
 }
 
-function is2DArrayEmpty(arr: number[][], nullE = 0) {
+function is2DArrayEmpty<T>(arr: T[][], nullElement: T) {
     for (let y = 0; y < arr.length; y++) {
-        if (!arr[y].every(e => e === nullE)) {
+        if (!arr[y].every(e => e === nullElement)) {
             return false
         }
     }
     return true
 }
 
-function startIndex(arr: number[], nullE = 0) {
+function startIndex<T>(arr: T[], nullElement: T) {
     for (let i = 0; i < arr.length; i++) {
-        if (arr[i] !== nullE) return i
+        if (arr[i] !== nullElement) return i
     }
     return Infinity
 }
-function endIndex(arr: number[], nullE = 0) {
+function endIndex<T>(arr: T[], nullElement: T) {
     for (let i = arr.length - 1; i >= 0; i--) {
-        if (arr[i] !== nullE) return i
+        if (arr[i] !== nullElement) return i
     }
     return -Infinity
 }
 
-export function trim3DArray(arr: number[][][], nullE = 0) {
+export function trim2Darray<T>(arr: T[][], nullElement: T) {
+    const startIndexes = []
+    const endIndexes = []
+    for (let row = 0; row < arr.length; row++) {
+        startIndexes.push(startIndex(arr[row], nullElement))
+        endIndexes.push(endIndex(arr[row], nullElement))
+    }
+
+    const minStart = Math.min(...startIndexes)
+    const maxEnd = Math.max(...endIndexes)
+
+    let spliced = 0
+    for (let x = 0; x < minStart; x++) {
+        for (let y = 0; y < arr.length; y++) {
+            arr[y].shift()
+        }
+        spliced++
+    }
+
+    const end = arr[0].length + spliced
+    for (let x = maxEnd; x < end - 1; x++) {
+        for (let y = 0; y < arr.length; y++) {
+            arr[y].pop()
+        }
+    }
+}
+
+export function trim3DArray<T>(arr: T[][][], nullElement: T) {
     // UP AND DOWN TRIM
     const emptyLayers = []
     for (let y = 0; y < arr.length; y++) {
-        emptyLayers.push(is2DArrayEmpty(arr[y], nullE) ? 0 : 1)
+        emptyLayers.push(is2DArrayEmpty(arr[y], nullElement) ? 0 : 1)
     }
 
-    const firstNonEmptyLayer = startIndex(emptyLayers, nullE)
-    const lastNonEmptyLayer = endIndex(emptyLayers, nullE)
+    const firstNonEmptyLayer = startIndex(emptyLayers, 0)
+    const lastNonEmptyLayer = endIndex(emptyLayers, 0)
 
     let layersRemoved = 0
     for (let y = 0; y < firstNonEmptyLayer; y++) {
@@ -115,8 +146,8 @@ export function trim3DArray(arr: number[][][], nullE = 0) {
     const endIndexes = []
     for (let layer = 0; layer < arr.length; layer++) {
         for (let row = 0; row < arr[layer].length; row++) {
-            startIndexes.push(startIndex(arr[layer][row], nullE))
-            endIndexes.push(endIndex(arr[layer][row], nullE))
+            startIndexes.push(startIndex(arr[layer][row], nullElement))
+            endIndexes.push(endIndex(arr[layer][row], nullElement))
         }
     }
 
@@ -153,8 +184,8 @@ export function trim3DArray(arr: number[][][], nullE = 0) {
             for (let z = 0; z < arr[y].length; z++) {
                 a.push(arr[y][z][x])
             }
-            startIndexes2.push(startIndex(a))
-            endIndexes2.push(endIndex(a))
+            startIndexes2.push(startIndex(a, nullElement))
+            endIndexes2.push(endIndex(a, nullElement))
         }
     }
     const minStart2 = Math.min(...startIndexes2)
@@ -176,7 +207,17 @@ export function trim3DArray(arr: number[][][], nullE = 0) {
     }
 }
 
-export function count3DArray(arr: number[][][], element = 1) {
+export function count2DArray<T>(arr: T[][], value: T) {
+    let count = 0
+    for (let y = 0; y < arr.length; y++) {
+        for (let x = 0; x < arr[y].length; x++) {
+            if (arr[y][x] === value) count++
+        }
+    }
+    return count
+}
+
+export function count3DArray<T>(arr: T[][][], element: T) {
     let count = 0
     for (let y = 0; y < arr.length; y++) {
         for (let z = 0; z < arr[y].length; z++) {
@@ -188,15 +229,18 @@ export function count3DArray(arr: number[][][], element = 1) {
     return count
 }
 
-export function rotate3DArray(
-    arr: number[][][],
+export function rotate3DArray<T>(
+    arr: T[][][],
     xAxis = false,
     yAxis = false,
-    zAxis = false
+    zAxis = false,
+    nullElement: T
 ) {
     const newArr = []
     for (let y = 0; y < arr.length; y++) {
-        newArr.push(generate2DArray(arr[0][0].length, arr[0].length, 0))
+        newArr.push(
+            generate2DArray(arr[0][0].length, arr[0].length, nullElement)
+        )
     }
 
     const height = arr.length
@@ -220,47 +264,66 @@ export function rotate3DArray(
     return newArr
 }
 
+export type CompressFunction = (data: ArrayBuffer, level: number) => ArrayBuffer
+export type DecompressFunction = (data: ArrayBuffer) => ArrayBuffer
+
 const BYTE_PER_PIXEL = 1
 const BYTE_SIZE_VALUE = 2
 
-export function array3DToString(arr: number[][][]) {
+function arrayBufferToBase64(buffer: ArrayBufferLike): string {
+    const bytes = new Uint8Array(buffer)
+    let binary = ''
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte)
+    }
+    return btoa(binary)
+}
+
+function base64ToArrayBuffer(base64: string): ArrayBuffer {
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i)
+    }
+    return bytes.buffer
+}
+export function array3DToString(arr: number[][][], compress: CompressFunction) {
     const height = arr.length
     const depth = arr[0].length
     const width = arr[0][0].length
 
-    const buffer = Buffer.alloc(
+    const arr_buffer = new ArrayBuffer(
         height * depth * width * BYTE_PER_PIXEL + 3 * BYTE_SIZE_VALUE
     )
-    // const buffer = Buffer.alloc(10 + 3 * 4)
+    const view = new DataView(arr_buffer)
     let offset = 0
-    buffer.writeUintBE(height, offset, BYTE_SIZE_VALUE)
+    view.setUint16(offset, height)
     offset += BYTE_SIZE_VALUE
-    buffer.writeUintBE(depth, offset, BYTE_SIZE_VALUE)
+    view.setUint16(offset, depth)
     offset += BYTE_SIZE_VALUE
-    buffer.writeUintBE(width, offset, BYTE_SIZE_VALUE)
+    view.setUint16(offset, width)
     offset += BYTE_SIZE_VALUE
 
     for (let y = 0; y < height; y++) {
         for (let z = 0; z < depth; z++) {
             for (let x = 0; x < width; x++) {
-                buffer.writeUintBE(arr[y][z][x], offset, BYTE_PER_PIXEL)
+                view.setUint8(offset, arr[y][z][x])
                 offset += BYTE_PER_PIXEL
             }
         }
     }
-    const compressed = Buffer.from(deflate(buffer, { level: 8 }))
-    return compressed.toString('base64')
+    return arrayBufferToBase64(compress(arr_buffer, 7))
 }
 
-export function stringToArray3D(str: string) {
-    const buffer = Buffer.from(str, 'base64')
-    const decompressed = Buffer.from(inflate(buffer))
+export function stringToArray3D(str: string, decompress: DecompressFunction) {
+    const buffer = base64ToArrayBuffer(str)
+    const decompressed = new DataView(decompress(buffer))
     let offset = 0
-    const height = decompressed.readUIntBE(offset, BYTE_SIZE_VALUE)
+    const height = decompressed.getUint16(offset)
     offset += BYTE_SIZE_VALUE
-    const depth = decompressed.readUIntBE(offset, BYTE_SIZE_VALUE)
+    const depth = decompressed.getUint16(offset)
     offset += BYTE_SIZE_VALUE
-    const width = decompressed.readUIntBE(offset, BYTE_SIZE_VALUE)
+    const width = decompressed.getUint16(offset)
     offset += BYTE_SIZE_VALUE
     const output: number[][][] = []
     for (let y = 0; y < height; y++) {
@@ -268,9 +331,7 @@ export function stringToArray3D(str: string) {
         for (let z = 0; z < depth; z++) {
             output[y].push([])
             for (let x = 0; x < width; x++) {
-                output[y][z].push(
-                    decompressed.readUIntBE(offset, BYTE_PER_PIXEL)
-                )
+                output[y][z].push(decompressed.getUint8(offset))
                 offset += BYTE_PER_PIXEL
             }
         }

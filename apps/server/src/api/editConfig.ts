@@ -1,8 +1,7 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
-import { compressedBuildSchema, printerConfigSchema } from 'utils'
+import { printerConfigSchema } from 'utils'
 import fs from 'fs'
-import path from 'path'
 import { sendAsync } from '../utils'
 
 export function editConfigHandler(router: APIRouter) {

@@ -4,17 +4,16 @@ use neon::prelude::*;
 use neon::types::buffer::TypedArray;
 use std::io::Write;
 
-fn compress(input: &[u8], level: Option<u32>) -> Vec<u8>{
+fn compress(input: &[u8], level: Option<u32>) -> Vec<u8> {
     let level = level.unwrap_or(6);
     let mut encoder = ZlibEncoder::new(Vec::new(), Compression::new(level.into()));
     encoder.write_all(input).unwrap();
     let compressed = encoder.finish().unwrap();
     compressed
-
 }
 
-fn compress_buffer_to_buffer(mut cx: FunctionContext) -> JsResult<JsBuffer> {
-    let input = cx.argument::<JsBuffer>(0)?;
+fn compress_buffer_to_buffer(mut cx: FunctionContext) -> JsResult<JsArrayBuffer> {
+    let input = cx.argument::<JsArrayBuffer>(0)?;
     let level = cx.argument_opt(1);
 
     let level = match level {
@@ -41,7 +40,7 @@ fn compress_buffer_to_buffer(mut cx: FunctionContext) -> JsResult<JsBuffer> {
 
     let compressed = compress(input, Some(level));
 
-    let mut buffer = cx.buffer(compressed.len())?;
+    let mut buffer = cx.array_buffer(compressed.len())?;
     buffer.as_mut_slice(&mut cx).copy_from_slice(&compressed);
 
     Ok(buffer)
@@ -53,13 +52,13 @@ fn decompress(input: &[u8]) -> Vec<u8> {
     decoder.finish().unwrap()
 }
 
-fn decompress_buffer_to_buffer(mut cx: FunctionContext) -> JsResult<JsBuffer> {
-    let input = cx.argument::<JsBuffer>(0)?;
+fn decompress_buffer_to_buffer(mut cx: FunctionContext) -> JsResult<JsArrayBuffer> {
+    let input = cx.argument::<JsArrayBuffer>(0)?;
     let input = input.as_slice(&mut cx);
 
     let decompressed = decompress(input);
 
-    let mut buffer = cx.buffer(decompressed.len())?;
+    let mut buffer = cx.array_buffer(decompressed.len())?;
     buffer.as_mut_slice(&mut cx).copy_from_slice(&decompressed);
 
     Ok(buffer)

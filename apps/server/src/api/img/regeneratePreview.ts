@@ -1,11 +1,12 @@
 import { z } from 'zod'
 import { APIRouter } from '../../api'
 import { JimpMime } from 'jimp'
-import { arrayToImage, stringToArray3D } from '../../utils'
-import { CompressedBuild } from 'utils'
+import { arrayToImage } from '../../utils'
+import { CompressedBuild, stringToArray3D } from 'utils'
 import path from 'path'
 import fs from 'fs'
 import { HTTPError } from 'express-api-router'
+import { decompressBufferToBuffer } from 'compression'
 
 export function regeneratePreviewHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -37,7 +38,10 @@ export function regeneratePreviewHandler(router: APIRouter) {
             if (build.type !== 'image')
                 throw new HTTPError(400, 'file is not an image')
 
-            const imageArray = stringToArray3D(build.shape)
+            const imageArray = stringToArray3D(
+                build.shape,
+                decompressBufferToBuffer
+            )
             const image = arrayToImage(imageArray[0])
             build.preview = await image.getBase64(JimpMime.png)
             fs.writeFileSync(filepath, JSON.stringify(build))

@@ -1,8 +1,9 @@
 import { create } from 'zustand'
 import type { Build, CompressedBuild, Printer, Task } from '../utils/types'
 import { useConfig } from './config'
-import { array3DToString } from '../utils/arrayUtils'
 import { useMemo } from 'react'
+import { array3DToString } from 'utils'
+import { compress } from '../utils/utils'
 
 interface dataStore {
     builds: Record<string, CompressedBuild>
@@ -64,7 +65,7 @@ const store = create<dataStore>((set, get) => {
         const { address } = useConfig.getState()
         const compressedBuild: CompressedBuild = {
             ...build,
-            shape: array3DToString(build.shape)
+            shape: array3DToString(build.shape, compress)
         }
         setBuild(name, compressedBuild)
         fetch(`${address}/builds`, {

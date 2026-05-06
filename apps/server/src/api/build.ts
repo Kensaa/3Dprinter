@@ -1,16 +1,16 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
+import { divide3D, sendPartToPrinter, wait } from '../utils'
 import {
+    BuildMessage,
+    CompressedBuild,
     count3DArray,
-    divide3D,
-    sendPartToPrinter,
-    stringToArray3D,
-    wait
-} from '../utils'
-import { BuildMessage, CompressedBuild } from 'utils'
+    stringToArray3D
+} from 'utils'
 import path from 'path'
 import fs from 'fs'
 import { HTTPError } from 'express-api-router'
+import { decompressBufferToBuffer } from 'compression'
 
 export function buildHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -58,7 +58,7 @@ export function buildHandler(router: APIRouter) {
             if (instances.currentTask)
                 throw new HTTPError(400, 'a build is already running')
 
-            const shape = stringToArray3D(build.shape)
+            const shape = stringToArray3D(build.shape, decompressBufferToBuffer)
             const height = shape.length // z
             const depth = shape[0].length // y
             const width = shape[0][0].length // x

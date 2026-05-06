@@ -1,17 +1,18 @@
 import { z } from 'zod'
 import { APIRouter } from '../../api'
 import { Jimp, JimpMime } from 'jimp'
+import { arrayToImage, imageToArray } from '../../utils'
 import {
     array3DToString,
-    arrayToImage,
+    CompressedBuild,
+    compressedBuildSchema,
     count2DArray,
-    imageToArray,
     trim2Darray
-} from '../../utils'
-import { CompressedBuild, compressedBuildSchema } from 'utils'
+} from 'utils'
 import path from 'path'
 import fs from 'fs'
 import { HTTPError } from 'express-api-router'
+import { compressBufferToBuffer } from 'compression'
 
 export function imageToBuildHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -39,14 +40,17 @@ export function imageToBuildHandler(router: APIRouter) {
             }
 
             const imageArray = imageToArray(image, req.body)
-            trim2Darray(imageArray)
+            trim2Darray(imageArray, 0)
             const preview = await arrayToImage(imageArray).getBase64(
                 JimpMime.png
             )
 
             const blockCount = count2DArray(imageArray, 1)
 
-            const compressedShape = array3DToString([imageArray])
+            const compressedShape = array3DToString(
+                [imageArray],
+                compressBufferToBuffer
+            )
 
             const build: CompressedBuild = {
                 type: 'image',

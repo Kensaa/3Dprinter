@@ -3,7 +3,8 @@ import ImageViewer from './ImageViewer'
 import { useBuilds } from '../stores/data'
 import { useMemo } from 'react'
 import type { Build } from '../utils/types'
-import { stringToArray3D } from '../utils/arrayUtils'
+import { stringToArray3D } from 'utils'
+import { decompress } from '../utils/utils'
 
 interface BuildPreviewProps {
     buildName: string
@@ -17,7 +18,7 @@ export default function BuildPreview({ buildName }: BuildPreviewProps) {
         const compressedBuild = builds[buildName]
         const build: Build = {
             ...compressedBuild,
-            shape: stringToArray3D(compressedBuild.shape)
+            shape: stringToArray3D(compressedBuild.shape, decompress)
         }
         return build
     }, [builds, buildName])

@@ -1,2 +1,5 @@
-export function compressBufferToBuffer(buffer: Buffer, level?: number): Buffer
-export function decompressBufferToBuffer(buffer: Buffer): Buffer
+export function compressBufferToBuffer(
+    buffer: ArrayBuffer,
+    level?: number
+): ArrayBuffer
+export function decompressBufferToBuffer(buffer: ArrayBuffer): ArrayBuffer

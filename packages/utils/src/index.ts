@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { WebSocket } from 'ws'
+export * from './arrayUtils'
 
 export const buildMetadataSchema = z.discriminatedUnion('type', [
     z.object({ type: z.literal('model') }),
