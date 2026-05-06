@@ -18,8 +18,8 @@ export default function NewModelModal({ show, hide }: NewModelModalProps) {
     const { setBuild } = useBuilds()
     const address = useAddress()
 
-    const handleFileUpload = (file: File) => {
-        console.log(file)
+    const handleFileUpload = (file: File | File[]) => {
+        if (Array.isArray(file)) file = file[0]
         const filename = file.name
 
         setName(filename.substring(0, filename.lastIndexOf('.')))

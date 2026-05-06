@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { Build, CompressedBuild, Printer, Task } from '../utils/types'
 import { useConfig } from './config'
 import { array3DToString } from '../utils/arrayUtils'
+import { useMemo } from 'react'
 
 interface dataStore {
     builds: Record<string, CompressedBuild>
@@ -95,20 +96,35 @@ const store = create<dataStore>((set, get) => {
 
 export const useData = store
 
-export const useBuilds = () =>
-    useData(state => ({
-        builds: state.builds,
-        fetchBuilds: state.fetchBuilds,
-        updateBuild: state.updateBuild,
-        setBuild: state.setBuild
-    }))
-export const usePrinters = () =>
-    useData(state => ({
-        printers: state.printers,
-        fetchPrinters: state.fetchPrinters
-    }))
-export const useCurrentTask = () =>
-    useData(state => ({
-        currentTask: state.currentTask,
-        fetchCurrentTask: state.fetchCurrentTask
-    }))
+export const useBuilds = () => {
+    const state = useData()
+    return useMemo(
+        () => ({
+            builds: state.builds,
+            fetchBuilds: state.fetchBuilds,
+            updateBuild: state.updateBuild,
+            setBuild: state.setBuild
+        }),
+        [state.builds, state.fetchBuilds, state.updateBuild, state.setBuild]
+    )
+}
+export const usePrinters = () => {
+    const state = useData()
+    return useMemo(
+        () => ({
+            printers: state.printers,
+            fetchPrinters: state.fetchPrinters
+        }),
+        [state.printers, state.fetchPrinters]
+    )
+}
+export const useCurrentTask = () => {
+    const state = useData()
+    return useMemo(
+        () => ({
+            currentTask: state.currentTask,
+            fetchCurrentTask: state.fetchCurrentTask
+        }),
+        [state.currentTask, state.fetchCurrentTask]
+    )
+}

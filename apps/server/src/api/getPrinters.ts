@@ -5,7 +5,7 @@ import { Printer, printerSchema } from 'printer-types'
 export function getPrintersHandler(router: APIRouter) {
     return router.createRouteHandler({
         authed: false,
-        bodySchema: z.object({}),
+        bodySchema: z.undefined(),
         paramsSchema: z.object({}),
         querySchema: z.object({}),
         responseSchema: printerSchema.array(),

@@ -264,7 +264,7 @@ if (fs.existsSync(CONFIG_FILE)) {
     if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
     console.log('public folder :', PUBLIC_PATH)
     expressApp.use('/', express.static(PUBLIC_PATH))
-    expressApp.get('*', (req: express.Request, res: express.Response) => {
+    expressApp.use((req: express.Request, res: express.Response) => {
         res.sendFile(path.join(PUBLIC_PATH, 'index.html'))
     })
 })()

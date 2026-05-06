@@ -1,9 +1,17 @@
 {
-    "extends": "tsconfig/base.json",
     "compilerOptions": {
+        "target": "ESNext",
+        "module": "nodenext",
+        "incremental": true,
+        "declaration": true,
+        "strict": true,
+        "moduleResolution": "nodenext",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "composite": true,
         "outDir": "./dist/",
         "rootDir": "./src/",
-        "tsBuildInfoFile": "./dist/.tsbuildinfo",
-        "composite": true
+        "tsBuildInfoFile": "./dist/.tsbuildinfo"
     }
 }

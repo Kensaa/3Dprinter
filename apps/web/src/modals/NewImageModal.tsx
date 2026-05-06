@@ -27,7 +27,8 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
     const { setBuild } = useBuilds()
     const address = useAddress()
 
-    const handleFileUpload = (file: File) => {
+    const handleFileUpload = (file: File | File[]) => {
+        if (Array.isArray(file)) file = file[0]
         console.log(file)
         const filename = file.name
 

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../../api'
-import jimp from 'jimp'
+import { JimpMime } from 'jimp'
 import { arrayToImage, stringToArray3D } from '../../utils'
 import { CompressedBuild } from 'printer-types'
 import path from 'path'
@@ -39,7 +39,7 @@ export function regeneratePreviewHandler(router: APIRouter) {
 
             const imageArray = stringToArray3D(build.shape)
             const image = arrayToImage(imageArray[0])
-            build.preview = await image.getBase64Async(jimp.MIME_PNG)
+            build.preview = await image.getBase64(JimpMime.png)
             fs.writeFileSync(filepath, JSON.stringify(build))
         }
     })

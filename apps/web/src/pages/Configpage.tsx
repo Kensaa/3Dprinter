@@ -3,12 +3,9 @@ import AppNavbar from '../components/AppNavbar'
 import { useEffect, useState } from 'react'
 import type { PrinterConfig } from 'printer-types'
 import LoadingSpinner from '../components/LoadingSpinner'
-import AceEditor from 'react-ace'
 import Button from '../components/Button'
-
-import 'ace-builds/src-noconflict/theme-github'
-import 'ace-builds/src-noconflict/mode-json5'
 import { Alert } from 'react-bootstrap'
+import { Editor } from '@monaco-editor/react'
 
 export default function Configpage() {
     const address = useAddress()
@@ -16,8 +13,10 @@ export default function Configpage() {
     const [value, setValue] = useState('')
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
+    const [hasSyntaxError, setHasSyntaxError] = useState(false)
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true)
         fetch(`${address}/config`)
             .then(res => res.json())
@@ -59,16 +58,28 @@ export default function Configpage() {
                             </Alert>
                         )}
                         <h1>Config Editor</h1>
-                        <AceEditor
-                            mode='json5'
-                            theme='github'
-                            onChange={val => setValue(val)}
-                            defaultValue={JSON.stringify(config, null, 2)}
+                        <Editor
+                            width='50%'
+                            height='400px'
+                            language='json'
+                            theme='light'
                             value={value}
-                            name='ConfigEditor'
-                            editorProps={{ $blockScrolling: true }}
+                            options={{
+                                minimap: {
+                                    enabled: false
+                                },
+                                scrollBeyondLastLine: false
+                            }}
+                            onValidate={e => setHasSyntaxError(e.length !== 0)}
+                            defaultValue={JSON.stringify(config, null, 2)}
+                            onChange={e => setValue(e || '')}
                         />
-                        <Button onClick={save}>Save</Button>
+                        <Button
+                            onClick={save}
+                            disabled={hasSyntaxError || loading}
+                        >
+                            Save
+                        </Button>
                     </>
                 )}
             </div>

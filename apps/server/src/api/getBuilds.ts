@@ -8,7 +8,7 @@ import path from 'path'
 export function getBuildsHandler(router: APIRouter) {
     return router.createRouteHandler({
         authed: false,
-        bodySchema: z.object({}),
+        bodySchema: z.undefined(),
         paramsSchema: z.object({}),
         querySchema: z.object({}),
         responseSchema: z.record(z.string(), compressedBuildSchema),

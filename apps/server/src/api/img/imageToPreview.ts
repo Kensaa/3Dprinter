@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../../api'
-import jimp from 'jimp'
+import { Jimp, JimpMime } from 'jimp'
 import {
     arrayToImage,
     count2DArray,
@@ -29,14 +29,16 @@ export function imageToPreviewHandler(router: APIRouter) {
         handler: async (req, res, instances) => {
             let image
             try {
-                image = await jimp.read(Buffer.from(req.body.image, 'base64'))
+                image = await Jimp.fromBuffer(
+                    Buffer.from(req.body.image, 'base64')
+                )
             } catch {
                 throw new HTTPError(400, 'failed to read image')
             }
             const imageArray = imageToArray(image, req.body)
             trim2Darray(imageArray)
-            const preview = await arrayToImage(imageArray).getBase64Async(
-                jimp.MIME_PNG
+            const preview = await arrayToImage(imageArray).getBase64(
+                JimpMime.png
             )
 
             const blockCount = count2DArray(imageArray, 1)

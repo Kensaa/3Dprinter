@@ -1,7 +1,7 @@
 import { createElement, useMemo, useState } from 'react'
 import { Form, Modal } from 'react-bootstrap'
 import Button from '../components/Button'
-import { Printer } from '../utils/types'
+import type { Printer } from '../utils/types'
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
