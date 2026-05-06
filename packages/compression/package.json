@@ -1,19 +1,25 @@
 {
     "name": "compression",
     "version": "1.0.0",
-    "description": "",
-    "main": "index.node",
-    "types": "src/index.d.ts",
+    "author": "Kensa",
+    "private": true,
     "scripts": {
-        "build": "cargo-cp-artifact -nc index.node -- cargo build --message-format=json-render-diagnostics",
-        "build-debug": "npm run build --",
-        "build-release": "npm run build -- --release",
-        "install": "npm run build-release",
-        "test": "cargo test"
+        "build": "wasm-pack build --target nodejs --out-dir pkg/pkg-node && wasm-pack build --target bundler --out-dir pkg/pkg-browser",
+        "cargo": "cargo"
     },
-    "author": "",
-    "license": "MIT",
     "devDependencies": {
-        "cargo-cp-artifact": "^0.1"
+        "wasm-pack": "^0.14.0"
+    },
+    "exports": {
+        ".": {
+            "browser": {
+                "types": "./pkg/pkg-browser/compression.d.ts",
+                "default": "./pkg/pkg-browser/compression.js"
+            },
+            "default": {
+                "types": "./pkg/pkg-node/compression.d.ts",
+                "default": "./pkg/pkg-node/compression.js"
+            }
+        }
     }
 }

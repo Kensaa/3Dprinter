@@ -12,7 +12,7 @@ import {
 import path from 'path'
 import fs from 'fs'
 import { HTTPError } from 'express-api-router'
-import { compressBufferToBuffer } from 'compression'
+import { compress_buffer } from 'compression'
 
 export function imageToBuildHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -49,7 +49,7 @@ export function imageToBuildHandler(router: APIRouter) {
 
             const compressedShape = array3DToString(
                 [imageArray],
-                compressBufferToBuffer
+                compress_buffer
             )
 
             const build: CompressedBuild = {

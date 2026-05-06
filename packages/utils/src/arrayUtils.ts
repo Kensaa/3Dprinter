@@ -264,14 +264,14 @@ export function rotate3DArray<T>(
     return newArr
 }
 
-export type CompressFunction = (data: ArrayBuffer, level: number) => ArrayBuffer
-export type DecompressFunction = (data: ArrayBuffer) => ArrayBuffer
+export type Bytes = Uint8Array
+export type CompressFunction = (data: Bytes, level: number) => Bytes
+export type DecompressFunction = (data: Bytes) => Bytes
 
 const BYTE_PER_PIXEL = 1
 const BYTE_SIZE_VALUE = 2
 
-function arrayBufferToBase64(buffer: ArrayBufferLike): string {
-    const bytes = new Uint8Array(buffer)
+function arrayBufferToBase64(bytes: Bytes): string {
     let binary = ''
     for (const byte of bytes) {
         binary += String.fromCharCode(byte)
@@ -279,13 +279,13 @@ function arrayBufferToBase64(buffer: ArrayBufferLike): string {
     return btoa(binary)
 }
 
-function base64ToArrayBuffer(base64: string): ArrayBuffer {
+function base64ToArrayBuffer(base64: string): Bytes {
     const binary = atob(base64)
     const bytes = new Uint8Array(binary.length)
     for (let i = 0; i < binary.length; i++) {
         bytes[i] = binary.charCodeAt(i)
     }
-    return bytes.buffer
+    return bytes
 }
 export function array3DToString(arr: number[][][], compress: CompressFunction) {
     const height = arr.length
@@ -312,12 +312,12 @@ export function array3DToString(arr: number[][][], compress: CompressFunction) {
             }
         }
     }
-    return arrayBufferToBase64(compress(arr_buffer, 7))
+    return arrayBufferToBase64(compress(new Uint8Array(arr_buffer), 7))
 }
 
 export function stringToArray3D(str: string, decompress: DecompressFunction) {
     const buffer = base64ToArrayBuffer(str)
-    const decompressed = new DataView(decompress(buffer))
+    const decompressed = new DataView(decompress(buffer).buffer)
     let offset = 0
     const height = decompressed.getUint16(offset)
     offset += BYTE_SIZE_VALUE

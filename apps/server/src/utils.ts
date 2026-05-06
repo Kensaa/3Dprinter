@@ -1,5 +1,4 @@
 import { intToRGBA, Jimp, JimpInstance } from 'jimp'
-import { compressBufferToBuffer, decompressBufferToBuffer } from 'compression'
 import type { WebSocket } from 'ws'
 import { BuildMessage, Printer } from 'utils'
 

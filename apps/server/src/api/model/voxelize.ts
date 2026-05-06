@@ -4,7 +4,7 @@ import { array3DToString, CompressedBuild, compressedBuildSchema } from 'utils'
 import path from 'path'
 import fs from 'fs'
 import { voxelize } from '../../voxelization'
-import { compressBufferToBuffer } from 'compression'
+import { compress_buffer } from 'compression'
 
 export function voxelizeHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -22,10 +22,7 @@ export function voxelizeHandler(router: APIRouter) {
 
             const file = Buffer.from(fileBase64, 'base64').toString('utf-8')
             const output = voxelize(file, scale)
-            const compressedShape = array3DToString(
-                output,
-                compressBufferToBuffer
-            )
+            const compressedShape = array3DToString(output, compress_buffer)
             const build: CompressedBuild = {
                 type: 'model',
                 shape: compressedShape
