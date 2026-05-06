@@ -17,7 +17,7 @@
         "**/.turbo": true,
         "**/node_modules": true,
         "**/dist": true,
-        "yarn.lock": true,
+        "yarn.lock": false,
 
         "apps/web/tsconfig.json": true,
         "apps/web/tsconfig.node.json": true,
