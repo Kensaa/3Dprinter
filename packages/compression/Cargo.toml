@@ -23,5 +23,11 @@ flate2 = { version = "1.0.17", features = [
 wasm-bindgen-test = "0.3.34"
 
 [profile.release]
-# Tell `rustc` to optimize for small code size.
 opt-level = "s"
+lto = true        # link-time optimization — bigger impact than opt-level
+codegen-units = 1 # slower build but smaller/faster output
+panic = "abort"   # removes panic unwinding code, reduces size
+
+[profile.release-node]
+inherits = "release"
+opt-level = 3        # optimize for speed
