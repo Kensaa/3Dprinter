@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { APIRouter } from '../../api'
 import { array3DToString } from '../../utils'
-import { CompressedBuild, compressedBuildSchema } from 'printer-types'
+import { CompressedBuild, compressedBuildSchema } from 'utils'
 import path from 'path'
 import fs from 'fs'
 import { voxelize } from '../../voxelization'

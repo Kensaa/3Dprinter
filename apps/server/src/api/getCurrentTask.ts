@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
-import { taskSchema } from 'printer-types'
+import { taskSchema } from 'utils'
 import { HTTPError } from 'express-api-router'
 import { omit } from '../utils'
 

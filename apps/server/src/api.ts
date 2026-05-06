@@ -1,5 +1,5 @@
 import { APIRouter as BaseAPIRouter } from 'express-api-router'
-import { Printer, PrinterConfig, Task } from 'printer-types'
+import { Printer, PrinterConfig, Task } from 'utils'
 
 import { getPrintersHandler } from './api/getPrinters'
 import { getCurrentTaskHandler } from './api/getCurrentTask'

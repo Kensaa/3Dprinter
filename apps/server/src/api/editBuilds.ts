@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
-import { compressedBuildSchema } from 'printer-types'
+import { compressedBuildSchema } from 'utils'
 import fs from 'fs'
 import path from 'path'
 

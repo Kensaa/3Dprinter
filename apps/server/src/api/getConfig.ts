@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
-import { printerConfigSchema } from 'printer-types'
+import { printerConfigSchema } from 'utils'
 
 export function getConfigHandler(router: APIRouter) {
     return router.createRouteHandler({

@@ -3849,15 +3849,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"printer-types@workspace:*, printer-types@workspace:packages/printer-types":
-  version: 0.0.0-use.local
-  resolution: "printer-types@workspace:packages/printer-types"
-  dependencies:
-    "@types/ws": "npm:^8.18.1"
-    zod: "npm:^4.4.3"
-  languageName: unknown
-  linkType: soft
-
 "proc-log@npm:^6.0.0":
   version: 6.1.0
   resolution: "proc-log@npm:6.1.0"
@@ -4292,7 +4283,7 @@ __metadata:
     express-api-router: "https://github.com/Kensaa/express-api-router.git#0760b2619279f14c50a370e03b4db5ca2e114b54"
     jimp: "npm:^1.6.1"
     obj-file-parser: "npm:^0.6.2"
-    printer-types: "workspace:*"
+    utils: "workspace:*"
     ws: "npm:^8.20.0"
     zod: "npm:^4.4.3"
   languageName: unknown
@@ -4849,6 +4840,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"utils@workspace:*, utils@workspace:packages/utils":
+  version: 0.0.0-use.local
+  resolution: "utils@workspace:packages/utils"
+  dependencies:
+    "@types/ws": "npm:^8.18.1"
+    zod: "npm:^4.4.3"
+  languageName: unknown
+  linkType: soft
+
 "vary@npm:^1, vary@npm:^1.1.2":
   version: 1.1.2
   resolution: "vary@npm:1.1.2"
@@ -4945,7 +4945,6 @@ __metadata:
     lucide-react: "npm:^1.14.0"
     normalize.css: "npm:^8.0.1"
     pako: "npm:^2.1.0"
-    printer-types: "workspace:*"
     react: "npm:^19.2.5"
     react-bootstrap: "npm:^2.10.10"
     react-dom: "npm:^19.2.5"
@@ -4955,6 +4954,7 @@ __metadata:
     typescript: "npm:~6.0.2"
     typescript-eslint: "npm:^8.58.2"
     usehooks-ts: "npm:^3.1.1"
+    utils: "workspace:*"
     vite: "npm:^8.0.10"
     wouter: "npm:^3.9.0"
     zod: "npm:^4.4.3"

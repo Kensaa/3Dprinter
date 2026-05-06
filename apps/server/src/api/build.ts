@@ -7,7 +7,7 @@ import {
     stringToArray3D,
     wait
 } from '../utils'
-import { BuildMessage, CompressedBuild } from 'printer-types'
+import { BuildMessage, CompressedBuild } from 'utils'
 import path from 'path'
 import fs from 'fs'
 import { HTTPError } from 'express-api-router'

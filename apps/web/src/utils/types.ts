@@ -3,7 +3,7 @@ import type {
     CompressedBuild as FullCompressedBuild,
     Printer as FullPrinter,
     Task as FullTask
-} from 'printer-types'
+} from 'utils'
 
 export type Printer = Omit<FullPrinter, 'ws'>
 export type Task = Omit<FullTask, 'parts'>

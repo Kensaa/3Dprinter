@@ -28,6 +28,7 @@ export default function ModelViewer({
     const [build, setBuild] = useState<Build>(initialBuild)
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setBuild(initialBuild)
     }, [buildName, initialBuild])
     const elementCount = useMemo(() => count3DArray(build.shape), [build])
@@ -173,8 +174,7 @@ function Mesh({ build, count }: MeshProps) {
     )
 }
 
-interface PanelProps {}
-function Panel({ children }: React.PropsWithChildren<PanelProps>) {
+function Panel({ children }: React.PropsWithChildren<unknown>) {
     return (
         <Html calculatePosition={() => [0, 0, 0]} wrapperClass='panel-wrapper'>
             <div className='panel'>{children}</div>

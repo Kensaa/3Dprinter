@@ -1,7 +1,7 @@
 import { intToRGBA, Jimp, JimpInstance } from 'jimp'
 import { compressBufferToBuffer, decompressBufferToBuffer } from 'compression'
 import type { WebSocket } from 'ws'
-import { BuildMessage, Printer } from 'printer-types'
+import { BuildMessage, Printer } from 'utils'
 
 const BYTE_PER_PIXEL = 1
 const BYTE_SIZE_VALUE = 2

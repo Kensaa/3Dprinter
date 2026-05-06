@@ -1,7 +1,7 @@
 import { useAddress } from '../stores/config'
 import AppNavbar from '../components/AppNavbar'
 import { useEffect, useState } from 'react'
-import type { PrinterConfig } from 'printer-types'
+import type { PrinterConfig } from 'utils'
 import LoadingSpinner from '../components/LoadingSpinner'
 import Button from '../components/Button'
 import { Alert } from 'react-bootstrap'

@@ -8,7 +8,7 @@ import {
     imageToArray,
     trim2Darray
 } from '../../utils'
-import { CompressedBuild, compressedBuildSchema } from 'printer-types'
+import { CompressedBuild, compressedBuildSchema } from 'utils'
 import path from 'path'
 import fs from 'fs'
 import { HTTPError } from 'express-api-router'

@@ -60,7 +60,10 @@ export default function Homepage() {
                         </div>
                     </div>
                     {selectedBuild && (
-                        <div className='w-50 h-100 unselectable'>
+                        <div
+                            style={{ height: '50vh' }}
+                            className='w-50 unselectable'
+                        >
                             <h4>Preview</h4>
                             <BuildPreview buildName={selectedBuild} />
                         </div>

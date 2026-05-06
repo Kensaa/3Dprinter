@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
-import { CompressedBuild, compressedBuildSchema } from 'printer-types'
+import { CompressedBuild, compressedBuildSchema } from 'utils'
 import { HTTPError } from 'express-api-router'
 import fs from 'fs'
 import path from 'path'
