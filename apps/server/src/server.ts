@@ -233,11 +233,7 @@ if (fs.existsSync(CONFIG_FILE)) {
         })
     })
 
-    const CLIENTS_PATH = path.resolve(
-        process.env.NODE_ENV === 'production'
-            ? './clients/'
-            : path.join(__dirname, '..', '..', 'clients/')
-    )
+    const CLIENTS_PATH = path.dirname(require.resolve('clients'))
 
     console.log('clients folder :', CLIENTS_PATH)
     expressApp.get('/clients/:file', (req, res) => {

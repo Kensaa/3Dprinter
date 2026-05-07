@@ -2094,6 +2094,12 @@ __metadata:
   languageName: node
   linkType: hard
 
+"clients@workspace:*, clients@workspace:apps/clients":
+  version: 0.0.0-use.local
+  resolution: "clients@workspace:apps/clients"
+  languageName: unknown
+  linkType: soft
+
 "clsx@npm:^2.0.0":
   version: 2.1.1
   resolution: "clsx@npm:2.1.1"
@@ -4417,6 +4423,7 @@ __metadata:
     "@types/node": "npm:^25.6.0"
     "@types/obj-file-parser": "npm:^0.5.2"
     "@types/ws": "npm:^8.18.1"
+    clients: "workspace:*"
     compression: "workspace:*"
     cors: "npm:^2.8.6"
     express: "npm:^5.2.1"

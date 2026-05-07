@@ -1,0 +1,8 @@
+{
+    "name": "clients",
+    "version": "1.0.0",
+    "author": "Kensa",
+    "private": true,
+    "license": "MIT",
+    "main": "./index.js"
+}
