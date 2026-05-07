@@ -7,7 +7,7 @@
     "main": "dist/server.js",
     "scripts": {
         "build": "tsc",
-        "dev": "node ."
+        "dev": "tsc && node ."
     },
     "dependencies": {
         "clients": "workspace:*",

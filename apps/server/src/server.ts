@@ -6,7 +6,6 @@ import fs from 'fs'
 import path from 'path'
 import { z } from 'zod'
 import { getTime, sendPartToPrinter, sendAsync } from './utils'
-
 import type { Task, PrinterState, Printer, PrinterConfig } from 'utils'
 import { initApi, Instances } from './api'
 
@@ -63,6 +62,10 @@ if (fs.existsSync(CONFIG_FILE)) {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(printerConfig, null, 2))
 }
 
+process.on('SIGINT', () => {
+    console.log('Shutting down...')
+    process.exit(0)
+})
 ;(async () => {
     const expressApp = express()
     expressApp.use(express.json({ limit: '5000mb' }))
@@ -251,11 +254,7 @@ if (fs.existsSync(CONFIG_FILE)) {
         res.status(200).send(fileContent)
     })
 
-    const PUBLIC_PATH = path.resolve(
-        process.env.NODE_ENV === 'production'
-            ? './public/'
-            : path.join(__dirname, '..', 'public/')
-    )
+    const PUBLIC_PATH = path.resolve(__dirname, '..', 'public/')
 
     if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
     console.log('public folder :', PUBLIC_PATH)
