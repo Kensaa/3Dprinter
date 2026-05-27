@@ -6,7 +6,7 @@ import { CompressedBuild, stringToArray3D } from 'utils'
 import path from 'path'
 import fs from 'fs'
 import { HTTPError } from 'express-api-router'
-import { decompress_buffer } from 'compression'
+import { decompress_buffer } from 'build-bindings'
 
 export function regeneratePreviewHandler(router: APIRouter) {
     return router.createRouteHandler({

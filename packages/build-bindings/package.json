@@ -1,5 +1,5 @@
 {
-    "name": "compression",
+    "name": "build-bindings",
     "version": "1.0.0",
     "author": "Kensa",
     "private": true,
@@ -13,12 +13,12 @@
     "exports": {
         ".": {
             "browser": {
-                "types": "./pkg/pkg-browser/compression.d.ts",
-                "default": "./pkg/pkg-browser/compression.js"
+                "types": "./pkg/pkg-browser/build_bindings.d.ts",
+                "default": "./pkg/pkg-browser/build_bindings.js"
             },
             "default": {
-                "types": "./pkg/pkg-node/compression.d.ts",
-                "default": "./pkg/pkg-node/compression.js"
+                "types": "./pkg/pkg-node/build_bindings.d.ts",
+                "default": "./pkg/pkg-node/build_bindings.js"
             }
         }
     }

@@ -1,4 +1,4 @@
-import { compress_buffer, decompress_buffer } from 'compression'
+import { compress_buffer, decompress_buffer } from 'build-bindings'
 
 export const blobToBase64 = async (blob: Blob) => {
     return new Promise<string>((onSuccess, onError) => {

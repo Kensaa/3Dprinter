@@ -12,7 +12,7 @@ import {
 import path from 'path'
 import fs from 'fs'
 import { HTTPError } from 'express-api-router'
-import { compress_buffer } from 'compression'
+import { compress_buffer, TestStruct } from 'build-bindings'
 
 export function imageToBuildHandler(router: APIRouter) {
     return router.createRouteHandler({

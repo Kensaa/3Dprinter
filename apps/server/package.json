@@ -10,8 +10,8 @@
         "dev": "tsc && node ."
     },
     "dependencies": {
+        "build-bindings": "workspace:*",
         "clients": "workspace:*",
-        "compression": "workspace:*",
         "cors": "^2.8.6",
         "express": "^5.2.1",
         "express-api-router": "https://github.com/Kensaa/express-api-router.git#0760b2619279f14c50a370e03b4db5ca2e114b54",

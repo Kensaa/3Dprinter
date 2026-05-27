@@ -4,7 +4,7 @@ import { array3DToString, CompressedBuild, compressedBuildSchema } from 'utils'
 import path from 'path'
 import fs from 'fs'
 import { voxelize } from '../../voxelization'
-import { compress_buffer } from 'compression'
+import { compress_buffer } from 'build-bindings'
 
 export function voxelizeHandler(router: APIRouter) {
     return router.createRouteHandler({

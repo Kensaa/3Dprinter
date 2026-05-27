@@ -1,5 +1,5 @@
 [package]
-name = "compression"
+name = "build-bindings"
 license = "MIT"
 repository = "https://github.com/Kensaa/3DPrinter"
 description = ""
