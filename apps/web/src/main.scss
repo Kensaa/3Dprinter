@@ -106,3 +106,9 @@ textarea textarea:focus {
     font-size: 1.5rem;
     border-bottom: 1px solid #ccc;
 }
+
+.canvas-wrapper {
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+}
