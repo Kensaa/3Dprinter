@@ -1,5 +1,5 @@
 import { createElement, useMemo, useState } from 'react'
-import { Form, Modal } from 'react-bootstrap'
+import { Form, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import Button from '../components/Button'
 import type { Printer } from '../utils/types'
 import {
@@ -139,9 +139,15 @@ function CommandButton({ name, icon, printers }: CommandButtonProps) {
     }
 
     return (
-        <Button variant='outline-primary' onClick={action} className='mx-1'>
-            {createElement(icon)}
-        </Button>
+        <OverlayTrigger
+            placement='top'
+            overlay={<Tooltip>{name}</Tooltip>}
+            delay={{ show: 200, hide: 0 }}
+        >
+            <Button variant='outline-primary' onClick={action} className='mx-1'>
+                {createElement(icon)}
+            </Button>
+        </OverlayTrigger>
     )
 }
 
