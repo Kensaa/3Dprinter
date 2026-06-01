@@ -1,14 +1,21 @@
 {
     "$schema": "https://turbo.build/schema.json",
-    "globalDotEnv": ["./.env"],
-    "pipeline": {
+    "globalPassThroughEnv": [],
+    "tasks": {
+        "release": {
+            "dependsOn": ["^build"],
+            "cache": false
+        },
         "dev": {
+            "dependsOn": ["^build"],
             "cache": false,
             "persistent": true
         },
         "build": {
             "dependsOn": ["^build"],
-            "outputs": ["dist/**/*"]
+            "inputs": ["src/**/*"],
+            "outputs": ["dist/**/*", "pkg/**/*"],
+            "outputLogs": "new-only"
         }
     }
 }

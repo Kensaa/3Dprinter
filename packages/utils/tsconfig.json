@@ -1,17 +1,17 @@
 {
-    "$schema": "https://json.schemastore.org/tsconfig",
-
     "compilerOptions": {
-        "target": "esnext",
+        "target": "ESNext",
         "module": "nodenext",
-        "moduleResolution": "nodenext",
         "incremental": true,
         "declaration": true,
         "strict": true,
+        "moduleResolution": "nodenext",
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "outDir": "./dist",
-        "composite": true
+        "composite": true,
+        "outDir": "./dist/",
+        "rootDir": "./src/",
+        "tsBuildInfoFile": "./dist/.tsbuildinfo"
     }
 }

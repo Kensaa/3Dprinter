@@ -15,14 +15,12 @@
     "Lua.diagnostics.disable": ["lowercase-global", "undefined-field"],
     "files.exclude": {
         "**/.turbo": true,
-        "**/node_modules": true,
-        "**/dist": true,
+        "**/node_modules": false,
+        "**/dist": false,
         "yarn.lock": false,
 
-        "apps/web/tsconfig.json": true,
-        "apps/web/tsconfig.node.json": true,
-        "apps/web/index.html": true,
         "apps/web/src/vite-env.d.ts": true
     },
-    "rust-analyzer.linkedProjects": ["packages/compression/Cargo.toml"]
+    "rust-analyzer.linkedProjects": ["packages/build-bindings/Cargo.toml"],
+    "rust-analyzer.cargo.features": ["convert"]
 }

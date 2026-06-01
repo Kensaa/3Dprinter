@@ -1,13 +1,15 @@
 {
-    "extends": "tsconfig/base.json",
-    "compilerOptions": {
-        "outDir": "./dist/",
-        "rootDir": "./src/",
-        "tsBuildInfoFile": "./dist/.tsbuildinfo"
-    },
-    "references": [
-        {
-            "path": "../../packages/printer-types"
-        }
-    ]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "nodenext",
+    "strict": true,
+    "moduleResolution": "nodenext",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "sourceMap": true,
+    "outDir": "dist/",
+    "rootDir": "src/"
+  },
+  "exclude": ["node_modules", "**/node_modules/*"]
 }

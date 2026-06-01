@@ -6,8 +6,7 @@ import fs from 'fs'
 import path from 'path'
 import { z } from 'zod'
 import { getTime, sendPartToPrinter, sendAsync } from './utils'
-
-import type { Task, PrinterState, Printer, PrinterConfig } from 'printer-types'
+import type { Task, PrinterState, Printer, PrinterConfig } from 'utils'
 import { initApi, Instances } from './api'
 
 const WEB_SERVER_PORT = parseInt(process.env.PORT ?? '9513')
@@ -63,6 +62,10 @@ if (fs.existsSync(CONFIG_FILE)) {
     fs.writeFileSync(CONFIG_FILE, JSON.stringify(printerConfig, null, 2))
 }
 
+process.on('SIGINT', () => {
+    console.log('Shutting down...')
+    process.exit(0)
+})
 ;(async () => {
     const expressApp = express()
     expressApp.use(express.json({ limit: '5000mb' }))
@@ -233,11 +236,7 @@ if (fs.existsSync(CONFIG_FILE)) {
         })
     })
 
-    const CLIENTS_PATH = path.resolve(
-        process.env.NODE_ENV === 'production'
-            ? './clients/'
-            : path.join(__dirname, '..', '..', 'clients/')
-    )
+    const CLIENTS_PATH = path.dirname(require.resolve('clients'))
 
     console.log('clients folder :', CLIENTS_PATH)
     expressApp.get('/clients/:file', (req, res) => {
@@ -255,16 +254,12 @@ if (fs.existsSync(CONFIG_FILE)) {
         res.status(200).send(fileContent)
     })
 
-    const PUBLIC_PATH = path.resolve(
-        process.env.NODE_ENV === 'production'
-            ? './public/'
-            : path.join(__dirname, '..', 'public/')
-    )
+    const PUBLIC_PATH = path.resolve(__dirname, '..', 'public/')
 
     if (!fs.existsSync(PUBLIC_PATH)) fs.mkdirSync(PUBLIC_PATH)
     console.log('public folder :', PUBLIC_PATH)
     expressApp.use('/', express.static(PUBLIC_PATH))
-    expressApp.get('*', (req: express.Request, res: express.Response) => {
+    expressApp.use((req: express.Request, res: express.Response) => {
         res.sendFile(path.join(PUBLIC_PATH, 'index.html'))
     })
 })()

@@ -1,13 +1,13 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
-import { taskSchema } from 'printer-types'
+import { taskSchema } from 'utils'
 import { HTTPError } from 'express-api-router'
 import { omit } from '../utils'
 
 export function getCurrentTaskHandler(router: APIRouter) {
     return router.createRouteHandler({
         authed: false,
-        bodySchema: z.object({}),
+        bodySchema: z.undefined(),
         paramsSchema: z.object({}),
         querySchema: z.object({}),
         responseSchema: taskSchema.omit({

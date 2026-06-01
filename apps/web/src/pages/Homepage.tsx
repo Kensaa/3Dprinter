@@ -7,6 +7,7 @@ import BuildModal from '../modals/BuildModal'
 import NewModelModal from '../modals/NewModelModal'
 import NewImageModal from '../modals/NewImageModal'
 import BuildPreview from '../components/BuildPreview'
+import { ImageMetadata } from 'build-bindings'
 
 export default function Homepage() {
     const { builds, fetchBuilds } = useBuilds()
@@ -30,7 +31,10 @@ export default function Homepage() {
                             width='100%'
                             elements={Object.entries(builds).map(e => ({
                                 name: e[0],
-                                type: e[1].type
+                                type:
+                                    e[1].metadata.type instanceof ImageMetadata
+                                        ? 'Image'
+                                        : 'Model'
                             }))}
                             onChange={setSelectedBuild}
                         />
@@ -60,7 +64,10 @@ export default function Homepage() {
                         </div>
                     </div>
                     {selectedBuild && (
-                        <div className='w-50 h-100 unselectable'>
+                        <div
+                            style={{ height: '50vh' }}
+                            className='w-50 unselectable'
+                        >
                             <h4>Preview</h4>
                             <BuildPreview buildName={selectedBuild} />
                         </div>

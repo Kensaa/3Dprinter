@@ -1,7 +1,8 @@
 {
-    "name": "tsconfig",
+    "name": "clients",
     "version": "1.0.0",
     "author": "Kensa",
     "private": true,
-    "license": "MIT"
+    "license": "MIT",
+    "main": "./index.js"
 }

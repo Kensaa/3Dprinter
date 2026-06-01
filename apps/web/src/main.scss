@@ -66,10 +66,6 @@ body,
     height: 100%;
 }
 
-.modal {
-    z-index: 99999999 !important;
-}
-
 .modal-body {
     height: 100%;
 }
@@ -100,11 +96,6 @@ textarea textarea:focus {
     align-items: center;
 }
 
-.tooltip .tooltip-inner {
-    z-index: 99999;
-    color: black;
-}
-
 .sticky-header {
     position: sticky;
     top: 0;
@@ -114,4 +105,8 @@ textarea textarea:focus {
     pointer-events: none;
     font-size: 1.5rem;
     border-bottom: 1px solid #ccc;
+}
+
+.panel-wrapper {
+    z-index: 0;
 }

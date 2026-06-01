@@ -1,26 +1,18 @@
 import AppNavbar from '../components/AppNavbar'
-import { useCurrentTask, usePrinters } from '../stores/data'
+import { useCurrentTask } from '../stores/data'
 import PrinterTable from '../components/PrinterTable'
 import { useInterval } from 'usehooks-ts'
-import type { Task } from '../utils/types'
 import ProgressViewer from '../components/ProgressViewer'
 import Button from '../components/Button'
+import { useEffect, useState } from 'react'
 
 export default function Printerpage() {
-    const { printers, fetchPrinters } = usePrinters()
-    const { currentTask, fetchCurrentTask } = useCurrentTask()
-
-    useInterval(() => {
-        fetchPrinters()
-        fetchCurrentTask()
-    }, 1000)
-
     return (
         <div className='page'>
             <AppNavbar />
             <div className='content'>
-                <CurrentTask currentTask={currentTask} />
-                <PrinterTable printers={printers} currentTask={currentTask} />
+                <CurrentTask />
+                <PrinterTable />
                 <div className='my-5'>
                     <Button
                         className='mx-1'
@@ -50,7 +42,10 @@ export default function Printerpage() {
     )
 }
 
-function CurrentTask({ currentTask }: { currentTask: Task | undefined }) {
+function CurrentTask() {
+    const { currentTask, fetchCurrentTask } = useCurrentTask()
+    useInterval(fetchCurrentTask, 1000)
+
     if (!currentTask) {
         return (
             <div>
@@ -67,11 +62,21 @@ function CurrentTask({ currentTask }: { currentTask: Task | undefined }) {
                     Progress: {currentTask.completedParts.length} /{' '}
                     {currentTask.partCount} parts built
                 </h4>
-                <h4>Time Elapsed: {timeSince(currentTask.startedAt)}</h4>
+                <ElapsedTime startedAt={currentTask.startedAt} />
             </div>
             <ProgressViewer width='75%' height='100%' />
         </div>
     )
+}
+
+function ElapsedTime({ startedAt }: { startedAt: number }) {
+    const [elapsed, setElapsed] = useState(() => timeSince(startedAt))
+    useEffect(() => {
+        const id = setInterval(() => setElapsed(timeSince(startedAt)), 1000)
+        return () => clearInterval(id)
+    }, [startedAt])
+
+    return <h4>Time Elapsed: {elapsed}</h4>
 }
 
 function timeSince(date: number): string {

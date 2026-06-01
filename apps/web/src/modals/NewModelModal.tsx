@@ -4,6 +4,7 @@ import Button from '../components/Button'
 import { FileUploader } from 'react-drag-drop-files'
 import { useBuilds } from '../stores/data'
 import { useAddress } from '../stores/config'
+import { CompressedBuild } from 'build-bindings'
 
 interface NewModelModalProps {
     show: boolean
@@ -18,8 +19,8 @@ export default function NewModelModal({ show, hide }: NewModelModalProps) {
     const { setBuild } = useBuilds()
     const address = useAddress()
 
-    const handleFileUpload = (file: File) => {
-        console.log(file)
+    const handleFileUpload = (file: File | File[]) => {
+        if (Array.isArray(file)) file = file[0]
         const filename = file.name
 
         setName(filename.substring(0, filename.lastIndexOf('.')))
@@ -43,6 +44,10 @@ export default function NewModelModal({ show, hide }: NewModelModalProps) {
             }
         })
             .then(res => res.json())
+            .then(data => {
+                console.log(data)
+                return CompressedBuild.deserialize(data)
+            })
             .then(build => {
                 setBuild(name, build)
                 hide()

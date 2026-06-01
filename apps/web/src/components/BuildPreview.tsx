@@ -2,8 +2,7 @@ import ModelViewer from './ModelViewer'
 import ImageViewer from './ImageViewer'
 import { useBuilds } from '../stores/data'
 import { useMemo } from 'react'
-import type { Build } from '../utils/types'
-import { stringToArray3D } from '../utils/arrayUtils'
+import { ModelMetadata } from 'build-bindings'
 
 interface BuildPreviewProps {
     buildName: string
@@ -12,32 +11,28 @@ interface BuildPreviewProps {
 export default function BuildPreview({ buildName }: BuildPreviewProps) {
     const { builds } = useBuilds()
 
-    const build = useMemo(() => {
-        if (!buildName || !builds[buildName]) return undefined
+    const compressedBuild = useMemo(() => {
+        if (!builds[buildName]) return undefined
         const compressedBuild = builds[buildName]
-        const build: Build = {
-            ...compressedBuild,
-            shape: stringToArray3D(compressedBuild.shape)
-        }
-        return build
+        return compressedBuild
     }, [builds, buildName])
 
-    if (!build) {
+    if (!compressedBuild) {
         return <div></div>
     }
     return (
         <>
-            {build.type === 'model' ? (
+            {compressedBuild.metadata.type instanceof ModelMetadata ? (
                 <ModelViewer
                     buildName={buildName}
-                    build={build}
+                    compressedBuild={compressedBuild}
                     width='100%'
                     height='100%'
                 />
             ) : (
                 <ImageViewer
-                    image={build.preview}
-                    blockCount={build.blockCount}
+                    image={compressedBuild.metadata.type.preview}
+                    blockCount={compressedBuild.metadata.block_count}
                     width='100%'
                     height='100%'
                 />

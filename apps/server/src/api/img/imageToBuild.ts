@@ -1,17 +1,8 @@
 import { z } from 'zod'
 import { APIRouter } from '../../api'
-import jimp from 'jimp'
-import {
-    array3DToString,
-    arrayToImage,
-    count2DArray,
-    imageToArray,
-    trim2Darray
-} from '../../utils'
-import { CompressedBuild, compressedBuildSchema } from 'printer-types'
+import { Build, ConvertImageOptions } from 'build-bindings'
 import path from 'path'
 import fs from 'fs'
-import { HTTPError } from 'express-api-router'
 
 export function imageToBuildHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -27,42 +18,32 @@ export function imageToBuildHandler(router: APIRouter) {
         }),
         paramsSchema: z.object({}),
         querySchema: z.object({}),
-        responseSchema: compressedBuildSchema,
+        responseSchema: z.string(),
         handler: async (req, res, instances) => {
-            let image
-            try {
-                image = await jimp.read(Buffer.from(req.body.image, 'base64'))
-            } catch {
-                throw new HTTPError(400, 'failed to read image')
-            }
-
-            const imageArray = imageToArray(image, req.body)
-            trim2Darray(imageArray)
-            const preview = await arrayToImage(imageArray).getBase64Async(
-                jimp.MIME_PNG
+            const build = Build.from_image(
+                Buffer.from(req.body.image, 'base64'),
+                ConvertImageOptions.new(
+                    req.body.threshold,
+                    req.body.inverted,
+                    req.body.scale,
+                    req.body.horizontalMirror,
+                    req.body.verticalMirror
+                )
             )
 
-            const blockCount = count2DArray(imageArray, 1)
-
-            const compressedShape = array3DToString([imageArray])
-
-            const build: CompressedBuild = {
-                type: 'image',
-                shape: compressedShape,
-                preview: preview,
-                blockCount
-            }
+            const compressed = build.compress()
 
             const filename = req.body.name.endsWith('.json')
                 ? req.body.name
                 : req.body.name + '.json'
 
+            const buildString = compressed.serialize()
             fs.writeFileSync(
                 path.join(instances.env.BUILDS_FOLDER, filename),
-                JSON.stringify(build)
+                buildString
             )
 
-            return build
+            return buildString
         }
     })
 }

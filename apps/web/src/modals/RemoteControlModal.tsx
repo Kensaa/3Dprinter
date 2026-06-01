@@ -1,7 +1,7 @@
 import { createElement, useMemo, useState } from 'react'
-import { Form, Modal } from 'react-bootstrap'
+import { Form, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap'
 import Button from '../components/Button'
-import { Printer } from '../utils/types'
+import type { Printer } from '../utils/types'
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
@@ -31,7 +31,7 @@ export default function RemoteControlModal({
         if (printers.length === 0) {
             return
         } else if (printers.length === 1) {
-            printers[0].label
+            return printers[0].label
         } else {
             return 'Multiple Printers'
         }
@@ -139,9 +139,15 @@ function CommandButton({ name, icon, printers }: CommandButtonProps) {
     }
 
     return (
-        <Button variant='outline-primary' onClick={action} className='mx-1'>
-            {createElement(icon)}
-        </Button>
+        <OverlayTrigger
+            placement='top'
+            overlay={<Tooltip>{name}</Tooltip>}
+            delay={{ show: 200, hide: 0 }}
+        >
+            <Button variant='outline-primary' onClick={action} className='mx-1'>
+                {createElement(icon)}
+            </Button>
+        </OverlayTrigger>
     )
 }
 

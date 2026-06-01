@@ -1,7 +1,6 @@
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { CameraControls, Edges, Stage } from '@react-three/drei'
-import type { Task } from '../utils/types'
 import { useCurrentTask } from '../stores/data'
 import LoadingSpinner from './LoadingSpinner'
 
@@ -16,11 +15,32 @@ export default function ProgressViewer({
 }: ProgressViewerProps) {
     const { currentTask } = useCurrentTask()
 
+    const cubes = useMemo(() => {
+        if (!currentTask) return []
+        const cubes = []
+        for (let i = 0; i < currentTask.partCount; i++) {
+            const position = currentTask.partsPositions[i]
+            let color = 0x111111
+            if (currentTask.currentlyBuildingParts.includes(i)) {
+                // yellow
+                color = 0xffff00
+            } else if (currentTask.completedParts.includes(i)) {
+                // green
+                color = 0x00ff00
+            }
+
+            cubes.push(<Box key={i} position={position} color={color} />)
+        }
+        return cubes
+    }, [currentTask])
+
     return (
         <div style={{ width, height }}>
             {currentTask ? (
                 <Canvas>
-                    <Stage>{createCubes(currentTask)}</Stage>
+                    {/* <Stage>{createCubes(currentTask)}</Stage> */}
+                    <Stage>{cubes}</Stage>
+
                     <CameraControls dollySpeed={0} />
                 </Canvas>
             ) : (
@@ -28,23 +48,6 @@ export default function ProgressViewer({
             )}
         </div>
     )
-}
-
-function createCubes(task: Task) {
-    const cubes = []
-    for (let i = 0; i < task.partCount; i++) {
-        const position = task.partsPositions[i]
-        let color = 0x111111
-        if (task.currentlyBuildingParts.includes(i)) {
-            // yellow
-            color = 0xffff00
-        } else if (task.completedParts.includes(i)) {
-            // green
-            color = 0x00ff00
-        }
-        cubes.push(<Box key={i} position={position} color={color} />)
-    }
-    return cubes
 }
 
 interface BoxProps {
