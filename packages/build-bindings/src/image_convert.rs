@@ -80,7 +80,7 @@ where
     if options.scale != 1. {
         let nwidth = (image.width() as f32 * options.scale).round() as u32;
         let nheight = (image.height() as f32 * options.scale).round() as u32;
-        image = image.resize(nwidth, nheight, FilterType::Lanczos3)
+        image = image.resize(nwidth, nheight, FilterType::CatmullRom)
     }
 
     if options.horizontal_mirror {
