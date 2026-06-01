@@ -28,7 +28,6 @@ export function voxelizeHandler(router: APIRouter) {
                 path.join(instances.env.BUILDS_FOLDER, filename),
                 buildString
             )
-            console.log(buildString)
             return buildString
         }
     })
