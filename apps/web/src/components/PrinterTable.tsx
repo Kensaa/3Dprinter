@@ -1,24 +1,28 @@
 import { useMemo, useState } from 'react'
 import { Table } from 'react-bootstrap'
-import type { Printer, Task } from '../utils/types'
 import RemoteControlModal from '../modals/RemoteControlModal'
 import { Move } from 'lucide-react'
 import Button from './Button'
 import LoadingSpinner from './LoadingSpinner'
+import { useCurrentTask, usePrinters } from '../stores/data'
+import type { Printer } from '../utils/types'
+import { useInterval } from 'usehooks-ts'
 
 interface PrinterTableProps {
-    printers?: Printer[]
-    currentTask?: Task
     width?: string
     height?: string
 }
 
 export default function PrinterTable({
-    printers,
-    currentTask,
     width = '100%',
     height = '30%'
 }: PrinterTableProps) {
+    const { printers, fetchPrinters } = usePrinters()
+
+    useInterval(() => {
+        fetchPrinters()
+    }, 1000)
+    const { currentTask } = useCurrentTask()
     const [controlingAllPrinters, setControllingAllPrinters] = useState(false)
 
     const sortedPrinters = useMemo(() => {

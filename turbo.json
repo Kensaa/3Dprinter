@@ -14,7 +14,7 @@
         "build": {
             "dependsOn": ["^build"],
             "inputs": ["src/**/*"],
-            "outputs": ["dist/**/*", "index.node"],
+            "outputs": ["dist/**/*", "pkg/**/*"],
             "outputLogs": "new-only"
         }
     }

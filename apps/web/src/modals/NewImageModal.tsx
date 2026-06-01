@@ -5,7 +5,7 @@ import { useBuilds } from '../stores/data'
 import { FileUploader } from 'react-drag-drop-files'
 import { useAddress } from '../stores/config'
 import ImageViewer from '../components/ImageViewer'
-import type { CompressedBuild } from '../utils/types'
+import { CompressedBuild } from 'build-bindings'
 
 interface NewImageModalProps {
     show: boolean
@@ -63,11 +63,12 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
             })
         })
             .then(res => res.json())
-            .then(res => {
+            .then(data => CompressedBuild.deserialize(data))
+            .then(compressedBuild => {
                 const buildname = name.endsWith('.json')
                     ? name.substring(0, name.length - 5)
                     : name
-                setBuild(buildname, res as CompressedBuild)
+                setBuild(buildname, compressedBuild)
                 hide()
             })
     }

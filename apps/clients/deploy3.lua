@@ -11,12 +11,12 @@ function requestItem(item, count)
 end
 
 function requestItemIntoTurtle(item, count)
-    me.exportItemToPeripheral({ name = item, count = count }, "front")
+    me.exportItem({ name = item, count = count }, "front")
     sleep(0.5)
 end
 
 function isInMe(item)
-    local items = me.listItems()
+    local items = me.getItems()
     for k, v in pairs(items) do
         if v.name == item then
             return true
@@ -77,7 +77,7 @@ requirements["computercraft:turtle_advanced"] = 1
 requirements["advancedperipherals:chunk_controller"] = 1
 requirements["minecraft:diamond_pickaxe"] = 1
 requirements["computercraft:wireless_modem_advanced"] = 1
-requirements["enderchests:ender_chest"] = 1
+requirements["enderstorage:ender_chest"] = 1
 requirements["minecraft:coal_block"] = 125
 
 
@@ -86,7 +86,7 @@ for k, v in pairs(deployerRequirements) do
         print('You have 0 ' .. k .. ',' .. v .. ' needed')
         return
     else
-        local amount = me.getItem({ name = k }).amount
+        local amount = me.getItem({ name = k }).count
         if amount < v then
             print('You have ' .. amount .. ' ' .. k .. ',' .. v .. ' needed')
             return
@@ -112,7 +112,7 @@ for k, v in pairs(requirements) do
         print('You have 0 ' .. k .. ',' .. v .. ' needed')
         return
     else
-        local amount = me.getItem({ name = k }).amount
+        local amount = me.getItem({ name = k }).count
         local totalRequired = v * num
         if amount < totalRequired then
             print('You have ' .. amount .. ' ' .. k .. ',' .. totalRequired .. ' needed')

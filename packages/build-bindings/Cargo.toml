@@ -1,6 +1,5 @@
 [package]
 name = "build-bindings"
-license = "MIT"
 repository = "https://github.com/Kensaa/3DPrinter"
 description = ""
 version = "1.0.0"
@@ -12,6 +11,7 @@ crate-type = ["cdylib", "rlib"]
 
 [features]
 default = []
+convert = ["dep:image", "dep:obj"]
 
 [dependencies]
 wasm-bindgen = "0.2.122"
@@ -21,9 +21,13 @@ flate2 = { version = "1.0.17", features = [
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
 base64 = "0.22.1"
-obj = "0.10.2"
+obj = { version = "0.10.2", optional = true }
 js-sys = "0.3.99"
 console_error_panic_hook = "0.1.7"
+image = { version = "0.25.10", default-features = false, features = [
+    "default-formats",
+], optional = true }
+ciborium = "0.2.2"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.34"

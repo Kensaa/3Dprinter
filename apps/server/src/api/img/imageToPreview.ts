@@ -1,9 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../../api'
-import { Jimp, JimpMime } from 'jimp'
-import { arrayToImage, imageToArray } from '../../utils'
-import { HTTPError } from 'express-api-router'
-import { count2DArray, trim2Darray } from 'utils'
+import { Build, ConvertImageOptions, ImageMetadata } from 'build-bindings'
 
 export function imageToPreviewHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -23,21 +20,19 @@ export function imageToPreviewHandler(router: APIRouter) {
             blockCount: z.number()
         }),
         handler: async (req, res, instances) => {
-            let image
-            try {
-                image = await Jimp.fromBuffer(
-                    Buffer.from(req.body.image, 'base64')
+            const build = Build.from_image(
+                Buffer.from(req.body.image, 'base64'),
+                ConvertImageOptions.new(
+                    req.body.threshold,
+                    req.body.inverted,
+                    req.body.scale,
+                    req.body.horizontalMirror,
+                    req.body.verticalMirror
                 )
-            } catch {
-                throw new HTTPError(400, 'failed to read image')
-            }
-            const imageArray = imageToArray(image, req.body)
-            trim2Darray(imageArray, 0)
-            const preview = await arrayToImage(imageArray).getBase64(
-                JimpMime.png
             )
 
-            const blockCount = count2DArray(imageArray, 1)
+            const preview = (build.metadata.type as ImageMetadata).preview
+            const blockCount = build.metadata.block_count
 
             return { preview, blockCount }
         }

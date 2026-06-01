@@ -1,77 +1,58 @@
-import { useRef, useState, useEffect, useMemo } from 'react'
+import { useRef, useEffect, useMemo } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { CameraControls, Html } from '@react-three/drei'
-import type { Build } from '../utils/types'
 import { useConfig } from '../stores/config'
 import { useBuilds } from '../stores/data'
 import { Color, InstancedMesh, Object3D } from 'three'
 import Button from '../components/Button'
 import { blockCountString } from '../utils/utils'
-import { count3DArray, rotate3DArray } from 'utils'
+import type { CompressedBuild } from 'build-bindings'
 
 interface ModelViewerProps {
     buildName: string
-    build: Build
+    compressedBuild: CompressedBuild
     width?: string
     height?: string
 }
 
 export default function ModelViewer({
     buildName,
-    build: initialBuild,
+    compressedBuild,
     width = '25%',
     height = '50%'
 }: ModelViewerProps) {
     const disableRender = useConfig(store => store.disableRender)
     const { updateBuild } = useBuilds()
 
-    const [build, setBuild] = useState<Build>(initialBuild)
+    const build = useMemo(() => {
+        return compressedBuild.uncompress()
+    }, [compressedBuild])
+    const buildShape = useMemo(() => build.get_shape() as number[][][], [build])
 
-    useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setBuild(initialBuild)
-    }, [buildName, initialBuild])
-    const elementCount = useMemo(() => count3DArray(build.shape, 1), [build])
-
-    // what ?
-    if (build === undefined) {
-        return (
-            <div
-                style={{ width, height }}
-                className='d-flex justify-content-center align-items-center border'
-            ></div>
-        )
-    }
     if (disableRender) return <></>
 
     // THING TO CHANGE HERE
     // don't push the build to the server each time we rotate it, add a "save/apply" button
-
+    const handleRotate = (xAxis: boolean, yAxis: boolean, zAxis: boolean) => {
+        build.rotate(xAxis, yAxis, zAxis)
+        updateBuild(buildName, build.compress())
+    }
     return (
         <div style={{ width, height }} className='border'>
             <Canvas>
                 <ambientLight />
                 <Panel>
                     <h4>{buildName}</h4>
-                    <p>{blockCountString(elementCount)}</p>
+                    <p>{blockCountString(build.metadata.block_count)}</p>
                 </Panel>
-                <Mesh build={build} count={elementCount} />
+                <Mesh shape={buildShape} count={build.metadata.block_count} />
                 <CameraControls />
                 <axesHelper args={[50]} />
             </Canvas>
             <div className='w-100 d-flex justify-content-center mt-3'>
                 <Button
                     onClick={() => {
-                        const newBuild = { ...build }
-                        newBuild.shape = rotate3DArray(
-                            build.shape,
-                            true,
-                            false,
-                            false,
-                            0
-                        )
-                        updateBuild(buildName, newBuild)
-                        setBuild(newBuild)
+                        handleRotate(true, false, false)
                     }}
                     variant='outline-primary'
                 >
@@ -79,16 +60,7 @@ export default function ModelViewer({
                 </Button>
                 <Button
                     onClick={() => {
-                        const newBuild = { ...build }
-                        newBuild.shape = rotate3DArray(
-                            build.shape,
-                            false,
-                            true,
-                            false,
-                            0
-                        )
-                        updateBuild(buildName, newBuild)
-                        setBuild(newBuild)
+                        handleRotate(false, true, false)
                     }}
                     variant='outline-primary'
                     className='mx-2'
@@ -97,16 +69,7 @@ export default function ModelViewer({
                 </Button>
                 <Button
                     onClick={() => {
-                        const newBuild = { ...build }
-                        newBuild.shape = rotate3DArray(
-                            build.shape,
-                            false,
-                            false,
-                            true,
-                            0
-                        )
-                        updateBuild(buildName, newBuild)
-                        setBuild(newBuild)
+                        handleRotate(false, false, true)
                     }}
                     variant='outline-primary'
                 >
@@ -118,11 +81,11 @@ export default function ModelViewer({
 }
 
 interface MeshProps {
-    build: Build
+    shape: number[][][]
     count: number
 }
 
-function Mesh({ build, count }: MeshProps) {
+function Mesh({ shape, count }: MeshProps) {
     const meshRef = useRef<InstancedMesh>(null)
 
     useEffect(() => {
@@ -132,9 +95,9 @@ function Mesh({ build, count }: MeshProps) {
         const tempObject = new Object3D()
         let i = 1
 
-        const height = build.shape.length
-        const depth = build.shape[0].length
-        const width = build.shape[0][0].length
+        const height = shape.length
+        const depth = shape[0].length
+        const width = shape[0][0].length
 
         tempObject.position.set(-width / 2, -height / 2, -depth / 2)
         tempObject.scale.set(1, 1, 1)
@@ -146,7 +109,7 @@ function Mesh({ build, count }: MeshProps) {
         for (let y = 0; y < height; y++) {
             for (let z = 0; z < depth; z++) {
                 for (let x = 0; x < width; x++) {
-                    if (build.shape[y][z][x] === 1) {
+                    if (shape[y][z][x] === 1) {
                         tempObject.position.set(
                             x - width / 2,
                             y - height / 2,
@@ -167,7 +130,7 @@ function Mesh({ build, count }: MeshProps) {
         }
 
         meshRef.current.instanceMatrix.needsUpdate = true
-    }, [build])
+    }, [shape])
 
     return (
         <instancedMesh ref={meshRef} args={[undefined, undefined, count]}>

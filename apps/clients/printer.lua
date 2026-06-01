@@ -586,8 +586,8 @@ function handleData(JSONData)
 
     buildMaxHeight = height + y + 1
     log('building a ' ..
-    width .. 'x' .. depth .. 'x' .. height .. ' shape at ' .. x .. ',' .. y .. ',' .. z .. ' (' ..
-    blockToPlace .. ' blocks)')
+        width .. 'x' .. depth .. 'x' .. height .. ' shape at ' .. x .. ',' .. y .. ',' .. z .. ' (' ..
+        blockToPlace .. ' blocks)')
     print('max height: ' .. buildMaxHeight)
     setState('moving')
     goTo(x, y + 1, z, buildMaxHeight + 2)
@@ -726,5 +726,5 @@ function init()
 end
 
 while true do
-    parallel.waitForAll(receive, buildManager, remoteManager, configManager, init)
+    parallel.waitForAll(receive, buildManager, remoteManager, configManager, dataManager, init)
 end

@@ -4,6 +4,7 @@ import Button from '../components/Button'
 import { FileUploader } from 'react-drag-drop-files'
 import { useBuilds } from '../stores/data'
 import { useAddress } from '../stores/config'
+import { CompressedBuild } from 'build-bindings'
 
 interface NewModelModalProps {
     show: boolean
@@ -43,6 +44,10 @@ export default function NewModelModal({ show, hide }: NewModelModalProps) {
             }
         })
             .then(res => res.json())
+            .then(data => {
+                console.log(data)
+                return CompressedBuild.deserialize(data)
+            })
             .then(build => {
                 setBuild(name, build)
                 hide()

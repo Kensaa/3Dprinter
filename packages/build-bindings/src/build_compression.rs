@@ -2,7 +2,7 @@ use crate::{Build, CompressedBuild};
 use base64::prelude::*;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
-use std::io::Write;
+use std::io::{Cursor, Write};
 use wasm_bindgen::prelude::*;
 
 fn compress(input: &[u8], level: Option<u32>) -> Vec<u8> {
@@ -56,13 +56,21 @@ impl Build {
 
 #[wasm_bindgen(js_class = CompressedBuild)]
 impl CompressedBuild {
-    pub fn from_json(json: &str) -> Result<CompressedBuild, JsValue> {
-        serde_json::from_str::<CompressedBuild>(json)
-            .map_err(|e| format!("failed to parse JSON : {}", e.to_string()).into())
+    pub fn deserialize(str: &str) -> Result<CompressedBuild, JsValue> {
+        let data = BASE64_STANDARD
+            .decode(str)
+            .map_err(|err| format!("failed to decode base64 : {}", err))?;
+
+        ciborium::from_reader(Cursor::new(data))
+            .map_err(|err| format!("failed to parse build : {}", err).into())
     }
 
-    pub fn to_json(&self) -> String {
-        serde_json::to_string(self).unwrap()
+    pub fn serialize(&self) -> Result<String, JsValue> {
+        let mut data = Vec::new();
+        ciborium::into_writer(self, &mut data)
+            .map_err(|err| format!("failed to serialize value : {}", err))?;
+
+        Ok(BASE64_STANDARD.encode(data))
     }
 
     pub fn uncompress(&self) -> Build {

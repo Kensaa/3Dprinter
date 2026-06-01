@@ -15,62 +15,6 @@ export interface ImageToArrayOptions {
 }
 
 /**
- * Convert an Jimp image into a 2D array
- * @param image image to convert
- * @param options options (see ImageToArrayOptions interface)
- * @returns a 2D array representing the image's pixels
- */
-export function imageToArray(
-    image: JimpImage,
-    options: Partial<ImageToArrayOptions>
-) {
-    const {
-        threshold = 50,
-        inverted = true,
-        scale = 1,
-        horizontalMirror = false,
-        verticalMirror = false
-    } = options
-    image.scale(scale)
-    image.flip({ horizontal: horizontalMirror, vertical: verticalMirror })
-    const output: number[][] = []
-    const width = image.width
-    const height = image.height
-    for (let y = 0; y < height; y++) {
-        output.push([])
-        for (let x = 0; x < width; x++) {
-            const color = intToRGBA(image.getPixelColor(x, y))
-            const gray = (color.r + color.g + color.b) / 3
-
-            if (color.a === 0) {
-                output[y].push(0)
-            } else {
-                if (gray > threshold) {
-                    output[y].push(inverted ? 0 : 1)
-                } else {
-                    output[y].push(inverted ? 1 : 0)
-                }
-            }
-        }
-    }
-    return output
-}
-
-export function arrayToImage(arr: number[][]) {
-    const width = arr[0].length
-    const height = arr.length
-    const img = new Jimp({ width, height, color: 'white' })
-    for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-            if (arr[y][x] === 1) {
-                img.setPixelColor(0x000000ff, x, y)
-            }
-        }
-    }
-    return img
-}
-
-/**
  * divide a 3D array in parts of dimension (xsize,ysize,zsize)
  * @param arr input array
  * @param xsize x size of the divided parts

@@ -7,7 +7,7 @@ import path from 'path'
 export function editBuildsHandler(router: APIRouter) {
     return router.createRouteHandler({
         authed: false,
-        bodySchema: z.record(z.string(), compressedBuildSchema),
+        bodySchema: z.record(z.string(), z.string()),
         paramsSchema: z.object({}),
         querySchema: z.object({}),
         responseSchema: z.void(),
@@ -18,7 +18,7 @@ export function editBuildsHandler(router: APIRouter) {
                         instances.env.BUILDS_FOLDER,
                         name.endsWith('.json') ? name : name + '.json'
                     ),
-                    JSON.stringify(build)
+                    build
                 )
             }
             return

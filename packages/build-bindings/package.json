@@ -4,7 +4,7 @@
     "author": "Kensa",
     "private": true,
     "scripts": {
-        "build": "wasm-pack build --target nodejs --out-dir pkg/pkg-node --profile release-node && wasm-pack build --target bundler --out-dir pkg/pkg-browser",
+        "build": "wasm-pack build --target nodejs --out-dir pkg/pkg-node --profile release-node -- --features convert && wasm-pack build --target bundler --out-dir pkg/pkg-browser",
         "cargo": "cargo"
     },
     "devDependencies": {

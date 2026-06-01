@@ -1,5 +1,3 @@
-import { compress_buffer, decompress_buffer } from 'build-bindings'
-
 export const blobToBase64 = async (blob: Blob) => {
     return new Promise<string>((onSuccess, onError) => {
         try {
@@ -37,6 +35,3 @@ export function blockCountString(number: number) {
     }
     return `${result} block${number === 1 ? '' : 's'}`
 }
-
-export const decompress = decompress_buffer
-export const compress = compress_buffer
