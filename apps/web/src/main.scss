@@ -107,8 +107,6 @@ textarea textarea:focus {
     border-bottom: 1px solid #ccc;
 }
 
-.canvas-wrapper {
-    position: relative;
+.panel-wrapper {
     z-index: 0;
-    isolation: isolate;
 }
