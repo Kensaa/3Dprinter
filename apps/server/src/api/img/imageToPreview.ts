@@ -8,6 +8,7 @@ import {
     GrayImageMetadata,
     GrayscaleConvertImageOptions
 } from 'build-bindings'
+import { HTTPError } from 'express-api-router'
 
 export function imageToPreviewHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -63,6 +64,8 @@ export function imageToPreviewHandler(router: APIRouter) {
                     break
                 }
                 case 'color_flat': {
+                    if (req.body.available_blocks.length === 0)
+                        throw new HTTPError(400, 'No block available')
                     build = Build.from_image_color_flat(
                         imageBuffer,
                         new ColorFlatConvertImageOptions(

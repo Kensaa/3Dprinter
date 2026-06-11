@@ -109,6 +109,10 @@ pub struct CompressedBuild {
     palette: Vec<String>,
 }
 
+pub fn js_err(msg: &str) -> JsValue {
+    js_sys::Error::new(msg).into()
+}
+
 #[wasm_bindgen(js_class = Build)]
 impl Build {
     pub fn get_shape(&self) -> Array<Array<Array<Number>>> {

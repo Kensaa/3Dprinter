@@ -63,7 +63,41 @@ export const defaultPresets = {
         'minecraft:deepslate',
         'minecraft:raw_iron_block',
         'minecraft:verdant_froglight'
-    ]
+    ],
+    SimpleColors: [
+        'minecraft:orange_concrete',
+        'minecraft:magenta_concrete',
+        'minecraft:light_blue_concrete',
+        'minecraft:yellow_concrete',
+        'minecraft:lime_concrete',
+        'minecraft:pink_concrete',
+        'minecraft:gray_concrete',
+        'minecraft:light_gray_concrete',
+        'minecraft:cyan_concrete',
+        'minecraft:purple_concrete',
+        'minecraft:blue_concrete',
+        'minecraft:brown_concrete',
+        'minecraft:green_concrete',
+        'minecraft:red_concrete',
+        'minecraft:black_concrete',
+        'minecraft:white_terracotta',
+        'minecraft:orange_terracotta',
+        'minecraft:magenta_terracotta',
+        'minecraft:light_blue_terracotta',
+        'minecraft:yellow_terracotta',
+        'minecraft:lime_terracotta',
+        'minecraft:pink_terracotta',
+        'minecraft:gray_terracotta',
+        'minecraft:light_gray_terracotta',
+        'minecraft:cyan_terracotta',
+        'minecraft:purple_terracotta',
+        'minecraft:blue_terracotta',
+        'minecraft:brown_terracotta',
+        'minecraft:green_terracotta',
+        'minecraft:red_terracotta',
+        'minecraft:black_terracotta'
+    ],
+    None: []
 }
 
 export const ALL_BLOCKS = get_all_blocks()

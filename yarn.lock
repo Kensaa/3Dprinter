@@ -2462,9 +2462,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express-api-router@https://github.com/Kensaa/express-api-router.git#0760b2619279f14c50a370e03b4db5ca2e114b54":
-  version: 1.0.12
-  resolution: "express-api-router@https://github.com/Kensaa/express-api-router.git#commit=0760b2619279f14c50a370e03b4db5ca2e114b54"
+"express-api-router@https://github.com/Kensaa/express-api-router.git#a4e67fb668e136da6c31a034eaef13bc216c86e8":
+  version: 1.1.1
+  resolution: "express-api-router@https://github.com/Kensaa/express-api-router.git#commit=a4e67fb668e136da6c31a034eaef13bc216c86e8"
   dependencies:
     cookie-parser: "npm:^1.4.7"
     express: "npm:^5.1.0"
@@ -2478,7 +2478,7 @@ __metadata:
       optional: true
     multer:
       optional: true
-  checksum: 10c0/88a9da21fab31f96fecc3a72d6a866098d0e0f86af4e869241ce71fb3b091c04ea93217d25dba0caf77799a6f04fe5a82c843d3fbd81299747a59ee9513a6469
+  checksum: 10c0/0af08e9f1ec71c074131a05af982881dfb66a98de2638e3ad8e11f2717fa4343aec62c122b7caacddc14a7f8b7100a9a5529056367a53a626feeb39c9cdccf30
   languageName: node
   linkType: hard
 
@@ -4130,7 +4130,7 @@ __metadata:
     clients: "workspace:*"
     cors: "npm:^2.8.6"
     express: "npm:^5.2.1"
-    express-api-router: "https://github.com/Kensaa/express-api-router.git#0760b2619279f14c50a370e03b4db5ca2e114b54"
+    express-api-router: "https://github.com/Kensaa/express-api-router.git#a4e67fb668e136da6c31a034eaef13bc216c86e8"
     jimp: "npm:^1.6.1"
     obj-file-parser: "npm:^0.6.2"
     utils: "workspace:*"

@@ -144,9 +144,9 @@ where
 {
     let mut image = ImageReader::new(image_data)
         .with_guessed_format()
-        .map_err(|err| format!("failed to guess image format : {}", err))?
+        .map_err(|err| crate::js_err(&format!("failed to guess image format : {}", err)))?
         .decode()
-        .map_err(|err| format!("failed to decode image : {}", err))?;
+        .map_err(|err| crate::js_err(&format!("failed to decode image : {}", err)))?;
 
     if base_options.scale != 1. {
         let nwidth = (image.width() as f32 * base_options.scale).round() as u32;
@@ -249,7 +249,10 @@ pub fn convert_image_color_flat(
                             let db = (b as i32 - b2 as i32).pow(2);
                             dr + dg + db
                         })
-                        .ok_or(format!("no color found for ({},{},{})", r, g, b))?;
+                        .ok_or(crate::js_err(&format!(
+                            "no color found for ({},{},{})",
+                            r, g, b
+                        )))?;
                     lookup_table.insert((r, g, b), *c);
                     line.push(*c);
                     palette.insert(*c);
@@ -276,7 +279,6 @@ pub fn convert_image_color_flat(
         .collect();
 
     let mut shape = vec![output];
-    // panic!("{:#?}", shape);
     trim_3d_array(&mut shape, 0);
     let (height, depth, width) = get_shape_3d_array(&shape);
     let block_count = count_not_null_3d_array(&shape, 0) as u32;
