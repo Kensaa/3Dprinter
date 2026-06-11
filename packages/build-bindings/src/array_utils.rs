@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 /// Returns the index of the first element in `arr` different from `null`, or `arr.len()` if there is none
 fn get_first_non_null<E>(arr: &Vec<E>, null: E) -> usize
 where
@@ -35,7 +37,7 @@ where
 /// Trims elements equals to `null` on the borders of the cube in `arr`
 pub fn trim_3d_array<E>(arr: &mut Vec<Vec<Vec<E>>>, null: E)
 where
-    E: Eq + Copy,
+    E: Eq + Copy + Display,
 {
     if arr.len() == 0 {
         return;
@@ -72,11 +74,15 @@ where
         .min()
         .unwrap();
 
+    println!("{}", first_side_slice);
+    print_arr(&arr[0]);
+
     arr.iter_mut().for_each(|layer| {
         layer.iter_mut().for_each(|depth_row| {
             depth_row.drain(..first_side_slice);
         });
     });
+    print_arr(&arr[0]);
 
     let last_side_slice = arr
         .iter()
@@ -136,9 +142,21 @@ where
     });
 }
 
+fn print_arr<E>(arr: &Vec<Vec<E>>)
+where
+    E: Display,
+{
+    for line in arr.iter() {
+        for e in line {
+            print!("{:02} ", e);
+        }
+        print!("\n");
+    }
+}
+
 #[allow(unused)]
 /// Count every element in `arr` that are not equal to `null`
-pub fn count_3d_array<E>(arr: &Vec<Vec<Vec<E>>>, null: E) -> usize
+pub fn count_not_null_3d_array<E>(arr: &Vec<Vec<Vec<E>>>, null: E) -> usize
 where
     E: Eq + Copy,
 {
@@ -146,6 +164,19 @@ where
         .flatten()
         .flatten()
         .map(|e| if *e != null { 1 } else { 0 })
+        .sum()
+}
+
+#[allow(unused)]
+/// Count every element in `arr` that are equal to `target`
+pub fn count_equal_3d_array<E>(arr: &Vec<Vec<Vec<E>>>, target: E) -> usize
+where
+    E: Eq + Copy,
+{
+    arr.iter()
+        .flatten()
+        .flatten()
+        .map(|e| if *e == target { 1 } else { 0 })
         .sum()
 }
 
@@ -448,6 +479,30 @@ mod tests {
         ];
         trim_3d_array(&mut arr, 0);
         assert_eq!(arr, expected);
+    }
+
+    #[test]
+    fn test_trim_3d_big() {
+        let mut arr = vec![vec![
+            vec![
+                16, 01, 16, 01, 16, 01, 01, 01, 02, 03, 02, 01, 01, 16, 01, 16, 01,
+            ],
+            vec![16, 01, 16, 01, 01, 02, 10, 10, 10, 10, 10, 02, 01, 16, 01],
+            vec![16, 01, 16, 01, 01, 05, 10, 10, 03, 13, 13, 02, 01, 16, 01],
+            vec![16, 01, 16, 01, 01, 10, 10, 13, 8, 11, 6, 6, 7, 1],
+            vec![01, 02, 02, 10, 10, 14, 6, 6, 6, 6, 6, 15],
+            vec![02, 10, 13, 10, 10, 9, 12, 11, 11, 11, 12, 1],
+            vec![02, 05, 02, 05, 10, 3, 15, 14, 14, 9, 1, 1],
+            vec![02, 05, 02, 05, 10, 10, 10, 3, 3, 05, 3, 1],
+            vec![02, 05, 13, 05, 10, 10, 10, 10, 10, 10, 3, 1],
+            vec![02, 05, 13, 05, 05, 5, 10, 10, 10, 10, 13, 1],
+            vec![02, 05, 13, 05, 05, 5, 5, 5, 5, 5, 2, 1],
+            vec![01, 02, 02, 05, 05, 5, 13, 13, 4, 5, 2, 1],
+            vec![16, 01, 01, 01, 04, 05, 5, 1, 2, 5, 5, 2, 1],
+            vec![16, 01, 16, 01, 01, 4, 05, 4, 1, 2, 5, 4, 2, 16, 1],
+            vec![16, 01, 16, 01, 01, 2, 13, 2, 1, 1, 1, 1, 1, 16, 1],
+        ]];
+        trim_3d_array(&mut arr, 0);
     }
 
     #[test]
