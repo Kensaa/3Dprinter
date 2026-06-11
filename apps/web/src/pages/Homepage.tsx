@@ -83,14 +83,18 @@ export default function Homepage() {
                 />
             )}
 
-            <NewModelModal
-                show={newModelShown}
-                hide={() => setNewModelShown(false)}
-            />
-            <NewImageModal
-                show={newImageShown}
-                hide={() => setNewImageShown(false)}
-            />
+            {newModelShown ? (
+                <NewModelModal
+                    show={newModelShown}
+                    hide={() => setNewModelShown(false)}
+                />
+            ) : undefined}
+            {newImageShown ? (
+                <NewImageModal
+                    show={newImageShown}
+                    hide={() => setNewImageShown(false)}
+                />
+            ) : undefined}
         </div>
     )
 }
