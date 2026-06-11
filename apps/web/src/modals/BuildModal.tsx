@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useEffect, useState } from 'react'
 import { useAddress } from '../stores/config'
-import { Modal, Form, Row, Col, Alert } from 'react-bootstrap'
-import Button from '../components/Button'
+import { Modal, Form, Row, Col, Alert, Button } from 'react-bootstrap'
 import BuildPreview from '../components/BuildPreview'
 import { useLocation } from 'wouter'
 
@@ -24,7 +22,7 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
 
     const [error, setError] = useState('')
 
-    const buildAction = (event: React.FormEvent<HTMLFormElement>) => {
+    const buildAction = (event: React.SubmitEvent<HTMLFormElement>) => {
         event.preventDefault()
         event.stopPropagation()
         fetch(`${address}/build`, {
@@ -84,47 +82,38 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
                     <Form onSubmit={buildAction} className='mx-2 w-50'>
                         <Form.Label>Build Position : </Form.Label>
                         <Row>
-                            {
-                                //@ts-ignore
-                                <Form.Group as={Col}>
-                                    <Form.Label>X:</Form.Label>
-                                    <Form.Control
-                                        placeholder='X'
-                                        type='number'
-                                        value={x}
-                                        onChange={e => setX(e.target.value)}
-                                        onPaste={pasteShortcut}
-                                    />
-                                </Form.Group>
-                            }
-                            {
-                                //@ts-ignore
-                                <Form.Group as={Col}>
-                                    <Form.Label>Y:</Form.Label>
+                            <Form.Group as={Col}>
+                                <Form.Label>X:</Form.Label>
+                                <Form.Control
+                                    placeholder='X'
+                                    type='number'
+                                    value={x}
+                                    onChange={e => setX(e.target.value)}
+                                    onPaste={pasteShortcut}
+                                />
+                            </Form.Group>
+                            <Form.Group as={Col}>
+                                <Form.Label>Y:</Form.Label>
 
-                                    <Form.Control
-                                        placeholder='Y'
-                                        type='number'
-                                        value={y}
-                                        onChange={e => setY(e.target.value)}
-                                        onPaste={pasteShortcut}
-                                    />
-                                </Form.Group>
-                            }
-                            {
-                                //@ts-ignore
-                                <Form.Group as={Col}>
-                                    <Form.Label>Z:</Form.Label>
+                                <Form.Control
+                                    placeholder='Y'
+                                    type='number'
+                                    value={y}
+                                    onChange={e => setY(e.target.value)}
+                                    onPaste={pasteShortcut}
+                                />
+                            </Form.Group>
+                            <Form.Group as={Col}>
+                                <Form.Label>Z:</Form.Label>
 
-                                    <Form.Control
-                                        placeholder='Z'
-                                        type='number'
-                                        value={z}
-                                        onChange={e => setZ(e.target.value)}
-                                        onPaste={pasteShortcut}
-                                    />
-                                </Form.Group>
-                            }
+                                <Form.Control
+                                    placeholder='Z'
+                                    type='number'
+                                    value={z}
+                                    onChange={e => setZ(e.target.value)}
+                                    onPaste={pasteShortcut}
+                                />
+                            </Form.Group>
                         </Row>
                         <Form.Group className='mt-3'>
                             <Form.Label>Heading:</Form.Label>
@@ -142,10 +131,7 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
                             </Form.Select>
                         </Form.Group>
                         <Form.Group className='d-flex justify-content-center mt-2'>
-                            {
-                                //@ts-ignore
-                                <Button type='submit'>Build</Button>
-                            }
+                            <Button type='submit'>Build</Button>
                         </Form.Group>
                     </Form>
                     <BuildPreview buildName={buildName} />

@@ -3,8 +3,8 @@ import { useCurrentTask } from '../stores/data'
 import PrinterTable from '../components/PrinterTable'
 import { useInterval } from 'usehooks-ts'
 import ProgressViewer from '../components/ProgressViewer'
-import Button from '../components/Button'
 import { useEffect, useState } from 'react'
+import { Button } from 'react-bootstrap'
 
 export default function Printerpage() {
     return (

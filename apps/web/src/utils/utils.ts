@@ -35,3 +35,16 @@ export function blockCountString(number: number) {
     }
     return `${result} block${number === 1 ? '' : 's'}`
 }
+
+export function getBlockName(block: string): string {
+    const tooltip = block
+        .split(':')[1]
+        .split('_')
+        .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+        .join(' ')
+
+    return tooltip
+}
+export function getBlockIconURL(item: string): string {
+    return `/block/${item.split(':')[1]}.png`
+}

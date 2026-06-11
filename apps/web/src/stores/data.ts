@@ -50,11 +50,9 @@ const store = create<dataStore>((set, get) => {
             .then(currentTask => {
                 const prev = get().currentTask
                 if (!prev) {
-                    console.log('update')
                     set({ currentTask })
                 } else {
                     if (!areTasksEqual(prev, currentTask)) {
-                        console.log('update')
                         set({ currentTask })
                     }
                 }

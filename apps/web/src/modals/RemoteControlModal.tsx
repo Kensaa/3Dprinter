@@ -1,6 +1,5 @@
 import { createElement, useMemo, useState } from 'react'
-import { Form, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap'
-import Button from '../components/Button'
+import { Button, Form, Modal } from 'react-bootstrap'
 import type { Printer } from '../utils/types'
 import {
     ArrowDownToLine,
@@ -15,6 +14,7 @@ import {
     RotateCw
 } from 'lucide-react'
 import { useAddress } from '../stores/config'
+import Tooltip from '../components/Tooltip'
 
 interface RemoteControlModalProps {
     printers: Printer[]
@@ -139,15 +139,15 @@ function CommandButton({ name, icon, printers }: CommandButtonProps) {
     }
 
     return (
-        <OverlayTrigger
+        <Tooltip
             placement='top'
-            overlay={<Tooltip>{name}</Tooltip>}
+            tooltipContent={name}
             delay={{ show: 200, hide: 0 }}
         >
             <Button variant='outline-primary' onClick={action} className='mx-1'>
                 {createElement(icon)}
             </Button>
-        </OverlayTrigger>
+        </Tooltip>
     )
 }
 

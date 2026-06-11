@@ -4,9 +4,9 @@ import { CameraControls, Html } from '@react-three/drei'
 import { useConfig } from '../stores/config'
 import { useBuilds } from '../stores/data'
 import { Color, InstancedMesh, Object3D } from 'three'
-import Button from '../components/Button'
 import { blockCountString } from '../utils/utils'
 import type { CompressedBuild } from 'build-bindings'
+import { Button } from 'react-bootstrap'
 
 interface ModelViewerProps {
     buildName: string
