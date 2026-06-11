@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use phf::phf_set;
 use wasm_bindgen::prelude::*;
 
