@@ -6,7 +6,7 @@ import fs from 'fs'
 import path from 'path'
 import { z } from 'zod'
 import { getTime, sendPartToPrinter, sendAsync } from './utils'
-import type { Task, PrinterState, Printer, PrinterConfig } from 'utils'
+import type { PrinterState, PrinterConfig } from 'utils'
 import { initApi, Instances } from './api'
 
 const WEB_SERVER_PORT = parseInt(process.env.PORT ?? '9513')
