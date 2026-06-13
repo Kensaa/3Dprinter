@@ -178,7 +178,7 @@ function GoToForm({ printers }: GoToFormProps) {
                 body: JSON.stringify({
                     printer: printer.id,
                     command: 'goTo',
-                    data: [x, y, z]
+                    data: [x, y, z, y]
                 })
             })
         }
@@ -296,7 +296,7 @@ function LineForm({ printers }: GoToFormProps) {
         if (!(x && y && z)) {
             return
         }
-        const currentPos = [x, y, z]
+        const currentPos = [x, y, z, y]
         for (const printer of printers) {
             fetch(`${address}/remote`, {
                 method: 'POST',
@@ -327,6 +327,7 @@ function LineForm({ printers }: GoToFormProps) {
                     console.error('invalid heading ' + heading)
                     return
             }
+            currentPos[3] += 1
         }
     }
 
