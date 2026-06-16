@@ -19,7 +19,7 @@ export async function getCurrentPartHandler({
 
     const currentTask = instances.currentTask
 
-    if (!client.partIndex) {
+    if (client.partIndex === null) {
         return sendResponse(responseSchema, { hasCurrentPart: false })
     }
 
