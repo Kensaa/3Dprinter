@@ -140,9 +140,18 @@ export class BijectiveMap<K, V> {
         this.map2.set(b, a)
     }
 
+    delete(e: K): void
+    delete(e: V): void
     delete(e: K | V): void {
-        this.map1.delete(e as K)
-        this.map2.delete(e as V)
+        if (this.map1.has(e as K)) {
+            const v = this.map1.get(e as K)!
+            this.map1.delete(e as K)
+            this.map2.delete(v)
+        } else if (this.map2.has(e as V)) {
+            const v = this.map2.get(e as V)!
+            this.map2.delete(e as V)
+            this.map1.delete(v)
+        }
     }
 
     get(key: K): V | undefined
