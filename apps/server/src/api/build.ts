@@ -6,6 +6,8 @@ import path from 'path'
 import fs from 'fs'
 import { HTTPError } from 'express-api-router'
 import { CompressedBuild } from 'build-bindings'
+import { clientsTable } from '../db/schema'
+import { eq } from 'drizzle-orm'
 
 export function buildHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -20,9 +22,14 @@ export function buildHandler(router: APIRouter) {
         responseSchema: z.void(),
         handler: async (req, res, instances) => {
             const { file, pos, heading } = req.body
-            const connectedPrinters = instances.printers.filter(
-                p => p.connected
-            )
+            // const connectedPrinters = instances.printers.filter(
+            //     p => p.connected
+            // )
+            const connectedPrinters = await instances.database
+                .select()
+                .from(clientsTable)
+                .where(eq(clientsTable.connected, true))
+
             const printerCount = connectedPrinters.length
             if (!file) throw new HTTPError(500, 'missing field "file"')
             if (!pos) throw new HTTPError(500, 'missing field "pos"')
@@ -118,8 +125,8 @@ export function buildHandler(router: APIRouter) {
                 parts: queue,
                 partsPositions,
                 partCount: queue.length,
-                currentlyBuildingParts: [],
-                completedParts: [],
+                currentlyBuildingParts: new Set(),
+                completedParts: new Set(),
                 nextPart: 0,
                 startedAt: Date.now(),
                 divisionWidth: divided[0].length,
@@ -131,11 +138,15 @@ export function buildHandler(router: APIRouter) {
                 if (printer.state !== 'idle') continue
                 const part = queue[instances.currentTask.nextPart] ?? undefined
                 if (!part) break
-                printer.partIndex = instances.currentTask.nextPart++
-                instances.currentTask.currentlyBuildingParts.push(
-                    printer.partIndex
-                )
-                await sendPartToPrinter(printer, part)
+                // printer.partIndex = instances.currentTask.nextPart++
+                const partIndex = instances.currentTask.nextPart++
+                await instances.database
+                    .update(clientsTable)
+                    .set({ partIndex: partIndex })
+                    .where(eq(clientsTable.id, printer.id))
+                instances.currentTask.currentlyBuildingParts.add(partIndex)
+                const ws = instances.clientMapping.get(printer.id)!
+                await sendPartToPrinter(ws, part)
                 await wait(200)
             }
         }

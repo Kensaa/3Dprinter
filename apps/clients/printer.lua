@@ -4,11 +4,15 @@ local config = {
 }
 
 local url = "$WS_URL$"
-if not fs.exists('json.lua') then
-    shell.run('wget https://raw.githubusercontent.com/rxi/json.lua/master/json.lua json.lua')
-end
+
+fs.delete('libs')
+fs.makeDir('libs')
+shell.run('wget $WEB_URL$/libs/json.lua libs/json.lua')
+shell.run('wget $WEB_URL$/libs/websocket.lua libs/websocket.lua')
+
 sleep(1)
-json = require "json"
+json = require "libs/json"
+websocket = require "libs/websocket"
 -- Setup :
 -- equip chunk loader from advanced peripheral to the left
 -- equip either a pickaxe or a advanced wireless modem to the right and place the other into the 15th slot
@@ -118,29 +122,20 @@ function place()
     blockToPlace = blockToPlace - 1
 end
 
-local ws, err = http.websocket(url)
-if not err == nil then
-    print(err)
-    return
-end
-
-function send(data)
-    ws.send(json.encode(data))
-end
-
 function log(message)
-    send({ type = 'log', message = message })
+    websocket.sendRequest('log', { message = message })
+end
+
+function setProperty(property, value)
+    websocket.sendRequest('setProperty', { property = property, value = value })
 end
 
 function setState(state)
     if currentState ~= state then
         currentState = state
-        send({ type = 'setState', state = state })
+        setProperty("state", state)
     end
 end
-
--- register the client (to associate a websocket with a label and an id on the server)
-send({ type = 'register', label = os.getComputerLabel() or "unnamed printer", id = os.getComputerID() })
 
 function countA(a)
     c = {}
@@ -338,7 +333,6 @@ end
 
 function goTo(targetX, targetY, targetZ, maxHeight)
     maxHeight = maxHeight or 310
-    print(currentHeading)
     if currentHeading == -1 then
         print('error')
         return
@@ -516,7 +510,7 @@ function build(data, height, depth, width)
                         end
                     end
                     progress = (y - 1 + (z - 1) / depth) / height * 100
-                    send({ type = 'setProgress', progress = progress })
+                    setProperty('progress', progress)
                 else
                     print("paused")
                     sleep(1)
@@ -545,7 +539,7 @@ function build(data, height, depth, width)
             end
         end
     end
-    send({ type = 'setProgress', progress = 100.0 })
+    setProperty('progress', 100)
     up()
     up()
 end
@@ -596,135 +590,138 @@ function handleData(JSONData)
     build(data, height, depth, width)
     fs.delete('data')
     log("finished building, asking for next part")
-    send({ type = 'setProgress', progress = 0.0 })
-    send({ type = "nextPart" })
-end
-
-paused = false
-currentPosition = { locate() }
-homePosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
-currentState = ''
-blockToPlace = 0 -- number of block left to place
-
-currentHeading = getHeading()
-homeHeading = currentHeading
-
-checkFuel()
-
-local currentMessage = nil
-
-function receive()
-    while true do
-        local _, _, response, isBinary = os.pullEvent("websocket_message")
-        if not isBinary then
-            currentMessage = json.decode(response)
+    websocket.sendRequest('setProperty', { property = "progress", value = 0 })
+    local nextPartResponse = websocket.sendRequestAndWaitForResponse('getNextPart', {})
+    if nextPartResponse then
+        print(textutils.serializeJSON(nextPartResponse))
+        local hasNewPart = nextPartResponse['newPart']
+        if not hasNewPart then
+            log("no next part, going back to home position")
+            setState('moving')
+            goTo(homePosition[1], homePosition[2], homePosition[3], buildMaxHeight + 2)
+            headTo(homeHeading)
+            log("back to home position, waiting for order")
+            setState('idle')
         end
     end
 end
 
 function buildManager()
-    local buildData = ''
     while true do
-        if currentMessage ~= nil then
-            if currentMessage['type'] == 'sendStart' then
-                buildData = ''
-                currentMessage = nil
-            elseif currentMessage['type'] == 'chunk' then
-                buildData = buildData .. currentMessage['chunk']
-                currentMessage = nil
-            elseif currentMessage['type'] == 'sendEnd' then
-                currentMessage = nil
-                handleData(json.decode(buildData))
-            elseif currentMessage['type'] == 'noNextPart' then
-                currentMessage = nil
-                log("no next part, going back to home position")
-                setState('moving')
-                goTo(homePosition[1], homePosition[2], homePosition[3], buildMaxHeight + 2)
-                headTo(homeHeading)
-                log("back to home position, waiting for order")
-                setState('idle')
-            end
+        local buildData = ''
+        local buildStartBody = websocket.waitForMessage({ type = "buildStart" })['body']
+        -- print(textutils.serialize(buildStartBody))
+        local partCount = buildStartBody['partCount']
+        print("starting to receive " .. partCount .. ' parts')
+        for i = 0, partCount - 1 do
+            print("receiving part " .. i)
+            local chunk = websocket.waitForMessage({ type = "buildChunk", body = { index = i } })['body']['chunk']
+            buildData = buildData .. chunk
         end
-        coroutine.yield()
+        websocket.waitForMessage({ type = "buildEnd" })
+        print('received ' .. partCount .. ', starting build')
+        -- TODO: maybe change that
+        handleData(json.decode(buildData))
     end
 end
 
 function remoteManager()
     while true do
-        if currentMessage ~= nil then
-            if currentMessage['type'] == 'remote' then
-                local remoteCommand = currentMessage['command']
-                print('received remote command : ' .. remoteCommand)
-                if remoteCommand == 'forward' then
-                    forward()
-                elseif remoteCommand == 'backward' then
-                    backward()
-                elseif remoteCommand == 'up' then
-                    up()
-                elseif remoteCommand == 'down' then
-                    down()
-                elseif remoteCommand == 'turnRight' then
-                    turnRight()
-                elseif remoteCommand == 'turnLeft' then
-                    turnLeft()
-                elseif remoteCommand == 'goTo' then
-                    local pState = currentState
-                    setState('moving')
-                    goTo(currentMessage['data'][1], currentMessage['data'][2], currentMessage['data'][3],
-                        currentMessage['data'][2])
-                    setState(pState)
-                elseif remoteCommand == 'headTo' then
-                    headTo(currentMessage['data'][1])
-                elseif remoteCommand == 'refuel' then
-                    refuel()
-                elseif remoteCommand == 'emptyInventory' then
-                    for i = 1, 14 do
-                        turtle.select(i)
-                        turtle.dropDown()
-                    end
-                    turtle.select(1)
-                elseif remoteCommand == 'pause' then
-                    paused = not paused
-                elseif remoteCommand == 'reboot' then
-                    os.reboot()
+        local message = websocket.waitForMessage({ type = "remote" })
+        if message ~= nil then
+            local body = message['body']
+            local remoteCommand = body['command']
+            local data = body['data']
+            print('received remote command : ' .. remoteCommand)
+            if remoteCommand == 'forward' then
+                forward()
+            elseif remoteCommand == 'backward' then
+                backward()
+            elseif remoteCommand == 'up' then
+                up()
+            elseif remoteCommand == 'down' then
+                down()
+            elseif remoteCommand == 'turnRight' then
+                turnRight()
+            elseif remoteCommand == 'turnLeft' then
+                turnLeft()
+            elseif remoteCommand == 'goTo' then
+                local pState = currentState
+                setState('moving')
+                goTo(data[1], data[2], data[3],
+                    data[4])
+                setState(pState)
+            elseif remoteCommand == 'headTo' then
+                headTo(data[1])
+            elseif remoteCommand == 'refuel' then
+                refuel()
+            elseif remoteCommand == 'emptyInventory' then
+                for i = 1, 14 do
+                    turtle.select(i)
+                    turtle.dropDown()
                 end
-                currentMessage = nil
+                turtle.select(1)
+            elseif remoteCommand == 'pause' then
+                paused = not paused
+            elseif remoteCommand == 'reboot' then
+                os.reboot()
             end
         end
-        coroutine.yield()
+        -- coroutine.yield()
     end
 end
 
 function configManager()
     while true do
-        if currentMessage ~= nil then
-            if currentMessage['type'] == 'config' then
-                config = currentMessage['config']
-                print('received new config')
-                -- print(textutils.serialize(config))
-                currentMessage = nil
-            end
+        local message = websocket.waitForMessage({ type = "config" })
+        if message ~= nil then
+            config = message['body']
+            print('received new config')
+            -- print(textutils.serialize(config))
         end
-        coroutine.yield()
+        -- coroutine.yield()
     end
 end
 
+paused = false
+currentPosition = nil
+currentHeading = nil
+homePosition = nil
+homeHeading = nil
+currentState = ''
+blockToPlace = 0 -- number of block left to place
+
 function dataManager()
     while true do
-        send({ type = 'setPos', pos = currentPosition })
-        send({ type = 'setFuel', fuel = turtle.getFuelLevel() })
+        if websocket.ws ~= nil then
+            setProperty('position', currentPosition)
+            setProperty("fuel", turtle.getFuelLevel())
+        end
         sleep(1)
     end
 end
 
 function init()
+    currentPosition = { locate() }
+    currentHeading = getHeading()
+
+    homePosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
+    homeHeading = currentHeading
+
+    websocket.connect(url, { label = os.getComputerLabel() or "unnamed printer", id = os.getComputerID() }, 3)
+
+
     setState('idle')
-    send({ type = 'setPos', pos = currentPosition })
-    send({ type = "config" })
-    sleep(0.2)
-    send({ type = 'currentPart' })
+    checkFuel()
+    setProperty('progress', 0)
+    websocket.sendRequest('getConfig', {})
+    local currentPartRes = websocket.sendRequestAndWaitForResponse('getCurrentPart', {})
+    if currentPartRes.hasCurrentPart then
+        print('printer has a current part')
+    else
+        print('printer has no current part')
+    end
 end
 
-while true do
-    parallel.waitForAll(receive, buildManager, remoteManager, configManager, dataManager, init)
-end
+parallel.waitForAll(websocket.pingLoop, websocket.receiveLoop, buildManager, remoteManager, configManager, dataManager,
+    init)

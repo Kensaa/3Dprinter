@@ -1,12 +1,13 @@
 import { create } from 'zustand'
-import type { Printer, Task } from '../utils/types'
+import type { Printer } from '../utils/types'
+import type { ApiTask } from 'utils'
 import { useConfig } from './config'
 import { CompressedBuild } from 'build-bindings'
 
 interface dataStore {
     builds: Record<string, CompressedBuild>
     printers?: Printer[]
-    currentTask?: Task
+    currentTask?: ApiTask
     fetchBuilds: () => void
     fetchPrinters: () => void
     fetchCurrentTask: () => void
@@ -46,7 +47,7 @@ const store = create<dataStore>((set, get) => {
                 if (res.status === 204) return undefined
                 return res.json()
             })
-            .then(data => data as Task | undefined)
+            .then(data => data as ApiTask | undefined)
             .then(currentTask => {
                 const prev = get().currentTask
                 if (!prev) {
@@ -128,7 +129,7 @@ export const useCurrentTask = () => {
     return { currentTask, fetchCurrentTask }
 }
 
-export function areTasksEqual(a?: Task, b?: Task): boolean {
+export function areTasksEqual(a?: ApiTask, b?: ApiTask): boolean {
     if (a === b) return true
     if (a !== undefined && b !== undefined) {
         return (

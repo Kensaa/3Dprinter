@@ -1,15 +1,15 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "nodenext",
-    "strict": true,
-    "moduleResolution": "nodenext",
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "sourceMap": true,
-    "outDir": "dist/",
-    "rootDir": "src/"
-  },
-  "exclude": ["node_modules", "**/node_modules/*"]
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "nodenext",
+        "strict": true,
+        "moduleResolution": "nodenext",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "sourceMap": true,
+        "outDir": "dist/",
+        "rootDir": "src/"
+    },
+    "exclude": ["node_modules", "**/node_modules/*", "drizzle.config.ts"]
 }

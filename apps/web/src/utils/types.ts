@@ -1,4 +1,3 @@
-import type { Printer as FullPrinter, Task as FullTask } from 'utils'
+import type { Printer as FullPrinter } from 'utils'
 
 export type Printer = Omit<FullPrinter, 'ws'>
-export type Task = Omit<FullTask, 'parts'>

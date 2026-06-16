@@ -1,5 +1,4 @@
 import { APIRouter as BaseAPIRouter } from 'express-api-router'
-import { Printer, PrinterConfig, Task } from 'utils'
 
 import { getPrintersHandler } from './api/getPrinters'
 import { getCurrentTaskHandler } from './api/getCurrentTask'
@@ -14,19 +13,7 @@ import { remoteHandler } from './api/remote'
 import { getLogsHandler } from './api/getLogs'
 import { getConfigHandler } from './api/getConfig'
 import { editConfigHandler } from './api/editConfig'
-
-export interface Instances {
-    printers: Printer[]
-    currentTask?: Task
-    logs: string[]
-    printerConfig: PrinterConfig
-    env: {
-        WEB_SERVER_PORT: number
-        DATA_FOLDER: string
-        BUILDS_FOLDER: string
-        CONFIG_FILE: string
-    }
-}
+import type { Instances } from './utils'
 
 export function initApi(instances: Instances) {
     const router = new BaseAPIRouter<Instances, never>(instances)

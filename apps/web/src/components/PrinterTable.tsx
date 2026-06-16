@@ -88,7 +88,7 @@ interface TableRowProps {
 function TableRow({ printer }: TableRowProps) {
     const [controlling, setControlling] = useState(false)
 
-    const { id, label, state, connected, pos, progress, fuel } = printer
+    const { id, label, state, connected, position, progress, fuel } = printer
     return (
         <>
             <tr className=''>
@@ -97,13 +97,13 @@ function TableRow({ printer }: TableRowProps) {
                 <td>{capitalise(state)}</td>
                 <td>{connected ? 'Connected' : 'Disconnected'}</td>
                 <td>
-                    {pos ? pos.map(p => Math.round(p)).join(' ') : 'Unknown'}
-                </td>
-                <td>{fuel !== undefined ? fuel.toFixed(2) : 'Unknown'}</td>
-                <td>
-                    {progress !== undefined
-                        ? progress.toFixed(2) + '%'
+                    {position
+                        ? position.map(p => Math.round(p)).join(' ')
                         : 'Unknown'}
+                </td>
+                <td>{fuel !== null ? fuel.toFixed(2) : 'Unknown'}</td>
+                <td>
+                    {progress !== null ? progress.toFixed(2) + '%' : 'Unknown'}
                 </td>
                 <td>
                     <Button

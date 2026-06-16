@@ -46,8 +46,8 @@ export const taskSchema = z.object({
     partCount: z.number(),
     parts: buildMessageSchema.array(),
     partsPositions: z.tuple([z.number(), z.number(), z.number()]).array(),
-    currentlyBuildingParts: z.number().array(),
-    completedParts: z.number().array(),
+    currentlyBuildingParts: z.set(z.number()),
+    completedParts: z.set(z.number()),
     nextPart: z.number(),
     startedAt: z.number(),
 
@@ -55,8 +55,19 @@ export const taskSchema = z.object({
     divisionHeight: z.number(),
     divisionDepth: z.number()
 })
-
 export type Task = z.infer<typeof taskSchema>
+export const apiTaskSchema = z.intersection(
+    taskSchema.omit({
+        currentlyBuildingParts: true,
+        completedParts: true,
+        parts: true
+    }),
+    z.object({
+        currentlyBuildingParts: z.number().array(),
+        completedParts: z.number().array()
+    })
+)
+export type ApiTask = z.infer<typeof apiTaskSchema>
 
 export const printerStateSchema = z.enum([
     'idle',
@@ -72,10 +83,10 @@ export const printerSchema = z.object({
     label: z.string(),
     state: printerStateSchema,
     connected: z.boolean(),
-    pos: z.tuple([z.number(), z.number(), z.number()]).optional(),
-    fuel: z.number().optional(),
-    progress: z.number().optional(),
-    partIndex: z.number().optional()
+    position: z.tuple([z.number(), z.number(), z.number()]).nullable(),
+    fuel: z.number().nullable(),
+    progress: z.number().nullable(),
+    partIndex: z.number().nullable()
 })
 
 // Type of the printer stored on the server

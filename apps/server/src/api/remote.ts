@@ -30,14 +30,13 @@ export function remoteHandler(router: APIRouter) {
         handler: async (req, res, instances) => {
             const { printer, command, data } = req.body
 
-            const current = instances.printers.find(p => p.id === printer)
-            if (!current) throw new HTTPError(404, 'printer not found')
-            if (!current.connected)
-                throw new HTTPError(404, 'printer not connected')
+            const ws = instances.clientMapping.get(printer)
+            if (!ws)
+                throw new HTTPError(404, 'printer not found or not connected')
 
             await sendAsync(
-                current.ws,
-                JSON.stringify({ type: 'remote', command, data })
+                ws,
+                JSON.stringify({ type: 'remote', body: { command, data } })
             )
         }
     })

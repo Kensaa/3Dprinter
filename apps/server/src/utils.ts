@@ -1,10 +1,24 @@
-import { intToRGBA, Jimp, JimpInstance } from 'jimp'
 import type { WebSocket } from 'ws'
-import { BuildMessage, Printer } from 'utils'
+import { BuildMessage, Printer, PrinterConfig, Task } from 'utils'
+import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
+import { clientsTable } from './db/schema'
 
-export type JimpImage =
-    | JimpInstance
-    | Awaited<ReturnType<typeof Jimp.fromBuffer>>
+export interface Instances {
+    database: Database
+    clientMapping: BijectiveMap<WebSocket, number> // Maps a websocket object to the corresponding ID in the database
+    currentTask?: Task
+    logs: string[]
+    printerConfig: PrinterConfig
+    env: {
+        WEB_SERVER_PORT: number
+        DATA_FOLDER: string
+        BUILDS_FOLDER: string
+        CONFIG_FILE: string
+    }
+}
+
+export type Database = BetterSQLite3Database<Record<string, never>>
+export type DatabaseClient = typeof clientsTable.$inferSelect
 
 export interface ImageToArrayOptions {
     threshold: number
@@ -83,20 +97,76 @@ export async function sendAsync(ws: WebSocket, data: string) {
     })
 }
 
-export async function sendPartToPrinter(printer: Printer, part: BuildMessage) {
+export async function sendPartToPrinter(ws: WebSocket, part: BuildMessage) {
     const strMsg = JSON.stringify(part)
     const msgParts = strMsg.match(/.{1,40000}/g) ?? [strMsg]
 
-    await sendAsync(printer.ws, JSON.stringify({ type: 'sendStart' }))
-    await wait(100)
+    await sendAsync(
+        ws,
+        JSON.stringify({
+            type: 'buildStart',
+            body: { partCount: msgParts.length }
+        })
+    )
+    // await wait(100)
+    let i = 0
     for (const chunk of msgParts) {
         await sendAsync(
-            printer.ws,
-            JSON.stringify({ type: 'chunk', chunk: chunk })
+            ws,
+            JSON.stringify({ type: 'buildChunk', body: { chunk, index: i } })
         )
-        await wait(50)
+        i++
     }
-    await wait(100)
+    // await wait(100)
 
-    await sendAsync(printer.ws, JSON.stringify({ type: 'sendEnd' }))
+    await sendAsync(ws, JSON.stringify({ type: 'buildEnd' }))
+}
+
+export class BijectiveMap<K, V> {
+    private map1: Map<K, V>
+    private map2: Map<V, K>
+
+    constructor() {
+        this.map1 = new Map()
+        this.map2 = new Map()
+    }
+
+    has(key: K | V): boolean {
+        return this.map1.has(key as K) || this.map2.has(key as V)
+    }
+
+    set(a: K, b: V): void {
+        this.map1.set(a, b)
+        this.map2.set(b, a)
+    }
+
+    delete(e: K | V): void {
+        this.map1.delete(e as K)
+        this.map2.delete(e as V)
+    }
+
+    get(key: K): V | undefined
+    get(key: V): K | undefined
+    get(key: K | V): K | V | undefined {
+        if (this.map1.has(key as K)) {
+            return this.map1.get(key as K)
+        }
+
+        return this.map2.get(key as V)
+    }
+    get size() {
+        return this.map1.size
+    }
+
+    keys(): K[] {
+        return this.map1.keys().toArray()
+    }
+
+    values(): V[] {
+        return this.map1.values().toArray()
+    }
+
+    entries(): [K, V][] {
+        return this.map1.entries().toArray()
+    }
 }

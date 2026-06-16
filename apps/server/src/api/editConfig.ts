@@ -21,10 +21,9 @@ export function editConfigHandler(router: APIRouter) {
                 JSON.stringify(instances.printerConfig, null, 2)
             )
 
-            for (const printer of instances.printers) {
-                if (!printer.connected) continue
+            for (const client of instances.clientMapping.keys()) {
                 await sendAsync(
-                    printer.ws,
+                    client,
                     JSON.stringify({
                         type: 'config',
                         config: instances.printerConfig

@@ -14,7 +14,7 @@
         "build": {
             "dependsOn": ["^build"],
             "inputs": ["src/**/*"],
-            "outputs": ["dist/**/*", "pkg/**/*"],
+            "outputs": ["dist/**/*", "pkg/**/*", "drizzle/**/*"],
             "outputLogs": "new-only"
         }
     }
