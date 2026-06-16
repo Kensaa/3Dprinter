@@ -7,7 +7,7 @@ import fs from 'fs'
 import { HTTPError } from 'express-api-router'
 import { CompressedBuild } from 'build-bindings'
 import { clientsTable } from '../db/schema'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 export function buildHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -22,21 +22,17 @@ export function buildHandler(router: APIRouter) {
         responseSchema: z.void(),
         handler: async (req, res, instances) => {
             const { file, pos, heading } = req.body
-            // const connectedPrinters = instances.printers.filter(
-            //     p => p.connected
-            // )
             const connectedPrinters = await instances.database
                 .select()
                 .from(clientsTable)
-                .where(eq(clientsTable.connected, true))
+                .where(
+                    and(
+                        eq(clientsTable.connected, true),
+                        eq(clientsTable.type, 'printer')
+                    )
+                )
 
             const printerCount = connectedPrinters.length
-            if (!file) throw new HTTPError(500, 'missing field "file"')
-            if (!pos) throw new HTTPError(500, 'missing field "pos"')
-            if (!Array.isArray(pos))
-                throw new HTTPError(500, 'field "pos" is not an array')
-            if (pos.length !== 3)
-                throw new HTTPError(500, 'field "pos" is not the right size')
             let filepath = path.join(instances.env.BUILDS_FOLDER, file)
             if (!filepath.endsWith('.json')) filepath += '.json'
             if (!fs.existsSync(filepath))

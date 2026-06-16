@@ -12,6 +12,7 @@ export async function getCurrentPartHandler({
     sendResponse
 }: WsRequest) {
     if (!client) return
+    if (client.type !== 'printer') return
     if (!instances.currentTask) {
         return sendResponse(responseSchema, { hasCurrentPart: false })
     }

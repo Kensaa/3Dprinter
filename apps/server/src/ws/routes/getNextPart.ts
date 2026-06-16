@@ -14,6 +14,7 @@ export async function getNextPartHandler({
     websocket
 }: WsRequest) {
     if (!client) return
+    if (client.type !== 'printer') return
     if (!instances.currentTask) {
         // No current task, clear any work assigned to client
         await setClientPart(instances.database, client.id, null)

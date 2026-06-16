@@ -125,7 +125,7 @@ end
 
 -- Send a the request of type `request` with body `body`
 function module.sendRequest(request, body)
-    return module.send({ request = request, body = body })
+    return module.send({ request = request, body = body or {} })
 end
 
 -- Send a the request of type `request` with body `body` and return the response for the server

@@ -708,7 +708,23 @@ function init()
     homePosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
     homeHeading = currentHeading
 
-    websocket.connect(url, { label = os.getComputerLabel() or "unnamed printer", id = os.getComputerID() }, 3)
+
+    local nbt = turtle.getItemDetail(16).nbt
+    if nbt == nil then
+        -- ender chest needs to be placed at least once to have nbt
+        equipPickaxe()
+        turtle.select(16)
+        turtle.place()
+        turtle.dig()
+    end
+    nbt = turtle.getItemDetail(16).nbt
+    websocket.connect(url, {
+        label = os.getComputerLabel() or "unnamed printer",
+        id = os.getComputerID(),
+        type =
+        "printer",
+        chest_nbt = nbt
+    }, 3)
 
 
     setState('idle')
@@ -716,6 +732,9 @@ function init()
     setProperty('progress', 0)
     websocket.sendRequest('getConfig', {})
     local currentPartRes = websocket.sendRequestAndWaitForResponse('getCurrentPart', {})
+    if currentPartRes == nil then
+        return
+    end
     if currentPartRes.hasCurrentPart then
         print('printer has a current part')
     else

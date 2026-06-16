@@ -11,6 +11,8 @@ import { setPropertyHandler } from './routes/setProperty'
 import { getCurrentPartHandler } from './routes/getCurrentPart'
 import { getNextPartHandler } from './routes/getNextPart'
 import { pingHandler } from './routes/ping'
+import { releaseLockHandler } from './routes/releaseLock'
+import { acquireLockHandler } from './routes/acquireLock'
 
 export function initWSAPI(httpServer: HTTPServer, instances: Instances) {
     async function onConnect(ws: ws.WebSocket) {}
@@ -46,6 +48,9 @@ export function initWSAPI(httpServer: HTTPServer, instances: Instances) {
     wsServer.addRoute('setProperty', setPropertyHandler)
     wsServer.addRoute('getCurrentPart', logMiddleware, getCurrentPartHandler)
     wsServer.addRoute('getNextPart', logMiddleware, getNextPartHandler)
+
+    wsServer.addRoute('acquireLock', logMiddleware, acquireLockHandler)
+    wsServer.addRoute('releaseLock', logMiddleware, releaseLockHandler)
 
     return wsServer
 }

@@ -5,8 +5,11 @@ import { eq } from 'drizzle-orm'
 
 const bodySchema = z.object({
     id: z.number(),
-    label: z.string()
+    type: z.enum(['printer', 'provider']),
+    label: z.string(),
+    chest_nbt: z.string()
 })
+
 export async function registerHandler(request: WsRequest) {
     const body = bodySchema.parse(request.body)
     const instances = request.instances
@@ -28,13 +31,15 @@ export async function registerHandler(request: WsRequest) {
         // Set the client to connected in the database
         await instances.database
             .update(clientsTable)
-            .set({ connected: true, state: 'idle' })
+            .set({ connected: true })
             .where(eq(clientsTable.id, client.id))
     } else {
         // New client, create the database entry
         await instances.database.insert(clientsTable).values({
             id: body.id,
+            type: body.type,
             label: body.label,
+            chest_nbt: body.chest_nbt,
             state: 'idle',
             connected: true
         })
@@ -47,6 +52,5 @@ export async function registerHandler(request: WsRequest) {
             instances.clientMapping.size
         } client connected)`
     )
-
     request.sendResponse(z.object(), {})
 }

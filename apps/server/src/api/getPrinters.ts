@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { APIRouter } from '../api'
 import { printerSchema } from 'utils'
 import { clientsTable } from '../db/schema'
+import { eq } from 'drizzle-orm'
 
 export function getPrintersHandler(router: APIRouter) {
     return router.createRouteHandler({
@@ -14,12 +15,7 @@ export function getPrintersHandler(router: APIRouter) {
             const printers = await instances.database
                 .select()
                 .from(clientsTable)
-            // const out: Omit<Printer, 'ws'>[] = []
-            // for (const printer of instances.printers) {
-            //     const { ws, ...printerWithoutWS } = printer
-            //     out.push(printerWithoutWS)
-            // }
-
+                .where(eq(clientsTable.type, 'printer'))
             return printers
         }
     })
