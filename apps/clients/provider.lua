@@ -62,20 +62,44 @@ function init()
 end
 
 function mainLoop()
+    local chest = peripheral.wrap('front')
     while true do
-        local blockRequest = websocket.waitForMessage({ type = "request", body = { request = "putBlocks" } })
-        if blockRequest ~= nil then
-            local blocks = blockRequest.body.body
-            print('received request to put blocks')
-            for key, value in pairs(blocks) do
-                while not requestItemIntoEnderchest(key, value) do
-                    sleep(0.5)
-                end
-            end
+        local message = websocket.waitForMessage({ type = "request" })
+        if message ~= nil then
+            local request = message.body.request
+            local body = message.body.body
 
-            print('finished requesting blocks')
-            websocket.sendResponse("putBlocks", {})
-            print('response sent')
+            if request == "exportBlocks" then
+                -- AE2 -> enderchest
+                print('received request to put blocks')
+                for key, value in pairs(body) do
+                    while not requestItemIntoEnderchest(key, value) do
+                        sleep(0.5)
+                    end
+                end
+
+                print('finished requesting blocks')
+                websocket.sendResponse(request, {})
+                print('response sent')
+            elseif request == "importBlocks" then
+                -- enderchest -> AE2
+                for _, _ in pairs(chest.list()) do
+                    me.importItem({}, "front")
+                end
+                websocket.sendResponse(request, {})
+            elseif request == "checkStorage" then
+                -- check if the specified blocks are in AE2
+                local missing = {}
+                for block, count in pairs(body) do
+                    local item = me.getItem({ name = block })
+                    if item == nil or item.name == nil or item.count == nil then
+                        missing[block] = count
+                    elseif item.count < count then
+                        missing[block] = count - (item.count or 0)
+                    end
+                end
+                websocket.sendResponse("checkStorage", missing)
+            end
         end
     end
 end

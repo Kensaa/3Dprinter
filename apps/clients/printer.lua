@@ -1,4 +1,5 @@
 local config = {
+    fuel = "minecraft:coal",
     buildBlock = "minecraft:cobblestone",
     gpsTry = 5
 }
@@ -36,38 +37,6 @@ function equipModem()
     end
     turtle.equipRight()
     turtle.select(1)
-end
-
-function checkFuel()
-    currentSlot = turtle.getSelectedSlot()
-    previousState = currentState
-    if turtle.getFuelLevel() < 100 then
-        print('turtle is out of fuel')
-        print('please add fuel and press enter')
-        setState('refueling')
-        read()
-        for slot = 1, 14 do
-            turtle.select(slot)
-            turtle.refuel()
-        end
-        turtle.select(currentSlot)
-        print('turtle refueled')
-        print('remove leftover fuel and press enter')
-        read()
-        setState(previousState)
-    end
-end
-
-function refuel()
-    currentSlot = turtle.getSelectedSlot()
-    previousState = currentState
-    setState('refueling')
-    for slot = 1, 14 do
-        turtle.select(slot)
-        turtle.refuel()
-    end
-    turtle.select(currentSlot)
-    setState(previousState)
 end
 
 function place(block)
@@ -341,6 +310,58 @@ function headTo(heading)
     end
 end
 
+function refuel(providerMode)
+    previousState = currentState
+    setState('refueling')
+    log("starting refuel")
+    if providerMode == "managed" then
+        -- place enderchest
+        equipPickaxe()
+        turtle.select(16)
+        turtle.placeUp()
+        turtle.select(1)
+
+        websocket.sendRequest("acquireLock")
+        websocket.waitForMessage({ type = "lockAcquired" })
+        websocket.sendRequestAndWaitForResponse('providerRequest',
+            { request = "exportBlocks", blocks = { [config.fuel] = 256 } })
+        local chest = peripheral.wrap("top")
+        for _ = 1, #chest.list() do
+            turtle.suckUp()
+        end
+        for slot = 1, 14 do
+            turtle.select(slot)
+            turtle.refuel()
+        end
+        for slot = 1, 14 do
+            turtle.select(slot)
+            turtle.dropUp()
+        end
+        websocket.sendRequestAndWaitForResponse('providerRequest',
+            { request = "importBlocks", blocks = {} })
+
+        websocket.sendRequest("releaseLock")
+        -- pickup enderchest
+        turtle.select(16)
+        turtle.digUp()
+        turtle.select(1)
+    else
+        log("build is unmanaged, refuel needs to be done manually")
+        print('please add fuel and press enter')
+        read()
+        for slot = 1, 14 do
+            turtle.select(slot)
+            turtle.refuel()
+        end
+        print('turtle refueled')
+        print('remove leftover fuel and press enter')
+        read()
+    end
+    log('refuel fininshed')
+
+    setState(previousState)
+end
+
 -- Fetch from enderchest the blocks contained in the `blocks` table (by acquiring the lock on the enderchest and asking the provider to put block in it)
 function fetchBlocks(blocks, providerMode)
     -- place enderchest
@@ -354,7 +375,7 @@ function fetchBlocks(blocks, providerMode)
         -- managed mode
         websocket.sendRequest("acquireLock")
         websocket.waitForMessage({ type = "lockAcquired" })
-        websocket.sendRequestAndWaitForResponse('requestBlocks', blocks)
+        websocket.sendRequestAndWaitForResponse('providerRequest', { request = "exportBlocks", blocks = blocks })
         for _ = 1, #chest.list() do
             turtle.suckUp()
         end
@@ -439,9 +460,6 @@ function precomputeNeededBlocks(data, palette, height, depth, width)
         if slotCount == 14 then
             -- all slot would be filled
             -- possible improvement: implemented like this, the last slot (the 14th) will only contain 1 block
-            if os.getComputerID() == 13 then
-                print(lastX, lastY, lastZ)
-            end
             res[lastY][lastZ][lastX] = currentCounts
             currentCounts = {}
             lastY = y
@@ -469,9 +487,6 @@ function build(data, palette, providerMode, height, depth, width)
 
     traverseBuildOrder(data, height, depth, width, true, function(y, z, x, val)
         -- check if we need to fetch some blocks
-        if os.getComputerID() == 13 then
-            print("build", x, y, z)
-        end
         local blocksToFetch = neededBlocks[y][z][x]
         local ts = getTableSize(blocksToFetch)
         if ts > 0 then
@@ -583,20 +598,6 @@ function traverseBuildOrder(data, height, depth, width, move, callback)
                                 callback(y, z, x, val)
                             end
 
-
-                            -- -- check if we need to fetch some blocks
-                            -- local blocksToFetch = neededBlocks[y][z][x]
-                            -- local ts = getTableSize(blocksToFetch)
-                            -- if ts > 0 then
-                            --     -- there are blocks to fetch
-                            --     log('fetching ' .. ts .. ' types of block')
-                            --     fetchBlocks(blocksToFetch, providerMode)
-                            -- end
-
-                            -- if val ~= 0 then
-                            --     place(palette[val + 1])
-                            -- end
-
                             -- end of line
                             if x == width then
                                 -- end of line
@@ -688,6 +689,14 @@ function traverseBuildOrder(data, height, depth, width, move, callback)
     end
 end
 
+-- Compute the euclidian distance between `pos1` and `pos2` (rounded up)
+function dist(pos1, pos2)
+    local dx = pos1[1] - pos2[1]
+    local dy = pos1[2] - pos2[2]
+    local dz = pos1[3] - pos2[3]
+    return math.ceil(math.sqrt(dx ^ 2 + dy ^ 2 + dz ^ 2))
+end
+
 function handleData(JSONData)
     local pos = JSONData['pos']
     local providerMode = JSONData['providerMode']
@@ -706,7 +715,7 @@ function handleData(JSONData)
     local y = tonumber(pos[2])
     local z = tonumber(pos[3])
 
-    blockToPlace = tonumber(JSONData['blockCount'])
+    local blockToPlace = tonumber(JSONData['blockCount'])
 
     y = y + heightOffset
 
@@ -724,11 +733,18 @@ function handleData(JSONData)
         z = z - widthOffset
     end
 
+    local d = dist(currentPosition, pos)
+    local fuelAprox = math.ceil(1.5 * (width * height * depth + (2 * d)))
+
     buildMaxHeight = height + y + 1
-    log('building a ' ..
-        width .. 'x' .. depth .. 'x' .. height .. ' shape at ' .. x .. ',' .. y .. ',' .. z .. ' (' ..
-        blockToPlace .. ' blocks)')
-    print('max height: ' .. buildMaxHeight)
+
+    log(string.format("build a %dx%dx%d shape at %d,%d,%d (%d blocks) (~%d fuel)", width, depth, height, x, y, z,
+        blockToPlace, fuelAprox))
+
+    -- check if there is enough fuel
+    if turtle.getFuelLevel() < fuelAprox then
+        refuel(providerMode)
+    end
     setState('moving')
     goTo(x, y + 1, z, buildMaxHeight + 2)
     headTo(heading)
@@ -765,7 +781,7 @@ function buildManager()
         end
         websocket.waitForMessage({ type = "buildEnd" })
         print('received ' .. partCount .. ', starting build')
-        -- TODO: maybe change that
+
         handleData(json.decode(buildData))
     end
 end
@@ -836,7 +852,6 @@ currentHeading = nil
 homePosition = nil
 homeHeading = nil
 currentState = ''
-blockToPlace = 0 -- number of block left to place
 
 function dataManager()
     while true do
@@ -875,7 +890,6 @@ function init()
 
 
     setState('idle')
-    checkFuel()
     setProperty('progress', 0)
     websocket.sendRequest('getConfig', {})
     local currentPartRes = websocket.sendRequestAndWaitForResponse('getCurrentPart', {})

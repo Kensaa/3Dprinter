@@ -78,7 +78,7 @@ export type Printer = z.infer<typeof printerSchema>
 
 // Type of the config
 export const printerConfigSchema = z.object({
-    buildBlock: z.string(),
+    fuel: z.string(),
     gpsTry: z.number().positive(),
     minPressure: z.number().positive(),
     maxBuildBatch: z.number().positive(),

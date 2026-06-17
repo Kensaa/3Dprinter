@@ -1,8 +1,10 @@
 import type { WebSocket } from 'ws'
+import { RawData } from 'ws'
 import { BuildMessage, Printer, PrinterConfig, Task } from 'utils'
 import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { clientsTable, lockQueueTable, lockStateTable } from './db/schema'
 import { and, eq } from 'drizzle-orm'
+import { messageSchema } from './ws/websocketServer'
 
 export interface Instances {
     database: Database
@@ -241,4 +243,44 @@ export async function releaseLock(
             break
         }
     }
+}
+
+export async function sendRequestAndWaitForResponse(
+    websocket: WebSocket,
+    request: string,
+    body: unknown
+): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+        const listener = (msg: RawData) => {
+            try {
+                const message = messageSchema.parse(JSON.parse(msg.toString()))
+                if (message.type !== 'response') return
+                const response = message.body
+                if (response.request !== request) return
+
+                websocket.off('message', listener)
+
+                if (!response.success) {
+                    // console.error(`failed to ${request}: `, response.error)
+                    reject(response.error)
+                    // return sendResponse(responseSchema, { success: false })
+                } else {
+                    resolve(response.response)
+                }
+            } catch {
+                websocket.off('message', listener)
+            }
+        }
+        websocket.on('message', listener)
+
+        websocket.send(
+            JSON.stringify({
+                type: 'request',
+                body: {
+                    request,
+                    body: body
+                }
+            })
+        )
+    })
 }

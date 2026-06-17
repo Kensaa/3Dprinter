@@ -13,7 +13,7 @@ import { getNextPartHandler } from './routes/getNextPart'
 import { pingHandler } from './routes/ping'
 import { releaseLockHandler } from './routes/releaseLock'
 import { acquireLockHandler } from './routes/acquireLock'
-import { requestBLocksHandler } from './routes/requestBlocks'
+import { providerRequestHandler } from './routes/providerRequest'
 
 export function initWSAPI(httpServer: HTTPServer, instances: Instances) {
     async function onConnect(ws: ws.WebSocket) {}
@@ -68,7 +68,7 @@ export function initWSAPI(httpServer: HTTPServer, instances: Instances) {
 
     wsServer.addRoute('acquireLock', logMiddleware, acquireLockHandler)
     wsServer.addRoute('releaseLock', logMiddleware, releaseLockHandler)
-    wsServer.addRoute('requestBlocks', logMiddleware, requestBLocksHandler)
+    wsServer.addRoute('providerRequest', logMiddleware, providerRequestHandler)
 
     return wsServer
 }

@@ -1,6 +1,11 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
-import { divide3D, sendPartToPrinter, wait } from '../utils'
+import {
+    divide3D,
+    sendPartToPrinter,
+    sendRequestAndWaitForResponse,
+    wait
+} from '../utils'
 import { BuildMessage, providerModeSchema } from 'utils'
 import path from 'path'
 import fs from 'fs'
@@ -54,7 +59,7 @@ export function buildHandler(router: APIRouter) {
                 if (block === undefined)
                     throw new HTTPError(
                         400,
-                        'A grayscale or model needs to have a block specified to be printed'
+                        'A grayscale image or model needs to have a block specified to be printed'
                     )
                 palette.push(block)
             }
@@ -66,6 +71,44 @@ export function buildHandler(router: APIRouter) {
                         500,
                         'A color image cannot be printed in unmanaged mode'
                     )
+                }
+            }
+
+            if (build.metadata.type instanceof ColorImageMetadata) {
+                // Build is a color image, check if all the blocks are available
+                const neededBlocks = Object.fromEntries(
+                    build.metadata.type.individual_block_count.entries()
+                )
+                const providers = await instances.database
+                    .select()
+                    .from(clientsTable)
+                    .where(
+                        and(
+                            eq(clientsTable.connected, true),
+                            eq(clientsTable.type, 'provider')
+                        )
+                    )
+                if (providers.length === 0)
+                    throw new HTTPError(404, 'No provider found')
+                const provider = providers[0]
+                const providerSocket = instances.clientMapping.get(provider.id)
+                if (!providerSocket) {
+                    throw new HTTPError(
+                        500,
+                        'Provider was marked as connected, but no socket can be found'
+                    )
+                }
+                const missing = (await sendRequestAndWaitForResponse(
+                    providerSocket,
+                    'checkStorage',
+                    neededBlocks
+                )) as Record<string, number>
+
+                if (Object.keys(missing).length > 0) {
+                    const msg = Object.entries(missing)
+                        .map(([block, count]) => `${block}: ${count}`)
+                        .join(', ')
+                    throw new HTTPError(400, 'missing: ' + msg)
                 }
             }
 

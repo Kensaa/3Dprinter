@@ -1,23 +1,15 @@
 import express from 'express'
 import cors from 'cors'
 import http from 'http'
-import ws from 'ws'
 import fs from 'fs'
 import path from 'path'
 import { z } from 'zod'
-import {
-    getTime,
-    sendPartToPrinter,
-    sendAsync,
-    Instances,
-    BijectiveMap
-} from './utils'
+import { BijectiveMap, Instances } from './utils'
 import type { PrinterConfig } from 'utils'
 import { initApi } from './api'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import Database from 'better-sqlite3'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
-import { WebsocketServer } from './ws/websocketServer'
 import { initWSAPI } from './ws/wsAPI'
 
 const WEB_SERVER_PORT = parseInt(process.env.PORT ?? '9513')
@@ -53,7 +45,7 @@ const websocketMessageSchema = z.discriminatedUnion('type', [
 ])
 
 const defaultPrinterConfig: PrinterConfig = {
-    buildBlock: 'minecraft:cobblestone',
+    fuel: 'minecraft:coal',
     gpsTry: 5,
     minPressure: 4,
     maxBuildBatch: 500,
