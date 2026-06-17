@@ -59,7 +59,8 @@ export default function PaletteEditor({
                                             style={{
                                                 width: 32,
                                                 height: 32,
-                                                backgroundColor: `#${get_base_color(color_id).toString(16).padStart(6, '0')}`
+                                                backgroundColor: `#${get_base_color(color_id).toString(16).padStart(6, '0')}`,
+                                                border: '1px solid black'
                                             }}
                                         />
                                     </Tooltip>
