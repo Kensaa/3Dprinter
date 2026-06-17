@@ -98,7 +98,7 @@ pub struct BuildMetadata {
 pub struct Build {
     pub metadata: BuildMetadata,
     shape: Vec<Vec<Vec<u8>>>,
-    palette: Vec<String>,
+    pub palette: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -106,7 +106,7 @@ pub struct Build {
 pub struct CompressedBuild {
     pub metadata: BuildMetadata,
     pub data: String,
-    palette: Vec<String>,
+    pub palette: Vec<String>,
 }
 
 pub fn js_err(msg: &str) -> JsValue {

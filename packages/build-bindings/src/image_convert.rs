@@ -202,7 +202,7 @@ pub fn convert_image_grayscale(
     let (height, depth, width) = get_shape_3d_array(&shape);
     let block_count = count_not_null_3d_array(&shape, 0) as u32;
 
-    let palette = Vec::new(); // TODO: change that ?;
+    let palette = vec!["minecraft:air".to_string()]; // only add empty block id, the block that will be used to build will be added at build time by the server
     let preview = compute_grayscale_preview(&shape);
     Ok(Build {
         shape,
