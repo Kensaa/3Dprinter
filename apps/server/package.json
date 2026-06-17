@@ -7,7 +7,7 @@
     "main": "dist/server.js",
     "scripts": {
         "build": "tsc",
-        "dev": "tsc && node .",
+        "dev": "tsc && node --enable-source-maps .",
         "drizzle-kit": "drizzle-kit"
     },
     "dependencies": {
