@@ -16,16 +16,48 @@ export type WsRequest = {
 
 type RouteHandler = (request: WsRequest, next: () => void) => Promise<void>
 
-const requestSchema = z.object({
+// export const messageSchema = z.object({
+//     type: z.string(),
+//     body: z.
+// })
+export const requestSchema = z.object({
     request: z.string(),
     body: z.unknown()
 })
+export const responseSchema = z.intersection(
+    z.object({
+        request: z.string()
+    }),
+    z.union([
+        z.object({
+            success: z.literal(true),
+            response: z.unknown()
+        }),
+        z.object({
+            success: z.literal(false),
+            error: z.string()
+        })
+    ])
+)
+export const messageSchema = z.union([
+    z.object({
+        type: z.literal('request'),
+        body: requestSchema
+    }),
+    z.object({
+        type: z.literal('response'),
+        body: responseSchema
+    })
+])
 
 /*
 LUA sends message (request) of the form
 {
-    request:"[action]",
-    body: {} (additional data)
+    type:"request"
+    body: {
+        request:"[action]",
+        body: {} (additional data)
+    }
 }
 
 Server sends back
@@ -53,9 +85,16 @@ export class WebsocketServer {
         this.wss = new ws.Server({ server })
 
         this.wss.on('connection', async ws => {
-            const sendRequestResponse = async (response: unknown) => {
+            const sendRequestResponse = async (
+                response: z.infer<typeof responseSchema>
+            ) => {
                 await new Promise(resolve => setTimeout(resolve, 100))
-                ws.send(JSON.stringify({ type: 'response', body: response }))
+                ws.send(
+                    JSON.stringify({
+                        type: 'response',
+                        body: responseSchema.parse(response)
+                    })
+                )
             }
 
             if (onConnect) {
@@ -69,19 +108,17 @@ export class WebsocketServer {
             })
 
             ws.on('message', async message => {
+                const rawJSON = JSON.parse(message.toString())
                 try {
-                    const { request, body } = requestSchema.parse(
-                        JSON.parse(message.toString())
-                    )
+                    const message = messageSchema.parse(rawJSON)
+                    if (message.type !== 'request') return // this listener only cares about request
+                    const { request, body } = message.body
                     if (!this.routes.has(request)) {
                         // No route found
                         await sendRequestResponse({
                             request,
-                            response: {
-                                type: 'error',
-                                success: false,
-                                error: 'Invalid request (no route found)'
-                            }
+                            success: false,
+                            error: 'Invalid request (no route found)'
                         })
                         return
                     }
@@ -109,11 +146,8 @@ export class WebsocketServer {
                                 )
                                 return sendRequestResponse({
                                     request,
-                                    response: {
-                                        type: 'error',
-                                        success: false,
-                                        error: 'Invalid response (internal server error)'
-                                    }
+                                    success: false,
+                                    error: 'Invalid response (internal server error)'
                                 })
                             }
                         }
@@ -130,11 +164,8 @@ export class WebsocketServer {
                                 console.error('Error in handler', error)
                                 sendRequestResponse({
                                     request,
-                                    response: {
-                                        type: 'error',
-                                        success: false,
-                                        message: error.message
-                                    }
+                                    success: false,
+                                    error: error.message
                                 })
                             }
                         }
@@ -144,6 +175,7 @@ export class WebsocketServer {
                     }
                 } catch (error) {
                     // TODO: better error handling
+                    console.error(rawJSON)
                     console.error(error)
                 }
             })

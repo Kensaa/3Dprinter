@@ -125,7 +125,16 @@ end
 
 -- Send a the request of type `request` with body `body`
 function module.sendRequest(request, body)
-    return module.send({ request = request, body = body or {} })
+    return module.send({ type = "request", body = { request = request, body = body or {} } })
+end
+
+-- Send a response for the request `request`, with response `response` if `error` is nil, or send `error` if it is not null
+function module.sendResponse(request, response, error)
+    if error ~= nil then
+        return module.send({ type = "response", body = { request = request, success = false, error = error } })
+    else
+        return module.send({ type = "response", body = { request = request, success = true, response = response or {} } })
+    end
 end
 
 -- Send a the request of type `request` with body `body` and return the response for the server
@@ -134,15 +143,14 @@ function module.sendRequestAndWaitForResponse(request, body, timeout)
     if not sendSuccess then
         return nil
     end
-    local response = module.waitForMessage({ type = 'response', body = { request = request.request } }, timeout)
+    local response = module.waitForMessage({ type = 'response', body = { request = request } }, timeout)
     if response == nil then
         return nil
     else
         if response.body.success then
-            return response.body.response
+            return response.body.response, response
         else
-            print(textutils.serialize(response.body))
-            print('Request ' .. response.body.request .. ' returned an error : ' .. response.body.response.error)
+            print('Request ' .. response.body.request .. ' returned an error : ' .. response.body.error)
         end
     end
 end

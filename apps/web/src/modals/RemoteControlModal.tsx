@@ -1,6 +1,6 @@
 import { createElement, useMemo, useState } from 'react'
 import { Button, Form, Modal } from 'react-bootstrap'
-import type { Printer } from '../utils/types'
+import type { Printer } from 'utils'
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
@@ -101,6 +101,11 @@ export default function RemoteControlModal({
                     />
                     <CommandButton
                         name='reboot'
+                        icon={RotateCw}
+                        printers={printers}
+                    />
+                    <CommandButton
+                        name='shutdown'
                         icon={Power}
                         printers={printers}
                     />

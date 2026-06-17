@@ -1,6 +1,5 @@
 import { create } from 'zustand'
-import type { Printer } from '../utils/types'
-import type { ApiTask } from 'utils'
+import type { ApiTask, Printer } from 'utils'
 import { useConfig } from './config'
 import { CompressedBuild } from 'build-bindings'
 

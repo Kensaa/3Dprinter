@@ -11,8 +11,5 @@
     },
     "dependencies": {
         "zod": "^4.4.3"
-    },
-    "devDependencies": {
-        "@types/ws": "^8.18.1"
     }
 }

@@ -4,7 +4,7 @@ import RemoteControlModal from '../modals/RemoteControlModal'
 import { Move } from 'lucide-react'
 import LoadingSpinner from './LoadingSpinner'
 import { useCurrentTask, usePrinters } from '../stores/data'
-import type { Printer } from '../utils/types'
+import type { Printer } from 'utils'
 import { useInterval } from 'usehooks-ts'
 
 interface PrinterTableProps {

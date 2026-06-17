@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAddress } from '../stores/config'
 import { Modal, Form, Row, Col, Alert, Button } from 'react-bootstrap'
 import BuildPreview from '../components/BuildPreview'
 import { useLocation } from 'wouter'
+import type { ProviderMode } from 'utils'
+import { useBuilds } from '../stores/data'
+import { ColorImageMetadata } from 'build-bindings'
+import Tooltip from '../components/Tooltip'
 
 interface BuildModalProps {
     buildName: string
@@ -11,6 +15,11 @@ interface BuildModalProps {
 }
 export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
     const [, setLocation] = useLocation()
+    const { builds } = useBuilds()
+    const [providerMode, setProviderMode] = useState<ProviderMode>(
+        (localStorage.getItem('providerMode') as ProviderMode) ?? 'managed'
+    )
+    const [block, setBlock] = useState(localStorage.getItem('block') ?? '')
     const [x, setX] = useState(localStorage.getItem('x') ?? '0')
     const [y, setY] = useState(localStorage.getItem('y') ?? '0')
     const [z, setZ] = useState(localStorage.getItem('z') ?? '0')
@@ -31,7 +40,9 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
             body: JSON.stringify({
                 file: buildName,
                 pos: [x, y, z].map(e => parseInt(e)),
-                heading: heading + 1
+                heading: heading + 1,
+                providerMode,
+                block
             })
         }).then(res => {
             if (res.ok) {
@@ -61,7 +72,16 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
         localStorage.setItem('x', x)
         localStorage.setItem('y', y)
         localStorage.setItem('z', z)
-    }, [x, y, z])
+        localStorage.setItem('providerMode', providerMode)
+        localStorage.setItem('block', block)
+    }, [x, y, z, providerMode, block])
+
+    // Does this build need a specified block
+    const needBlockID = useMemo(() => {
+        const compressedBuild = builds[buildName]
+        if (!compressedBuild) return false
+        return !(compressedBuild.metadata.type instanceof ColorImageMetadata)
+    }, [buildName, builds])
 
     return (
         <Modal show={show} onHide={hide} dialogClassName='large-modal'>
@@ -80,6 +100,63 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
                 )}
                 <div className='d-flex w-100 h-75'>
                     <Form onSubmit={buildAction} className='mx-2 w-50'>
+                        <div className='mb-5'>
+                            <Tooltip
+                                placement='right'
+                                tooltipContent={
+                                    <ul className='m-0'>
+                                        <li className='tooltip-list'>
+                                            Managed Mode: will use providers
+                                            clients to provide block to the
+                                            printers
+                                        </li>
+                                        <li className='tooltip-list'>
+                                            Unmanaged Mode: enderchest are
+                                            supposed already filled with blocks
+                                        </li>
+                                    </ul>
+                                }
+                                delay={{ show: 200, hide: 0 }}
+                            >
+                                <Form.Group>
+                                    <Form.Label>Provider Mode</Form.Label>
+                                    <Form.Select
+                                        value={providerMode}
+                                        onChange={e =>
+                                            setProviderMode(
+                                                e.target.value as ProviderMode
+                                            )
+                                        }
+                                    >
+                                        <option value='managed'>Managed</option>
+                                        <option
+                                            disabled={!needBlockID}
+                                            value='unmanaged'
+                                        >
+                                            Unmanaged
+                                        </option>
+                                    </Form.Select>
+                                </Form.Group>
+                            </Tooltip>
+                            {needBlockID ? (
+                                <Tooltip
+                                    placement='right'
+                                    tooltipContent='the id of the block that will be used to build'
+                                    delay={{ show: 200, hide: 0 }}
+                                >
+                                    <Form.Group>
+                                        <Form.Label>Block:</Form.Label>
+                                        <Form.Control
+                                            placeholder='block'
+                                            value={block}
+                                            onChange={e =>
+                                                setBlock(e.target.value)
+                                            }
+                                        />
+                                    </Form.Group>
+                                </Tooltip>
+                            ) : undefined}
+                        </div>
                         <Form.Label>Build Position : </Form.Label>
                         <Row>
                             <Form.Group as={Col}>
@@ -131,7 +208,12 @@ export default function BuildModal({ buildName, show, hide }: BuildModalProps) {
                             </Form.Select>
                         </Form.Group>
                         <Form.Group className='d-flex justify-content-center mt-2'>
-                            <Button type='submit'>Build</Button>
+                            <Button
+                                type='submit'
+                                disabled={needBlockID && block === ''}
+                            >
+                                Build
+                            </Button>
                         </Form.Group>
                     </Form>
                     <BuildPreview buildName={buildName} />

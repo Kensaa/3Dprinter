@@ -374,6 +374,7 @@ impl MapColor {
                 "minecraft:white_wool",
                 "minecraft:white_stained_glass",
                 "minecraft:white_concrete",
+                "minecraft:white_glazed_terracotta",
             },
             Self::Clay => phf_set! {
                 "minecraft:clay"
@@ -404,76 +405,91 @@ impl MapColor {
                 "minecraft:acacia_planks",
                 "minecraft:red_sandstone",
                 "minecraft:terracotta",
+                "minecraft:orange_glazed_terracotta",
             },
             Self::Magenta => phf_set! {
                 "minecraft:magenta_wool",
                 "minecraft:magenta_stained_glass",
                 "minecraft:magenta_concrete",
+                "minecraft:magenta_glazed_terracotta",
             },
             Self::LightBlue => phf_set! {
                 "minecraft:light_blue_wool",
                 "minecraft:light_blue_stained_glass",
                 "minecraft:light_blue_concrete",
+                "minecraft:light_blue_glazed_terracotta",
             },
             Self::Yellow => phf_set! {
                 "minecraft:yellow_wool",
                 "minecraft:yellow_stained_glass",
                 "minecraft:yellow_concrete",
+                "minecraft:yellow_glazed_terracotta",
             },
             Self::LightGreen => phf_set! {
                 "minecraft:lime_wool",
                 "minecraft:lime_stained_glass",
                 "minecraft:lime_concrete",
+                "minecraft:lime_glazed_terracotta",
             },
             Self::Pink => phf_set! {
                 "minecraft:pink_wool",
                 "minecraft:pink_stained_glass",
                 "minecraft:pink_concrete",
+                "minecraft:pink_glazed_terracotta",
             },
             Self::Gray => phf_set! {
                 "minecraft:gray_wool",
                 "minecraft:gray_stained_glass",
                 "minecraft:gray_concrete",
+                "minecraft:gray_glazed_terracotta",
             },
             Self::LightGray => phf_set! {
                 "minecraft:light_gray_wool",
                 "minecraft:light_gray_stained_glass",
                 "minecraft:light_gray_concrete",
+                "minecraft:light_gray_glazed_terracotta",
             },
             Self::Cyan => phf_set! {
                 "minecraft:cyan_wool",
                 "minecraft:cyan_stained_glass",
                 "minecraft:cyan_concrete",
+                "minecraft:cyan_glazed_terracotta",
             },
             Self::Purple => phf_set! {
                 "minecraft:purple_wool",
                 "minecraft:purple_stained_glass",
                 "minecraft:purple_concrete",
+                "minecraft:purple_glazed_terracotta",
             },
             Self::Blue => phf_set! {
                 "minecraft:blue_wool",
                 "minecraft:blue_stained_glass",
                 "minecraft:blue_concrete",
+                "minecraft:blue_glazed_terracotta",
             },
             Self::Brown => phf_set! {
                 "minecraft:brown_wool",
                 "minecraft:brown_stained_glass",
                 "minecraft:brown_concrete",
+                "minecraft:brown_glazed_terracotta",
             },
             Self::Green => phf_set! {
                 "minecraft:green_wool",
                 "minecraft:green_stained_glass",
                 "minecraft:green_concrete",
+                "minecraft:green_glazed_terracotta",
             },
             Self::Red => phf_set! {
                 "minecraft:red_wool",
                 "minecraft:red_stained_glass",
                 "minecraft:red_concrete",
+                "minecraft:red_glazed_terracotta",
             },
             Self::Black => phf_set! {
                 "minecraft:black_wool",
                 "minecraft:black_stained_glass",
                 "minecraft:black_concrete",
+                "minecraft:black_glazed_terracotta",
             },
             Self::Gold => phf_set! {
                 "minecraft:gold_block"

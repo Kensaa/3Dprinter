@@ -1,8 +1,8 @@
 import type { Server as HTTPServer } from 'http'
 import ws from 'ws'
-import { Instances } from '../utils'
+import { Instances, releaseLock } from '../utils'
 import { logMiddleware, WebsocketServer } from './websocketServer'
-import { clientsTable } from '../db/schema'
+import { clientsTable, lockStateTable } from '../db/schema'
 import { eq } from 'drizzle-orm'
 import { getConfigHandler } from './routes/getConfig'
 import { logHandler } from './routes/log'
@@ -13,6 +13,7 @@ import { getNextPartHandler } from './routes/getNextPart'
 import { pingHandler } from './routes/ping'
 import { releaseLockHandler } from './routes/releaseLock'
 import { acquireLockHandler } from './routes/acquireLock'
+import { requestBLocksHandler } from './routes/requestBlocks'
 
 export function initWSAPI(httpServer: HTTPServer, instances: Instances) {
     async function onConnect(ws: ws.WebSocket) {}
@@ -26,6 +27,22 @@ export function initWSAPI(httpServer: HTTPServer, instances: Instances) {
                 .returning()
 
             instances.clientMapping.delete(ws)
+
+            // Check if the client owns a lock, and release it if there is one
+            const lockState = await instances.database
+                .select()
+                .from(lockStateTable)
+                .where(eq(lockStateTable.clientID, clientID))
+            if (lockState.length > 0) {
+                const lock = lockState[0]
+                await releaseLock(
+                    instances.database,
+                    instances.clientMapping,
+                    lock.providerID,
+                    lock.clientID
+                )
+            }
+
             console.log(
                 `"${client[0].label}" disconnected, total connected printers: ${
                     instances.clientMapping.size
@@ -51,6 +68,7 @@ export function initWSAPI(httpServer: HTTPServer, instances: Instances) {
 
     wsServer.addRoute('acquireLock', logMiddleware, acquireLockHandler)
     wsServer.addRoute('releaseLock', logMiddleware, releaseLockHandler)
+    wsServer.addRoute('requestBlocks', logMiddleware, requestBLocksHandler)
 
     return wsServer
 }

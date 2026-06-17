@@ -1,7 +1,8 @@
 import type { WebSocket } from 'ws'
 import { BuildMessage, Printer, PrinterConfig, Task } from 'utils'
 import { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
-import { clientsTable } from './db/schema'
+import { clientsTable, lockQueueTable, lockStateTable } from './db/schema'
+import { and, eq } from 'drizzle-orm'
 
 export interface Instances {
     database: Database
@@ -177,5 +178,67 @@ export class BijectiveMap<K, V> {
 
     entries(): [K, V][] {
         return this.map1.entries().toArray()
+    }
+}
+
+/**
+ * Releases a enderchest lock
+ * @param database The database instance
+ * @param clientMapping the ClientMapping instance
+ * @param providerID the ID of the lock's provider
+ * @param clientID the ID of the client currently owning the lock
+ */
+export async function releaseLock(
+    database: Instances['database'],
+    clientMapping: Instances['clientMapping'],
+    providerID: number,
+    clientID: number
+) {
+    const lockState = await database
+        .select()
+        .from(lockStateTable)
+        .where(eq(lockStateTable.providerID, providerID))
+
+    if (lockState.length === 0) {
+        throw 'the current lock is not owned by any printer'
+    }
+    const lock = lockState[0]
+    if (lock.clientID !== clientID) {
+        throw 'you do not own the lock'
+    }
+    await database
+        .delete(lockStateTable)
+        .where(
+            and(
+                eq(lockStateTable.clientID, lock.clientID),
+                eq(lockStateTable.providerID, lock.providerID)
+            )
+        )
+
+    const queue = await database
+        .select()
+        .from(lockQueueTable)
+        .where(eq(lockQueueTable.providerID, providerID))
+        .orderBy(lockQueueTable.created_at)
+
+    for (const queueMember of queue) {
+        await database
+            .delete(lockQueueTable)
+            .where(
+                and(
+                    eq(lockQueueTable.clientID, queueMember.clientID),
+                    eq(lockQueueTable.providerID, queueMember.providerID)
+                )
+            )
+
+        const ws = clientMapping.get(queueMember.clientID)
+        if (ws) {
+            await database.insert(lockStateTable).values({
+                clientID: queueMember.clientID,
+                providerID: queueMember.providerID
+            })
+            ws.send(JSON.stringify({ type: 'lockAcquired' }))
+            break
+        }
     }
 }

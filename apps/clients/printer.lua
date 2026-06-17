@@ -38,44 +38,6 @@ function equipModem()
     turtle.select(1)
 end
 
-function restock(amount)
-    local slotsToFill = math.min(14, math.floor(amount / 64))
-    equipPickaxe()
-    turtle.select(16)
-    turtle.placeUp()
-    turtle.select(1)
-
-    local firstItem = nil
-    for k, v in pairs(peripheral.call("top", "list") or {}) do
-        firstItem = v.name
-        break
-    end
-    while firstItem ~= config['buildBlock'] do
-        for k, v in pairs(peripheral.call("top", "list") or {}) do
-            firstItem = v.name
-            break
-        end
-        sleep(1)
-    end
-
-    for i = 1, slotsToFill do
-        turtle.select(i)
-        if (turtle.getItemCount() == 0) then
-            turtle.suckUp()
-        end
-        turtle.suckUp()
-    end
-    if slotsToFill < 14 then
-        turtle.select(slotsToFill + 1)
-        if (turtle.getItemCount() == 0) then
-            turtle.suckUp(amount % 64)
-        end
-    end
-    turtle.select(16)
-    turtle.digUp()
-    turtle.select(1)
-end
-
 function checkFuel()
     currentSlot = turtle.getSelectedSlot()
     previousState = currentState
@@ -108,18 +70,16 @@ function refuel()
     setState(previousState)
 end
 
-function place()
+function place(block)
     local slot = 0
-    while turtle.getItemCount() == 0 or turtle.getItemDetail().name ~= config['buildBlock'] do
+    while turtle.getItemDetail() == nil or turtle.getItemDetail().name ~= block do
         slot = slot + 1
         if slot == 15 then
-            restock(blockToPlace)
-            slot = 1
+            error("unable to place " .. block .. " block not found in inventory")
         end
         turtle.select(slot)
     end
     turtle.placeDown()
-    blockToPlace = blockToPlace - 1
 end
 
 function log(message)
@@ -381,9 +341,157 @@ function headTo(heading)
     end
 end
 
-function build(data, height, depth, width)
+-- Fetch from enderchest the blocks contained in the `blocks` table (by acquiring the lock on the enderchest and asking the provider to put block in it)
+function fetchBlocks(blocks, providerMode)
+    -- place enderchest
+    equipPickaxe()
+    turtle.select(16)
+    turtle.placeUp()
+    turtle.select(1)
+    local chest = peripheral.wrap("top")
+
+    if providerMode == "managed" then
+        -- managed mode
+        websocket.sendRequest("acquireLock")
+        websocket.waitForMessage({ type = "lockAcquired" })
+        websocket.sendRequestAndWaitForResponse('requestBlocks', blocks)
+        for _ = 1, #chest.list() do
+            turtle.suckUp()
+        end
+        websocket.sendRequest("releaseLock")
+    else
+        for _, count in pairs(blocks) do
+            -- should only loop once
+            local fullSlots = math.floor(count / 64)
+            local rest = count % 64
+            for _ = 1, fullSlots do
+                turtle.suckUp(64)
+            end
+            turtle.suckUp(rest)
+        end
+    end
+
+    -- pickup enderchest
+    turtle.select(16)
+    turtle.digUp()
+    turtle.select(1)
+
+    -- verify fetch
+    local inv = {}
+    for i = 1, 14 do
+        local detail = turtle.getItemDetail(i)
+        if detail ~= nil then
+            inv[detail.name] = (inv[detail.name] or 0) + detail.count
+        end
+    end
+    for k, v in pairs(blocks) do
+        if inv[k] == nil then
+            error("there should be " .. k .. ' in the inventory')
+        else
+            if inv[k] ~= v then
+                error("invalid count of " .. k .. " : " .. v .. " expected, got " .. inv[k])
+            end
+        end
+    end
+end
+
+-- Returns the number of entry in the table
+function getTableSize(t)
+    local count = 0
+    for _, _ in pairs(t) do
+        count = count + 1
+    end
+    return count
+end
+
+-- Precompute the instances of block fetch before actually doing the build
+-- Returns a 3D array that, for each cell, contains a table of block to be fetched (and their quantities) while building this block (most cell will be empty, but if they are not, the blocks need to be fetched before building it)
+function precomputeNeededBlocks(data, palette, height, depth, width)
+    local res = {}
+    for _ = 1, height do
+        local layer = {}
+        for _ = 1, depth do
+            local line = {}
+            for _ = 1, width do
+                table.insert(line, {})
+            end
+            table.insert(layer, line)
+        end
+        table.insert(res, layer)
+    end
+
+    local lastX, lastY, lastZ = nil, nil, nil
+    local currentCounts = {}
+    traverseBuildOrder(data, height, depth, width, false, function(y, z, x, val)
+        -- set the last block to the first block found
+        if lastX == nil and lastY == nil and lastZ == nil then
+            lastX = x
+            lastY = y
+            lastZ = z
+        end
+
+        -- compute slot count (to know if we need to stop)
+        -- used slots: for each blocks => ceil(count / 64)
+        local slotCount = 0
+        for _, v in pairs(currentCounts) do
+            slotCount = slotCount + math.ceil(v / 64)
+        end
+        if slotCount == 14 then
+            -- all slot would be filled
+            -- possible improvement: implemented like this, the last slot (the 14th) will only contain 1 block
+            if os.getComputerID() == 13 then
+                print(lastX, lastY, lastZ)
+            end
+            res[lastY][lastZ][lastX] = currentCounts
+            currentCounts = {}
+            lastY = y
+            lastZ = z
+            lastX = x
+        end
+
+        -- add current block
+        local block = palette[val + 1]
+        currentCounts[block] = (currentCounts[block] or 0) + 1
+    end)
+
+    if lastX ~= nil and lastY ~= nil and lastZ ~= nil then
+        -- in the case that we didn't explore any block (should not happen but idc)
+        res[lastY][lastZ][lastX] = currentCounts
+    end
+    return res
+end
+
+function build(data, palette, providerMode, height, depth, width)
+    local neededBlocks = precomputeNeededBlocks(data, palette, height, depth, width)
+    -- if os.getComputerID() == 13 then
+    --     http.post("http://localhost:4321", textutils.serializeJSON(neededBlocks))
+    -- end
+
+    traverseBuildOrder(data, height, depth, width, true, function(y, z, x, val)
+        -- check if we need to fetch some blocks
+        if os.getComputerID() == 13 then
+            print("build", x, y, z)
+        end
+        local blocksToFetch = neededBlocks[y][z][x]
+        local ts = getTableSize(blocksToFetch)
+        if ts > 0 then
+            -- there are blocks to fetch
+            log('fetching ' .. ts .. ' types of block')
+            fetchBlocks(blocksToFetch, providerMode)
+        end
+
+        place(palette[val + 1])
+
+        progress = (y - 1 + (z - 1) / depth) / height * 100
+        setProperty('progress', progress)
+    end)
+end
+
+-- Traverses all cells in the exact order the turtle will visit them,
+-- calling callback(y, z, x, val) for each cell where data[y][z][x] is different than 0
+-- if move is set to true, the function will make the turtle follow the movement of the traversal, if false it will just be simulated
+function traverseBuildOrder(data, height, depth, width, move, callback)
     for y = 1, height do
-        print("layer n°" .. y)
         local layer = data[y]
         local startIndexes = {}
         local endIndexes = {}
@@ -392,26 +500,29 @@ function build(data, height, depth, width)
         local layerEmpty = true
         for z = 1, depth do
             for x = 1, width do
-                if tonumber(layer[z][x]) == 1 then
+                if tonumber(layer[z][x]) ~= 0 then
                     layerEmpty = false
                 end
             end
         end
         if layerEmpty then
-            print('layer is empty')
-            if y ~= height then
-                up()
+            -- layer empty
+            if move then
+                if y ~= height then
+                    up()
+                end
             end
         else
-            print('layer is not empty')
+            -- layer not empty
+            -- compute first and last element in the line
             for z = 1, depth do
                 for x = width, 1, -1 do
-                    if tonumber(layer[z][x]) == 1 then
+                    if tonumber(layer[z][x]) ~= 0 then
                         startIndexes[z] = x
                     end
                 end
                 for x = 1, width do
-                    if tonumber(layer[z][x]) == 1 then
+                    if tonumber(layer[z][x]) ~= 0 then
                         endIndexes[z] = x
                     end
                 end
@@ -420,25 +531,39 @@ function build(data, height, depth, width)
             local Xdir = 0   -- 0 = left to right | 1 = right to left
             local startX = 1 -- index from which to start on next row (default to 1 to start the first row at the start)
             for z = 1, depth do
-                if not paused then
+                if paused then
+                    print("paused")
+                    sleep(1)
+                else
                     local row = layer[z]
-                    print('row n°' .. z .. ', Xdir: ' .. Xdir)
 
                     if startIndexes[z] == nil and z ~= depth then
                         --last row --> don't have to take shortcut --> break everything
-                        print('line is empty')
-                        if Xdir == 0 then
-                            turnRight()
-                            forward()
-                            turnLeft()
-                        else
-                            turnLeft()
-                            forward()
-                            turnRight()
+                        -- line is empty
+                        if move then
+                            if Xdir == 0 then
+                                turnRight()
+                                forward()
+                                turnLeft()
+                            else
+                                turnLeft()
+                                forward()
+                                turnRight()
+                            end
                         end
+                        -- -- in the case that we skip a line, check if there were block to fetch in it (it should not happen unless the part is small and the line we skip is the first one, in that case, all the block to fetch are in the first cell [1][1][1])
+                        -- for x = 1, width do
+                        --     local blocksToFetch = neededBlocks[y][z][x]
+                        --     local ts = getTableSize(blocksToFetch)
+                        --     if ts > 0 then
+                        --         -- there are blocks to fetch
+                        --         log('fetching ' .. ts .. ' types of block')
+                        --         fetchBlocks(blocksToFetch, providerMode)
+                        --     end
+                        -- end
                     else
-                        print('line is not empty')
-                        --don't forward on first pass because at the start of each row, the turtle is 1 bloc further from where it should be
+                        -- line is not empty
+                        -- don't forward on first pass because at the start of each row, the turtle is 1 bloc further from where it should be
                         firstPass = true
                         for x = startX, width do
                             index = x
@@ -447,30 +572,51 @@ function build(data, height, depth, width)
                                 index = width - x + 1
                             end
                             if not firstPass then
-                                forward()
+                                if move then
+                                    forward()
+                                end
                             else
                                 firstPass = false
                             end
-                            if tonumber(row[index]) == 1 then
-                                place()
+                            local val = tonumber(row[index])
+                            if val ~= 0 then
+                                callback(y, z, x, val)
                             end
+
+
+                            -- -- check if we need to fetch some blocks
+                            -- local blocksToFetch = neededBlocks[y][z][x]
+                            -- local ts = getTableSize(blocksToFetch)
+                            -- if ts > 0 then
+                            --     -- there are blocks to fetch
+                            --     log('fetching ' .. ts .. ' types of block')
+                            --     fetchBlocks(blocksToFetch, providerMode)
+                            -- end
+
+                            -- if val ~= 0 then
+                            --     place(palette[val + 1])
+                            -- end
 
                             -- end of line
                             if x == width then
-                                print("end of line")
+                                -- end of line
                                 if z ~= depth then
                                     -- last row ---> dont turn --> makes the turtle go 1 block down while it shouldn't
                                     startX = 1
                                     if Xdir == 0 then
                                         Xdir = 1
-                                        turnRight()
-                                        forward()
-                                        turnRight()
+                                        if move then
+                                            turnRight()
+                                            forward()
+                                            turnRight()
+                                        end
                                     else
                                         Xdir = 0
-                                        turnLeft()
-                                        forward()
-                                        turnLeft()
+                                        if move then
+                                            turnLeft()
+                                            forward()
+                                            turnLeft()
+                                        end
                                     end
                                 end
                             else
@@ -482,10 +628,13 @@ function build(data, height, depth, width)
                                             startX = width - x +
                                                 1    -- set next start to where the shortcut places us
                                             Xdir = 1 -- we change direction (obviously)
-                                            print("turning earlier to the right")
-                                            turnRight()
-                                            forward()
-                                            turnRight()
+
+                                            -- turning earlier to the right
+                                            if move then
+                                                turnRight()
+                                                forward()
+                                                turnRight()
+                                            end
                                             break
                                         end
                                     end
@@ -497,11 +646,12 @@ function build(data, height, depth, width)
                                             startX =
                                                 i    -- set next start to where the shortcut places us
                                             Xdir = 0 -- we change direction (obviously)
-                                            print("turning earlier to the left")
-                                            --backward()
-                                            turnLeft()
-                                            forward()
-                                            turnLeft()
+                                            -- turning earlier to the left
+                                            if move then
+                                                turnLeft()
+                                                forward()
+                                                turnLeft()
+                                            end
                                             break
                                         end
                                     end
@@ -509,45 +659,41 @@ function build(data, height, depth, width)
                             end
                         end
                     end
-                    progress = (y - 1 + (z - 1) / depth) / height * 100
-                    setProperty('progress', progress)
-                else
-                    print("paused")
-                    sleep(1)
                 end
             end
             -- end of layer
-            if y ~= height then -- if it's the last layer, no need to go back to the start
-                if Xdir == 0 then
-                    --oposite side as start
-                    turnRight()
-                    turnRight()
+            if move then
+                if y ~= height then -- if it's the last layer, no need to go back to the start
+                    if Xdir == 0 then
+                        --oposite side as start
+                        turnRight()
+                        turnRight()
 
-                    for i = 1, width - 1 do
+                        for i = 1, width - 1 do
+                            forward()
+                        end
+                        turnRight()
+                    else
+                        --same side as start
+                        turnRight()
+                    end
+                    for _ = 1, depth - 1 do
                         forward()
                     end
                     turnRight()
-                else
-                    --same side as start
-                    turnRight()
+                    up()
                 end
-                for _ = 1, depth - 1 do
-                    forward()
-                end
-                turnRight()
-                up()
             end
         end
     end
-    setProperty('progress', 100)
-    up()
-    up()
 end
 
 function handleData(JSONData)
     local pos = JSONData['pos']
+    local providerMode = JSONData['providerMode']
     local heading = tonumber(JSONData['heading'])
     local data = JSONData['data']
+    local palette = JSONData['palette']
     local height = tonumber(JSONData['height'])
     local depth = tonumber(JSONData['depth'])
     local width = tonumber(JSONData['width'])
@@ -587,13 +733,12 @@ function handleData(JSONData)
     goTo(x, y + 1, z, buildMaxHeight + 2)
     headTo(heading)
     setState('building')
-    build(data, height, depth, width)
+    build(data, palette, providerMode, height, depth, width)
     fs.delete('data')
     log("finished building, asking for next part")
     websocket.sendRequest('setProperty', { property = "progress", value = 0 })
     local nextPartResponse = websocket.sendRequestAndWaitForResponse('getNextPart', {})
     if nextPartResponse then
-        print(textutils.serializeJSON(nextPartResponse))
         local hasNewPart = nextPartResponse['newPart']
         if not hasNewPart then
             log("no next part, going back to home position")
@@ -665,6 +810,8 @@ function remoteManager()
                 paused = not paused
             elseif remoteCommand == 'reboot' then
                 os.reboot()
+            elseif remoteCommand == 'shutdown' then
+                os.shutdown()
             end
         end
         -- coroutine.yield()

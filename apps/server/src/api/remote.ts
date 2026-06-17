@@ -20,7 +20,8 @@ export function remoteHandler(router: APIRouter) {
                 'refuel',
                 'emptyInventory',
                 'pause',
-                'reboot'
+                'reboot',
+                'shutdown'
             ]),
             data: z.number().or(z.string()).array().optional()
         }),
@@ -33,7 +34,6 @@ export function remoteHandler(router: APIRouter) {
             const ws = instances.clientMapping.get(printer)
             if (!ws)
                 throw new HTTPError(404, 'printer not found or not connected')
-
             await sendAsync(
                 ws,
                 JSON.stringify({ type: 'remote', body: { command, data } })
