@@ -403,6 +403,7 @@ impl MapColor {
                 "minecraft:orange_concrete",
                 "minecraft:acacia_planks",
                 "minecraft:red_sandstone",
+                "minecraft:terracotta",
             },
             Self::Magenta => phf_set! {
                 "minecraft:magenta_wool",
