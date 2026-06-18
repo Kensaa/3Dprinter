@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Modal, Form, Button } from 'react-bootstrap'
+import { Modal, Form, Button, Collapse } from 'react-bootstrap'
 import { useBuilds } from '../stores/data'
 import { FileUploader } from 'react-drag-drop-files'
 import { useAddress } from '../stores/config'
@@ -18,6 +18,12 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
     const [scale, setScale] = useState(1)
     const [horizontalMirror, setHorizontalMirror] = useState(false)
     const [verticalMirror, setVerticalMirror] = useState(false)
+
+    const [hueRotation, setHueRotation] = useState(0)
+    const [saturation, setSaturation] = useState(100)
+    const [brightness, setBrightness] = useState(100)
+    const [contrast, setContrast] = useState(100)
+
     const [type, setType] = useState('grayscale')
     const [threshold, setThreshold] = useState(50)
     const [inverted, setInverted] = useState(true)
@@ -66,6 +72,10 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
                 scale,
                 horizontalMirror,
                 verticalMirror,
+                hue_rotate: hueRotation,
+                saturation: saturation / 100,
+                brightness: brightness / 100,
+                contrast: contrast / 100,
                 available_blocks: palette
             })
         })
@@ -94,6 +104,10 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
                     scale,
                     horizontalMirror,
                     verticalMirror,
+                    hue_rotate: hueRotation,
+                    saturation: saturation / 100,
+                    brightness: brightness / 100,
+                    contrast: contrast / 100,
                     available_blocks: palette
                 })
             })
@@ -116,6 +130,10 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
         scale,
         horizontalMirror,
         verticalMirror,
+        hueRotation,
+        saturation,
+        brightness,
+        contrast,
         address,
         type
     ])
@@ -174,6 +192,58 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
                                 }
                             />
                         </Form.Group>
+                        <CollapsibleFormGroup label='Image Pre-processing'>
+                            <Form.Group>
+                                <Form.Label>
+                                    Hue Rotation : {hueRotation}
+                                </Form.Label>
+                                <Form.Range
+                                    value={hueRotation}
+                                    min={-180}
+                                    max={180}
+                                    onChange={e =>
+                                        setHueRotation(parseInt(e.target.value))
+                                    }
+                                ></Form.Range>
+                            </Form.Group>
+                            <Form.Group>
+                                <Form.Label>
+                                    Saturation: {saturation}%
+                                </Form.Label>
+                                <Form.Range
+                                    value={saturation}
+                                    min={0}
+                                    max={200}
+                                    onChange={e =>
+                                        setSaturation(parseInt(e.target.value))
+                                    }
+                                ></Form.Range>
+                            </Form.Group>
+                            <Form.Group>
+                                <Form.Label>
+                                    Brightness: {brightness}%
+                                </Form.Label>
+                                <Form.Range
+                                    value={brightness}
+                                    min={0}
+                                    max={200}
+                                    onChange={e =>
+                                        setBrightness(parseInt(e.target.value))
+                                    }
+                                ></Form.Range>
+                            </Form.Group>
+                            <Form.Group>
+                                <Form.Label>Contrast: {contrast}%</Form.Label>
+                                <Form.Range
+                                    value={contrast}
+                                    min={0}
+                                    max={200}
+                                    onChange={e =>
+                                        setContrast(parseInt(e.target.value))
+                                    }
+                                ></Form.Range>
+                            </Form.Group>
+                        </CollapsibleFormGroup>
 
                         <Form.Group className='mb-5'>
                             <Form.Label>Conversion Type</Form.Label>
@@ -249,5 +319,31 @@ export default function NewImageModal({ show, hide }: NewImageModalProps) {
                 </div>
             </Modal.Body>
         </Modal>
+    )
+}
+
+function CollapsibleFormGroup({
+    label,
+    children
+}: {
+    label: string
+    children: React.ReactNode
+}) {
+    const [open, setOpen] = useState(false)
+
+    return (
+        <Form.Group>
+            <div
+                onClick={() => setOpen(o => !o)}
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+                className='d-flex align-items-center gap-2'
+            >
+                <span>{open ? '▾' : '▸'}</span>
+                <Form.Label className='mb-0'>{label}</Form.Label>
+            </div>
+            <Collapse in={open}>
+                <div className='mx-4 mt-1'>{children}</div>
+            </Collapse>
+        </Form.Group>
     )
 }

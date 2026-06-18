@@ -18,7 +18,11 @@ export function imageToBuildHandler(router: APIRouter) {
                 name: z.string(),
                 scale: z.number().positive().default(1),
                 horizontalMirror: z.boolean().default(false),
-                verticalMirror: z.boolean().default(false)
+                verticalMirror: z.boolean().default(false),
+                hue_rotate: z.number().default(0),
+                saturation: z.number().default(1),
+                brightness: z.number().default(1),
+                contrast: z.number().default(1)
             }),
             z.discriminatedUnion('type', [
                 z.object({
@@ -39,7 +43,11 @@ export function imageToBuildHandler(router: APIRouter) {
             const baseOptions = new BaseConvertImageOptions(
                 req.body.scale,
                 req.body.horizontalMirror,
-                req.body.verticalMirror
+                req.body.verticalMirror,
+                req.body.hue_rotate,
+                req.body.saturation,
+                req.body.brightness,
+                req.body.contrast
             )
 
             const imageBuffer = Buffer.from(req.body.image, 'base64')

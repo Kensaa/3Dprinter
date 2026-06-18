@@ -59,6 +59,10 @@ wasm_struct! {
         pub scale: f32 = 1.,
         pub horizontal_mirror: bool = false,
         pub vertical_mirror: bool = false,
+        pub hue_rotate: f32 = 0.,      // degrees, e.g. 180.0
+        pub saturation: f32 = 1.,      // multiplier, e.g. 1.5 = +50%, 0.0 = grayscale
+        pub brightness: f32 = 1.,      // multiplier, e.g. 1.2 = +20%
+        pub contrast: f32 = 1.,        // multiplier, e.g. 1.5 = more contrast
     }
 }
 wasm_struct! {
@@ -160,7 +164,30 @@ where
     if base_options.vertical_mirror {
         image = image.flipv();
     }
-    Ok(image)
+
+    let mut rgba = image.into_rgba8(); // get ImageBuffer<Rgba<u8>, Vec<u8>>
+    let raw: &mut [u8] = rgba.as_mut();
+
+    use palette::cast::FromComponents;
+    use palette::IntoColor;
+    for pixel in <&mut [palette::Srgba<u8>]>::from_components(raw) {
+        if pixel.alpha == 0 {
+            continue;
+        }
+        let srgba = pixel.color.into_format::<f32>();
+        let mut hsl: palette::Hsla = srgba.into_color();
+
+        hsl.hue += base_options.hue_rotate;
+        hsl.saturation = (hsl.saturation * base_options.saturation).clamp(0.0, 1.0);
+        hsl.lightness = (hsl.lightness * base_options.brightness).clamp(0.0, 1.0);
+        hsl.lightness = ((hsl.lightness - 0.5) * base_options.contrast + 0.5).clamp(0.0, 1.0);
+
+        let out: palette::Srgba<f32> = hsl.into_color();
+        *pixel = out.into_format();
+    }
+
+    // Ok(image)
+    Ok(DynamicImage::ImageRgba8(rgba))
 }
 
 pub fn convert_image_grayscale(
