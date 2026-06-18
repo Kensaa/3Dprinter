@@ -78,9 +78,7 @@ export function imageToBuildHandler(router: APIRouter) {
 
             const compressed = build.compress()
 
-            const filename = req.body.name.endsWith('.json')
-                ? req.body.name
-                : req.body.name + '.json'
+            const filename = req.body.name
 
             const buildString = compressed.serialize()
             fs.writeFileSync(

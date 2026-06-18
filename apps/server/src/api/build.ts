@@ -41,7 +41,6 @@ export function buildHandler(router: APIRouter) {
 
             const printerCount = connectedPrinters.length
             let filepath = path.join(instances.env.BUILDS_FOLDER, file)
-            if (!filepath.endsWith('.json')) filepath += '.json'
             if (!fs.existsSync(filepath))
                 throw new HTTPError(404, 'file not found')
             if (printerCount === 0) throw new HTTPError(404, 'no printer found')

@@ -19,11 +19,7 @@ export function getBuildsHandler(router: APIRouter) {
                     path.join(instances.env.BUILDS_FOLDER, name),
                     'utf-8'
                 )
-                try {
-                    builds[path.parse(name).name] = strData
-                } catch {
-                    throw new HTTPError(400, 'file is not json')
-                }
+                builds[path.parse(name).name] = strData
             }
 
             return builds
