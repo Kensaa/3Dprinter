@@ -1,6 +1,5 @@
 node_modules/
 dist
-builds
 server/public
 .env
 yarn-error.log
@@ -11,3 +10,5 @@ tsconfig.tsbuildinfo
 data
 apps/test
 .yarn
+pkg
+target
