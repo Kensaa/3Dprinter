@@ -169,7 +169,7 @@ impl Build {
         let (height, depth, width) = get_shape_3d_array(&shape);
         Ok(Build {
             shape,
-            palette: Vec::new(),
+            palette: vec!["minecraft:air".to_string()],
             metadata: BuildMetadata {
                 r#type: BuildType::Model(ModelMetadata {}),
                 width,
