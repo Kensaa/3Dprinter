@@ -21,7 +21,9 @@ export function remoteHandler(router: APIRouter) {
                 'emptyInventory',
                 'pause',
                 'reboot',
-                'shutdown'
+                'shutdown',
+                'setHome',
+                'goToHome'
             ]),
             data: z.number().or(z.string()).array().optional()
         }),

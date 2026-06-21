@@ -5,6 +5,8 @@ import {
     ArrowDownToLine,
     ArrowUpFromLine,
     Fuel,
+    House,
+    HousePlus,
     MoveDown,
     MoveUp,
     PackageX,
@@ -78,6 +80,18 @@ export default function RemoteControlModal({
                     <CommandButton
                         name='up'
                         icon={ArrowUpFromLine}
+                        printers={printers}
+                    />
+                </div>
+                <div className='m-1'>
+                    <CommandButton
+                        name='setHome'
+                        icon={HousePlus}
+                        printers={printers}
+                    />
+                    <CommandButton
+                        name='goToHome'
+                        icon={House}
                         printers={printers}
                     />
                 </div>

@@ -865,6 +865,12 @@ function remoteManager()
                 os.reboot()
             elseif remoteCommand == 'shutdown' then
                 os.shutdown()
+            elseif remoteCommand == 'setHome' then
+                homePosition = { currentPosition[1], currentPosition[2], currentPosition[3] }
+                homeHeading = currentHeading
+            elseif remoteCommand == 'goToHome' then
+                goTo(homePosition[1], homePosition[2], homePosition[3], homePosition[2])
+                headTo(homeHeading)
             end
         end
         -- coroutine.yield()
