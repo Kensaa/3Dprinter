@@ -48,7 +48,9 @@ function place(block)
         end
         turtle.select(slot)
     end
-    turtle.placeDown()
+    while not turtle.placeDown() do
+        sleep(1)
+    end
 end
 
 function log(message)
@@ -178,6 +180,7 @@ function forward()
                 --dodge if the current turtle is the one with the higher id
                 if os.getComputerID() > peripheral.call("front", "getID") then
                     print('im higher id')
+                    sleep(math.random())
                     if turtle.up() then
                         currentPosition[2] = currentPosition[2] + 1
                     elseif turtle.down() then
@@ -185,7 +188,7 @@ function forward()
                     end
                 else
                     print('im lower id')
-                    sleep(1)
+                    sleep(1 + math.random())
                 end
             end
         else
@@ -216,9 +219,10 @@ function backward()
                 -- the two turtles are facing each other
                 --dodge if the current turtle is the one with the higher id
                 if os.getComputerID() > peripheral.call("back", "getID") then
+                    sleep(math.random())
                     backward()
                 else
-                    sleep(1)
+                    sleep(1 + math.random())
                 end
             end
         else
@@ -310,41 +314,47 @@ function headTo(heading)
     end
 end
 
+-- Acquires and place the enderchest and calls `action`, then release and pickup the enderchest
+function enderchestAction(action)
+    -- place enderchest
+    equipPickaxe()
+    turtle.select(16)
+    turtle.placeUp()
+    turtle.select(1)
+    websocket.sendRequest("acquireLock")
+    websocket.waitForMessage({ type = "lockAcquired" })
+    action(peripheral.wrap('top'))
+
+    websocket.sendRequest("releaseLock")
+    -- pickup enderchest
+    turtle.select(16)
+    turtle.digUp()
+    turtle.select(1)
+end
+
 function refuel(providerMode)
     previousState = currentState
     setState('refueling')
     log("starting refuel")
     if providerMode == "managed" then
-        -- place enderchest
-        equipPickaxe()
-        turtle.select(16)
-        turtle.placeUp()
-        turtle.select(1)
+        enderchestAction(function(chest)
+            websocket.sendRequestAndWaitForResponse('providerRequest',
+                { request = "exportBlocks", blocks = { [config.fuel] = 256 } })
 
-        websocket.sendRequest("acquireLock")
-        websocket.waitForMessage({ type = "lockAcquired" })
-        websocket.sendRequestAndWaitForResponse('providerRequest',
-            { request = "exportBlocks", blocks = { [config.fuel] = 256 } })
-        local chest = peripheral.wrap("top")
-        for _ = 1, #chest.list() do
-            turtle.suckUp()
-        end
-        for slot = 1, 14 do
-            turtle.select(slot)
-            turtle.refuel()
-        end
-        for slot = 1, 14 do
-            turtle.select(slot)
-            turtle.dropUp()
-        end
-        websocket.sendRequestAndWaitForResponse('providerRequest',
-            { request = "importBlocks", blocks = {} })
-
-        websocket.sendRequest("releaseLock")
-        -- pickup enderchest
-        turtle.select(16)
-        turtle.digUp()
-        turtle.select(1)
+            for _ = 1, #chest.list() do
+                turtle.suckUp()
+            end
+            for slot = 1, 14 do
+                turtle.select(slot)
+                turtle.refuel()
+            end
+            for slot = 1, 14 do
+                turtle.select(slot)
+                turtle.dropUp()
+            end
+            websocket.sendRequestAndWaitForResponse('providerRequest',
+                { request = "importBlocks", blocks = {} })
+        end)
     else
         log("build is unmanaged, refuel needs to be done manually")
         print('please add fuel and press enter')
@@ -364,23 +374,20 @@ end
 
 -- Fetch from enderchest the blocks contained in the `blocks` table (by acquiring the lock on the enderchest and asking the provider to put block in it)
 function fetchBlocks(blocks, providerMode)
-    -- place enderchest
-    equipPickaxe()
-    turtle.select(16)
-    turtle.placeUp()
-    turtle.select(1)
-    local chest = peripheral.wrap("top")
-
     if providerMode == "managed" then
         -- managed mode
-        websocket.sendRequest("acquireLock")
-        websocket.waitForMessage({ type = "lockAcquired" })
-        websocket.sendRequestAndWaitForResponse('providerRequest', { request = "exportBlocks", blocks = blocks })
-        for _ = 1, #chest.list() do
-            turtle.suckUp()
-        end
-        websocket.sendRequest("releaseLock")
+        enderchestAction(function(chest)
+            websocket.sendRequestAndWaitForResponse('providerRequest', { request = "exportBlocks", blocks = blocks })
+            for _ = 1, #chest.list() do
+                turtle.suckUp()
+            end
+        end)
     else
+        -- place enderchest
+        equipPickaxe()
+        turtle.select(16)
+        turtle.placeUp()
+        turtle.select(1)
         for _, count in pairs(blocks) do
             -- should only loop once
             local fullSlots = math.floor(count / 64)
@@ -390,12 +397,12 @@ function fetchBlocks(blocks, providerMode)
             end
             turtle.suckUp(rest)
         end
+        -- pickup enderchest
+        turtle.select(16)
+        turtle.digUp()
+        turtle.select(1)
     end
 
-    -- pickup enderchest
-    turtle.select(16)
-    turtle.digUp()
-    turtle.select(1)
 
     -- verify fetch
     local inv = {}
@@ -411,6 +418,34 @@ function fetchBlocks(blocks, providerMode)
         else
             if inv[k] ~= v then
                 error("invalid count of " .. k .. " : " .. v .. " expected, got " .. inv[k])
+            end
+        end
+    end
+end
+
+function emptyInventory(providerMode)
+    -- check if turtle has any items in its inventory
+    local hasItem = false
+    for slot = 1, 14 do
+        if turtle.getItemDetail(slot) ~= nil then
+            hasItem = true
+            break
+        end
+    end
+    if hasItem then
+        if providerMode == 'managed' then
+            enderchestAction(function()
+                for slot = 1, 14 do
+                    turtle.select(slot)
+                    turtle.dropUp()
+                end
+                websocket.sendRequestAndWaitForResponse('providerRequest',
+                    { request = "importBlocks", blocks = {} })
+            end)
+        else
+            for slot = 1, 14 do
+                turtle.select(slot)
+                turtle.dropDown()
             end
         end
     end
@@ -733,6 +768,8 @@ function handleData(JSONData)
         z = z - widthOffset
     end
 
+    emptyInventory(providerMode)
+
     local d = dist(currentPosition, pos)
     local fuelAprox = math.ceil(1.5 * (width * height * depth + (2 * d)))
 
@@ -898,6 +935,7 @@ function init()
     end
     if currentPartRes.hasCurrentPart then
         print('printer has a current part')
+        emptyInventory(nil)
     else
         print('printer has no current part')
     end
