@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1781643170874,
+      "tag": "0000_useful_goblin_queen",
+      "breakpoints": true
+    }
+  ]
+}

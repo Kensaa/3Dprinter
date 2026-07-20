@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Modal, Form } from 'react-bootstrap'
-import Button from '../components/Button'
+import { Modal, Form, Button } from 'react-bootstrap'
 import { FileUploader } from 'react-drag-drop-files'
 import { useBuilds } from '../stores/data'
 import { useAddress } from '../stores/config'

@@ -2,7 +2,7 @@ import ModelViewer from './ModelViewer'
 import ImageViewer from './ImageViewer'
 import { useBuilds } from '../stores/data'
 import { useMemo } from 'react'
-import { ModelMetadata } from 'build-bindings'
+import { ColorImageMetadata, ModelMetadata } from 'build-bindings'
 
 interface BuildPreviewProps {
     buildName: string
@@ -33,6 +33,14 @@ export default function BuildPreview({ buildName }: BuildPreviewProps) {
                 <ImageViewer
                     image={compressedBuild.metadata.type.preview}
                     blockCount={compressedBuild.metadata.block_count}
+                    individualBlockCount={
+                        compressedBuild.metadata.type instanceof
+                        ColorImageMetadata
+                            ? Object.fromEntries(
+                                  compressedBuild.metadata.type.individual_block_count.entries()
+                              )
+                            : undefined
+                    }
                     width='100%'
                     height='100%'
                 />

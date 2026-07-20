@@ -59,7 +59,7 @@ body,
 .large-modal {
     max-width: 100% !important;
     width: 80%;
-    height: 90%;
+    // height: 90%;
 }
 
 .modal-content {
@@ -109,4 +109,9 @@ textarea textarea:focus {
 
 .panel-wrapper {
     z-index: 0;
+}
+
+.tooltip-list {
+    text-align: left;
+    // text-justify: inter-word;
 }

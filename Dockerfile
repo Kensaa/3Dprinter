@@ -12,7 +12,7 @@ RUN yarn dlx turbo prune server web --docker
 
 # INSTALL 
 FROM base AS build
-RUN apk add git curl bash build-base
+RUN apk add git curl bash build-base python3
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
@@ -20,8 +20,11 @@ WORKDIR /app
 
 COPY --from=prune /app/out/json/ .
 COPY --from=prune /app/out/yarn.lock ./yarn.lock
-RUN yarn
+# RUN yarn
+RUN yarn || (cat /tmp/xfs-*/build.log && exit 1)
 COPY --from=prune /app/out/full/ .
+RUN yarn turbo build --filter=build-bindings
+RUN yarn workspace web extract-textures
 # BUILD
 RUN yarn turbo build --filter=server --filter=web
 

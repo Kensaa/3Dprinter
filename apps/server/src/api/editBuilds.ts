@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
-import { compressedBuildSchema } from 'utils'
 import fs from 'fs'
 import path from 'path'
 
@@ -14,10 +13,7 @@ export function editBuildsHandler(router: APIRouter) {
         handler: (req, res, instances) => {
             for (const [name, build] of Object.entries(req.body)) {
                 fs.writeFileSync(
-                    path.join(
-                        instances.env.BUILDS_FOLDER,
-                        name.endsWith('.json') ? name : name + '.json'
-                    ),
+                    path.join(instances.env.BUILDS_FOLDER, name),
                     build
                 )
             }

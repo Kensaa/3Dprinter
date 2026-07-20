@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
-import { Table } from 'react-bootstrap'
+import { Button, Table } from 'react-bootstrap'
 import RemoteControlModal from '../modals/RemoteControlModal'
 import { Move } from 'lucide-react'
-import Button from './Button'
 import LoadingSpinner from './LoadingSpinner'
 import { useCurrentTask, usePrinters } from '../stores/data'
-import type { Printer } from '../utils/types'
+import type { Printer } from 'utils'
 import { useInterval } from 'usehooks-ts'
 
 interface PrinterTableProps {
@@ -89,7 +88,7 @@ interface TableRowProps {
 function TableRow({ printer }: TableRowProps) {
     const [controlling, setControlling] = useState(false)
 
-    const { id, label, state, connected, pos, progress, fuel } = printer
+    const { id, label, state, connected, position, progress, fuel } = printer
     return (
         <>
             <tr className=''>
@@ -98,13 +97,13 @@ function TableRow({ printer }: TableRowProps) {
                 <td>{capitalise(state)}</td>
                 <td>{connected ? 'Connected' : 'Disconnected'}</td>
                 <td>
-                    {pos ? pos.map(p => Math.round(p)).join(' ') : 'Unknown'}
-                </td>
-                <td>{fuel !== undefined ? fuel.toFixed(2) : 'Unknown'}</td>
-                <td>
-                    {progress !== undefined
-                        ? progress.toFixed(2) + '%'
+                    {position
+                        ? position.map(p => Math.round(p)).join(' ')
                         : 'Unknown'}
+                </td>
+                <td>{fuel !== null ? fuel.toFixed(2) : 'Unknown'}</td>
+                <td>
+                    {progress !== null ? progress.toFixed(2) + '%' : 'Unknown'}
                 </td>
                 <td>
                     <Button

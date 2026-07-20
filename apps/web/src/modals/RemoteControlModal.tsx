@@ -1,11 +1,12 @@
 import { createElement, useMemo, useState } from 'react'
-import { Form, Modal, OverlayTrigger, Tooltip } from 'react-bootstrap'
-import Button from '../components/Button'
-import type { Printer } from '../utils/types'
+import { Button, Form, Modal } from 'react-bootstrap'
+import type { Printer } from 'utils'
 import {
     ArrowDownToLine,
     ArrowUpFromLine,
     Fuel,
+    House,
+    HousePlus,
     MoveDown,
     MoveUp,
     PackageX,
@@ -15,6 +16,7 @@ import {
     RotateCw
 } from 'lucide-react'
 import { useAddress } from '../stores/config'
+import Tooltip from '../components/Tooltip'
 
 interface RemoteControlModalProps {
     printers: Printer[]
@@ -81,6 +83,18 @@ export default function RemoteControlModal({
                         printers={printers}
                     />
                 </div>
+                <div className='m-1'>
+                    <CommandButton
+                        name='setHome'
+                        icon={HousePlus}
+                        printers={printers}
+                    />
+                    <CommandButton
+                        name='goToHome'
+                        icon={House}
+                        printers={printers}
+                    />
+                </div>
                 <div className='mt-3'>
                     <CommandButton
                         name='refuel'
@@ -101,6 +115,11 @@ export default function RemoteControlModal({
                     />
                     <CommandButton
                         name='reboot'
+                        icon={RotateCw}
+                        printers={printers}
+                    />
+                    <CommandButton
+                        name='shutdown'
                         icon={Power}
                         printers={printers}
                     />
@@ -139,15 +158,15 @@ function CommandButton({ name, icon, printers }: CommandButtonProps) {
     }
 
     return (
-        <OverlayTrigger
+        <Tooltip
             placement='top'
-            overlay={<Tooltip>{name}</Tooltip>}
+            tooltipContent={name}
             delay={{ show: 200, hide: 0 }}
         >
             <Button variant='outline-primary' onClick={action} className='mx-1'>
                 {createElement(icon)}
             </Button>
-        </OverlayTrigger>
+        </Tooltip>
     )
 }
 
@@ -178,7 +197,7 @@ function GoToForm({ printers }: GoToFormProps) {
                 body: JSON.stringify({
                     printer: printer.id,
                     command: 'goTo',
-                    data: [x, y, z]
+                    data: [x, y, z, y]
                 })
             })
         }
@@ -296,7 +315,7 @@ function LineForm({ printers }: GoToFormProps) {
         if (!(x && y && z)) {
             return
         }
-        const currentPos = [x, y, z]
+        const currentPos = [x, y, z, y]
         for (const printer of printers) {
             fetch(`${address}/remote`, {
                 method: 'POST',
@@ -327,6 +346,7 @@ function LineForm({ printers }: GoToFormProps) {
                     console.error('invalid heading ' + heading)
                     return
             }
+            currentPos[3] += 1
         }
     }
 

@@ -105,6 +105,8 @@ me.importItem({ name = "minecraft:coal_block", count = 64 }, "up")
 
 print('how much turtle do you want to deploy?')
 local num = tonumber(read())
+print("how much do you want to offset the label of the printer (leave empty for default)")
+local labelOffset = tonumber(read())
 clear()
 -- check requirements
 for k, v in pairs(requirements) do
@@ -150,7 +152,7 @@ for i = 0, num - 1 do
     requestItemIntoTurtle("advancedperipherals:chunk_controller", requirements["advancedperipherals:chunk_controller"])
     requestItemIntoTurtle("minecraft:diamond_pickaxe", requirements["minecraft:diamond_pickaxe"])
     requestItemIntoTurtle("computercraft:wireless_modem_advanced", requirements["computercraft:wireless_modem_advanced"])
-    requestItemIntoTurtle("enderchests:ender_chest", requirements["enderchests:ender_chest"])
+    requestItemIntoTurtle("enderstorage:ender_chest", requirements["enderstorage:ender_chest"])
     setFile([[
         turtle.select(1)
         turtle.equipLeft()
@@ -162,7 +164,7 @@ for i = 0, num - 1 do
         turtle.transferTo(16,1)
         turtle.select(1)
 
-        os.setComputerLabel('printer '..]] .. i + 1 .. [[)
+        os.setComputerLabel('printer '..]] .. i + 1 + labelOffset .. [[)
         shell.run('wget '..']] .. url .. [[/clients/bootstrap.lua startup')
         for i = 1,]] .. i % 10 .. [[ do
             turtle.forward()

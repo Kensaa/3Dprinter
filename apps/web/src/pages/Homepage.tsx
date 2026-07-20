@@ -2,12 +2,16 @@ import { useState, useEffect } from 'react'
 import AppNavbar from '../components/AppNavbar'
 import { useBuilds } from '../stores/data'
 import Selector from '../components/Selector'
-import Button from '../components/Button'
 import BuildModal from '../modals/BuildModal'
 import NewModelModal from '../modals/NewModelModal'
 import NewImageModal from '../modals/NewImageModal'
 import BuildPreview from '../components/BuildPreview'
-import { ImageMetadata } from 'build-bindings'
+import {
+    ColorImageMetadata,
+    GrayImageMetadata,
+    type BuildType
+} from 'build-bindings'
+import { Button } from 'react-bootstrap'
 
 export default function Homepage() {
     const { builds, fetchBuilds } = useBuilds()
@@ -31,10 +35,7 @@ export default function Homepage() {
                             width='100%'
                             elements={Object.entries(builds).map(e => ({
                                 name: e[0],
-                                type:
-                                    e[1].metadata.type instanceof ImageMetadata
-                                        ? 'Image'
-                                        : 'Model'
+                                type: getBuildType(e[1].metadata.type)
                             }))}
                             onChange={setSelectedBuild}
                         />
@@ -82,14 +83,30 @@ export default function Homepage() {
                 />
             )}
 
-            <NewModelModal
-                show={newModelShown}
-                hide={() => setNewModelShown(false)}
-            />
-            <NewImageModal
-                show={newImageShown}
-                hide={() => setNewImageShown(false)}
-            />
+            {newModelShown ? (
+                <NewModelModal
+                    show={newModelShown}
+                    hide={() => setNewModelShown(false)}
+                />
+            ) : undefined}
+            {newImageShown ? (
+                <NewImageModal
+                    show={newImageShown}
+                    hide={() => setNewImageShown(false)}
+                />
+            ) : undefined}
         </div>
     )
+}
+
+function getBuildType(
+    type: BuildType
+): 'Grayscale Image' | 'Color Image' | 'Model' {
+    if (type instanceof GrayImageMetadata) {
+        return 'Grayscale Image'
+    } else if (type instanceof ColorImageMetadata) {
+        return 'Color Image'
+    } else {
+        return 'Model'
+    }
 }

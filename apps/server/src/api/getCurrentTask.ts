@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { APIRouter } from '../api'
-import { taskSchema } from 'utils'
+import { ApiTask, apiTaskSchema, taskSchema } from 'utils'
 import { HTTPError } from 'express-api-router'
 import { omit } from '../utils'
 
@@ -10,13 +10,24 @@ export function getCurrentTaskHandler(router: APIRouter) {
         bodySchema: z.undefined(),
         paramsSchema: z.object({}),
         querySchema: z.object({}),
-        responseSchema: taskSchema.omit({
-            // dont send the parts
-            parts: true
-        }),
+        responseSchema: apiTaskSchema,
         handler: (req, res, instances) => {
             if (!instances.currentTask) throw new HTTPError(204, 'no task')
-            return omit(instances.currentTask, 'parts')
+            const currentTask = instances.currentTask
+            const omitedTask = omit(
+                currentTask,
+                'parts',
+                'currentlyBuildingParts',
+                'completedParts'
+            )
+
+            return {
+                ...omitedTask,
+                currentlyBuildingParts: currentTask.currentlyBuildingParts
+                    .values()
+                    .toArray(),
+                completedParts: currentTask.completedParts.values().toArray()
+            }
         }
     })
 }

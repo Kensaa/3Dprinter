@@ -3,8 +3,7 @@ import AppNavbar from '../components/AppNavbar'
 import { useEffect, useState } from 'react'
 import type { PrinterConfig } from 'utils'
 import LoadingSpinner from '../components/LoadingSpinner'
-import Button from '../components/Button'
-import { Alert } from 'react-bootstrap'
+import { Alert, Button } from 'react-bootstrap'
 import { Editor } from '@monaco-editor/react'
 
 export default function Configpage() {
