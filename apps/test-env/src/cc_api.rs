@@ -7,6 +7,26 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         $table:expr,
         $name:literal,
         |$lua:pat, $args:tt : $args_ty:ty|,
+        |$state:ident| $body:block
+    ) => {{
+            let state = state.clone();
+
+            $table.set(
+                $name,
+                #[allow(unused_parens)]
+                lua.create_function(move |$lua, $args: $args_ty| {
+                    #[allow(unused)]
+                    let $state = &mut *state.borrow_mut();
+                    $body
+                })?,
+            )?;
+        }};
+    }
+    macro_rules! turtle_method {
+        (
+        $table:expr,
+        $name:literal,
+        |$lua:pat, $args:tt : $args_ty:ty|,
         |$turtle:ident, $state:ident| $body:block
     ) => {{
             let state = state.clone();
@@ -16,8 +36,6 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
                 #[allow(unused_parens)]
                 lua.create_function(move |$lua, $args: $args_ty| {
                     let $state = &mut *state.borrow_mut();
-                    // #[allow(unused)]
-                    // let $world = &mut state.world;
 
                     let $turtle = $state
                         .turtles
@@ -33,7 +51,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     }
     macro_rules! no_arg_turtle_method {
         ($table:expr, $name:literal, $method:ident) => {
-            cc_method!(
+            turtle_method!(
                 $table,
                 $name,
                 |_, _: ()|,
@@ -45,7 +63,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     }
     macro_rules! world_turtle_method {
         ($table:expr, $name:literal, $method:ident) => {
-            cc_method!(
+            turtle_method!(
                 $table,
                 $name,
                 |_, _: ()|,
@@ -76,7 +94,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     world_turtle_method!(turtle_table, "inspectUp", inspect_up);
     world_turtle_method!(turtle_table, "inspectDown", inspect_down);
 
-    cc_method!(
+    turtle_method!(
         turtle_table,
         "select",
         |_, slot: usize|,
@@ -84,7 +102,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
             Ok(turtle.select(slot))
         }
     );
-    cc_method!(
+    turtle_method!(
         turtle_table,
         "getItemDetail",
         |_, (slot,_): (Option<usize>,Option<bool>)|,
@@ -92,7 +110,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
             Ok(turtle.get_item_detail(slot))
         }
     );
-    cc_method!(
+    turtle_method!(
         turtle_table,
         "getItemCount",
         |_, slot: (Option<usize>)|,
@@ -100,7 +118,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
             Ok(turtle.get_item_detail(slot).map(|slot| slot.count).unwrap_or(0))
         }
     );
-    cc_method!(
+    turtle_method!(
         turtle_table,
         "getItemSpace",
         |_, slot: (Option<usize>)|,
@@ -120,7 +138,13 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
 
     let os_table = lua.create_table()?;
 
-    cc_method!(os_table,"getComputerID",|_,_:()|,|turtle,state| {Ok(turtle.id)});
+    cc_method!(os_table,"getComputerID",|_,_:()|,|state| {Ok(id)});
+
+    cc_method!(os_table,"startTimer",|_,(duration):(f32)|, |state| {
+        let deadline = state.clock + (duration * 1000.0).round() as u64;
+        let id = state.new_timer(id, deadline);
+        Ok(id)
+    });
 
     globals.set("os", os_table)?;
     Ok(())

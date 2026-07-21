@@ -1,1 +1,5 @@
-print(os.startTimer(5))
+print("test 1 : start")
+sleep(4)
+print("test 1 : middle")
+sleep(4)
+print("test 1 : end")

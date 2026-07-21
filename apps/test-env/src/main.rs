@@ -8,23 +8,24 @@ mod turtle;
 mod world;
 
 fn main() {
-    let source = fs::read_to_string("tests/test1.lua").expect("failed to read turtle source");
-    // let source2 = fs::read_to_string("tests/test2.lua").expect("failed to read turtle source");
+    let source1 = fs::read_to_string("tests/test1.lua").expect("failed to read turtle source");
+    let source2 = fs::read_to_string("tests/test2.lua").expect("failed to read turtle source");
 
     let mut simulation = Simulation::new();
 
     simulation
-        .add_turtle(source.clone(), (0, 0, 0), Heading::North)
+        .add_turtle(source1.clone(), (0, 0, 0), Heading::North)
         .expect("failed to add turtle 1");
-    // simulation
-    //     .add_turtle(source.clone(), (0, 0, -2), Heading::South)
-    //     .expect("failed to add turtle 1");
+    simulation
+        .add_turtle(source2.clone(), (0, 0, -2), Heading::South)
+        .expect("failed to add turtle 2");
 
     // let turtle2 = Turtle::new(source2, (1, 0, 0), Heading::North);
     // simulation.add_turtle(turtle2);
 
+    let start_inst = Instant::now();
     while !simulation.all_done().unwrap() {
-        let start_inst = Instant::now();
+        // let step_inst = Instant::now();
         match simulation.step() {
             Err(err) => {
                 eprintln!(
@@ -34,20 +35,17 @@ fn main() {
             }
             Ok(()) => {}
         }
-        let step_time = start_inst.elapsed();
-        let state = simulation.state.borrow();
-        // let turtle = state.turtles.get(&0).unwrap();
-        // state
-        //     .turtles
-        //     .iter()
-        //     .for_each(|(id, turtle)| println!("{} : {:?}", id, turtle.position));
-        //     println!(
-        //         "{:?} (in {}us)",
-        //         turtle.position,
-        //         // turtle.selected_slot,
-        //         step_time.as_micros()
-        //     )
+        // let step_time = step_inst.elapsed();
+        // println!("step (in {}us)", step_time.as_micros());
     }
+    let run_time = start_inst.elapsed();
+
+    let state = simulation.state.borrow();
+    println!(
+        "\nsimulation clock is {}ms at the end of execution\nran in {}us",
+        state.clock,
+        run_time.as_micros()
+    )
 
     // println!("Hello, world!");
     // let lua = Lua::new();

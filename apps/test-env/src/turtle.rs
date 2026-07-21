@@ -287,4 +287,12 @@ impl TurtleState {
     pub fn inspect_down(&mut self, world: &mut World) -> Option<String> {
         self.inspect_at(world, self.down_pos())
     }
+
+    // pub fn new_timer(&mut self, deadline: u64) -> usize {
+    //     let id = self.next_timer;
+    //     self.next_timer += 1;
+
+    //     self.timers.push(Reverse((deadline, id)));
+    //     id
+    // }
 }
