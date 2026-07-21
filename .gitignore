@@ -11,3 +11,4 @@ tsconfig.tsbuildinfo
 data
 apps/test
 .yarn
+lua

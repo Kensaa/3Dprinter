@@ -21,6 +21,9 @@
 
         "apps/web/src/vite-env.d.ts": true
     },
-    "rust-analyzer.linkedProjects": ["packages/build-bindings/Cargo.toml"],
-    "rust-analyzer.cargo.features": ["convert"]
+    "rust-analyzer.linkedProjects": [
+        "packages/build-bindings/Cargo.toml",
+        "apps/test-env/Cargo.toml"
+    ],
+    "rust-analyzer.cargo.features": "all"
 }
