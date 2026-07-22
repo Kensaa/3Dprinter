@@ -1,11 +1,13 @@
 use std::{
     cell::RefCell,
     cmp::Reverse,
-    collections::{BinaryHeap, HashMap, VecDeque},
+    collections::{BinaryHeap, HashMap, HashSet},
     rc::Rc,
 };
 
-use mlua::{Lua, MultiValue, Result as LuaResult, Thread, Value, thread::ThreadStatus};
+use mlua::{
+    Error, IntoLuaMulti, Lua, MultiValue, Result as LuaResult, Thread, Value, thread::ThreadStatus,
+};
 
 use crate::{
     cc_api::register_api,
@@ -52,7 +54,10 @@ impl SimState {
     pub fn new_timer(&mut self, turtle_id: usize, deadline: u64) -> usize {
         let id = self.next_timer_id;
         self.next_timer_id += 1;
-        // println!("new timer for turtle {}, deadline: {}", turtle_id, deadline);
+        // println!(
+        //     "\tnew timer for turtle {}, deadline: {}",
+        //     turtle_id, deadline
+        // );
 
         self.timers.push(Reverse((deadline, id, turtle_id)));
         id
@@ -64,7 +69,7 @@ const THREAD_KEY: &str = "sim_main_thread";
 pub struct Simulation {
     pub state: SharedState,
     lua_vms: HashMap<usize, Lua>,
-    ready: VecDeque<usize>, // ids runnable on the next pass
+    ready: HashSet<usize>, // ids runnable on the next pass
 }
 
 const PRELUDE: &str = include_str!("prelude.lua");
@@ -74,7 +79,7 @@ impl Simulation {
         Self {
             state: Rc::new(RefCell::new(SimState::new())),
             lua_vms: HashMap::new(),
-            ready: VecDeque::new(),
+            ready: HashSet::new(),
         }
     }
 
@@ -98,7 +103,7 @@ impl Simulation {
         lua.set_named_registry_value(THREAD_KEY, thread)?;
 
         self.lua_vms.insert(id, lua);
-        self.ready.push_back(id);
+        self.ready.insert(id);
         Ok(id)
     }
 
@@ -109,22 +114,53 @@ impl Simulation {
             return Ok(());
         }
 
-        let yielded: MultiValue = thread.resume(resume_args)?;
-        if yielded.is_empty() {
-            self.ready.push_back(id);
-        } else {
-            // TODO: maybe put other event things in here
-        }
+        let _yielded: MultiValue = thread.resume(resume_args)?;
+        // println!("\tturtle {id} yielded with value: {:?}", yielded);
+        // if yielded.is_empty() {
+        //     println!("\trescheduling turtle {id} for next tick");
+        //     self.ready.insert(id);
+        // } else {
+        //     // TODO: maybe put other event things in here
+        // }
 
         Ok(())
     }
 
     pub fn step(&mut self) -> LuaResult<()> {
-        let due_now: Vec<usize> = self.ready.drain(..).collect();
+        // Check if any turtle has pending events and promote them to ready if that is the case
+        {
+            let state = self.state.borrow();
+
+            for (id, t) in state.turtles.iter() {
+                if !t.event_queue.is_empty() {
+                    println!("\tpromoting {}", id);
+                    self.ready.insert(*id);
+                }
+            }
+        }
+
+        let due_now: Vec<usize> = self.ready.drain().collect();
         // Resumes turtle that are ready
         for id in due_now {
-            // println!("\tdue now : {}", id);
-            self.resume_turtle(id, MultiValue::new())?;
+            println!("\tdue: {}", id);
+            let lua = self
+                .lua_vms
+                .get(&id)
+                .ok_or(Error::RuntimeError("turtle not registered".to_string()))?;
+
+            let resume_args = {
+                // Get the resume value (i.e: any event in the queue for this turtle)
+                let mut state = self.state.borrow_mut();
+                let turtle = state
+                    .turtles
+                    .get_mut(&id)
+                    .ok_or(Error::RuntimeError("turtle not registered".to_string()))?;
+                match turtle.event_queue.pop_front() {
+                    Some(args) => args.into_lua_multi(&lua),
+                    None => Ok(MultiValue::new()),
+                }
+            }?;
+            self.resume_turtle(id, resume_args)?;
         }
 
         // nothing is runnable anymore, check the timers to find the next one
@@ -139,7 +175,7 @@ impl Simulation {
             };
 
             if let Some(deadline) = next_deadline {
-                // println!("\tnext deadline : {}", deadline);
+                // println!("\tmoving clock to {}ms", deadline);
                 let due_timers = {
                     let mut dues = Vec::new();
                     let mut state = self.state.borrow_mut();

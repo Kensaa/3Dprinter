@@ -1,5 +1,5 @@
-use crate::simulation::SharedState;
-use mlua::{Lua, Result as LuaResult};
+use crate::{simulation::SharedState, turtle::EventArg};
+use mlua::{Error, FromLua, Lua, Result as LuaResult, Value, Variadic};
 
 pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> {
     macro_rules! cc_method {
@@ -15,6 +15,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
                 $name,
                 #[allow(unused_parens)]
                 lua.create_function(move |$lua, $args: $args_ty| {
+                    // println!("\tturtle {} called {}", id, $name);
                     #[allow(unused)]
                     let $state = &mut *state.borrow_mut();
                     $body
@@ -35,6 +36,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
                 $name,
                 #[allow(unused_parens)]
                 lua.create_function(move |$lua, $args: $args_ty| {
+                    // println!("\tturtle {} called {}", id, $name);
                     let $state = &mut *state.borrow_mut();
 
                     let $turtle = $state
@@ -68,6 +70,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
                 $name,
                 |_, _: ()|,
                 |turtle, state| {
+                    println!("\tturtle {} called {}", id, $name);
                     Ok(turtle.$method(&mut state.world))
                 }
             );
@@ -139,12 +142,41 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     let os_table = lua.create_table()?;
 
     cc_method!(os_table,"getComputerID",|_,_:()|,|state| {Ok(id)});
+    cc_method!(os_table,"clock",|_,_:()|,|state| {Ok(state.clock)});
 
     cc_method!(os_table,"startTimer",|_,(duration):(f32)|, |state| {
         let deadline = state.clock + (duration * 1000.0).round() as u64;
         let id = state.new_timer(id, deadline);
         Ok(id)
     });
+
+    turtle_method!(
+        os_table,
+        "queueEvent",
+        |lua, args: Variadic<Value>|,
+        |turtle, state| {
+            let mut args = args.into_iter().map(|arg| EventArg::from_lua(arg, lua)).collect::<Result<Vec<EventArg>,Error>>()?;
+            match args.first() {
+                Some(EventArg::Str(_)) => {},
+                other => {
+                    let got = match other {
+                        None => "no value",
+                        Some(EventArg::Nil) => "nil",
+                        Some(_) => "unknown",
+                    };
+                    return Err(mlua::Error::RuntimeError(format!(
+                        "bad argument #1 (string expected, got {got})"
+                    )));
+                }
+            };
+            let name = match args.remove(0) {
+                EventArg::Str(s) => s,
+                _ => unreachable!()
+            };
+            turtle.push_event(name,args);
+            Ok(())
+        }
+    );
 
     globals.set("os", os_table)?;
     Ok(())

@@ -1,4 +1,6 @@
-use mlua::{IntoLua, Lua, Result as LuaResult, Value};
+use std::collections::VecDeque;
+
+use mlua::{Error, FromLua, IntoLua, Lua, Result as LuaResult, Value};
 
 use crate::world::{Position, World};
 
@@ -48,7 +50,7 @@ impl Heading {
 }
 
 // type Slot = (String, u8);
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Slot {
     pub name: String,
     pub count: u8,
@@ -71,6 +73,42 @@ impl Slot {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum EventArg {
+    Nil,
+    Bool(bool),
+    Int(i64),
+    Num(f64),
+    Str(String),
+}
+impl IntoLua for EventArg {
+    fn into_lua(self, lua: &Lua) -> LuaResult<Value> {
+        match self {
+            EventArg::Nil => Ok(Value::Nil),
+            EventArg::Bool(b) => Ok(Value::Boolean(b)),
+            EventArg::Int(i) => Ok(Value::Integer(i)),
+            EventArg::Num(n) => Ok(Value::Number(n)),
+            EventArg::Str(s) => Ok(Value::String(lua.create_string(s)?)),
+        }
+    }
+}
+impl FromLua for EventArg {
+    fn from_lua(value: Value, _: &Lua) -> LuaResult<Self> {
+        match value {
+            Value::Nil => Ok(Self::Nil),
+            Value::Boolean(b) => Ok(Self::Bool(b)),
+            Value::Integer(i) => Ok(Self::Int(i)),
+            Value::Number(n) => Ok(Self::Num(n)),
+            Value::String(s) => Ok(Self::Str(s.to_string_lossy())),
+            _ => Err(Error::FromLuaConversionError {
+                from: value.type_name(),
+                to: "EventArg".to_string(),
+                message: None,
+            }),
+        }
+    }
+}
+
 pub struct TurtleState {
     pub id: usize,
     pub position: Position,
@@ -78,6 +116,8 @@ pub struct TurtleState {
     pub inventory: [Option<Slot>; INVENTORY_SIZE],
     pub selected_slot: usize,
     pub equipment: [Option<Slot>; 2],
+
+    pub event_queue: VecDeque<Vec<EventArg>>,
 }
 
 impl TurtleState {
@@ -89,6 +129,8 @@ impl TurtleState {
             inventory: Default::default(),
             selected_slot: 1,
             equipment: Default::default(),
+
+            event_queue: VecDeque::new(),
         }
     }
 
@@ -288,11 +330,8 @@ impl TurtleState {
         self.inspect_at(world, self.down_pos())
     }
 
-    // pub fn new_timer(&mut self, deadline: u64) -> usize {
-    //     let id = self.next_timer;
-    //     self.next_timer += 1;
-
-    //     self.timers.push(Reverse((deadline, id)));
-    //     id
-    // }
+    pub fn push_event(&mut self, name: impl Into<String>, mut args: Vec<EventArg>) {
+        args.insert(0, EventArg::Str(name.into()));
+        self.event_queue.push_back(args);
+    }
 }
