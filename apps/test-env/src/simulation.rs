@@ -142,7 +142,7 @@ impl Simulation {
 
             for (id, t) in state.turtles.iter() {
                 if !t.event_queue.is_empty() {
-                    println!("\tpromoting {}", id);
+                    // println!("\tpromoting {}", id);
                     self.ready.insert(*id);
                 }
             }
@@ -151,7 +151,7 @@ impl Simulation {
         let due_now: Vec<usize> = self.ready.drain().collect();
         // Resumes turtle that are ready
         for id in due_now {
-            println!("\tdue: {}", id);
+            // println!("\tdue: {}", id);
             let lua = self
                 .lua_vms
                 .get(&id)

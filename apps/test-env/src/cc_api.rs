@@ -196,5 +196,12 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     });
 
     globals.set("os", os_table)?;
+
+    let gps_table = lua.create_table()?;
+    turtle_method!(gps_table,"locate",|_,_:()|, |turtle,world| {
+        Ok(turtle.position)
+    });
+
+    globals.set("gps", gps_table)?;
     Ok(())
 }
