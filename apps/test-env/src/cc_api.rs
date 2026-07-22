@@ -178,6 +178,23 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         }
     );
 
+    turtle_method!(
+    os_table,
+    "getComputerLabel",
+    |_,_:()|,
+    |turtle, world| {
+        Ok((turtle.label.clone()))
+    });
+
+    turtle_method!(
+    os_table,
+    "setComputerLabel",
+    |_, label: Option<String>|,
+    |turtle, world| {
+        turtle.label = label;
+        Ok(())
+    });
+
     globals.set("os", os_table)?;
     Ok(())
 }

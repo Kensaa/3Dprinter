@@ -111,6 +111,7 @@ impl FromLua for EventArg {
 
 pub struct TurtleState {
     pub id: usize,
+    pub label: Option<String>,
     pub position: Position,
     pub heading: Heading,
     pub inventory: [Option<Slot>; INVENTORY_SIZE],
@@ -121,9 +122,15 @@ pub struct TurtleState {
 }
 
 impl TurtleState {
-    pub fn new(id: usize, position: Position, heading: Heading) -> Self {
+    pub fn new(
+        id: usize,
+        label: Option<impl Into<String>>,
+        position: Position,
+        heading: Heading,
+    ) -> Self {
         Self {
             id,
+            label: label.map(|s| s.into()),
             position,
             heading,
             inventory: Default::default(),

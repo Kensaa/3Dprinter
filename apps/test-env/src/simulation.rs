@@ -40,11 +40,16 @@ impl SimState {
         }
     }
 
-    fn spawn_turtle(&mut self, position: Position, heading: Heading) -> usize {
+    fn spawn_turtle(
+        &mut self,
+        label: Option<impl Into<String>>,
+        position: Position,
+        heading: Heading,
+    ) -> usize {
         let id = self.next_turtle_id;
         self.next_turtle_id += 1;
 
-        let turtle = TurtleState::new(id, position, heading);
+        let turtle = TurtleState::new(id, label, position, heading);
 
         self.world.add_turtle(&turtle);
         self.turtles.insert(id, turtle);
@@ -86,10 +91,14 @@ impl Simulation {
     pub fn add_turtle(
         &mut self,
         source: String,
+        label: Option<impl Into<String>>,
         position: Position,
         heading: Heading,
     ) -> LuaResult<usize> {
-        let id = self.state.borrow_mut().spawn_turtle(position, heading);
+        let id = self
+            .state
+            .borrow_mut()
+            .spawn_turtle(label, position, heading);
 
         let lua = Lua::new();
         register_api(&lua, &self.state, id)?;

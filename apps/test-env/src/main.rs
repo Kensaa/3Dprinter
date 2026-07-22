@@ -15,7 +15,7 @@ fn main() {
     let mut simulation = Simulation::new();
 
     simulation
-        .add_turtle(source1.clone(), (0, 0, 0), Heading::North)
+        .add_turtle(source1.clone(), Some("turtle 1"), (0, 0, 0), Heading::North)
         .expect("failed to add turtle 1");
     // simulation
     //     .add_turtle(source2.clone(), (0, 0, -2), Heading::South)
