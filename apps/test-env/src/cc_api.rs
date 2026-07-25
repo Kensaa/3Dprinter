@@ -1,5 +1,6 @@
 use crate::{simulation::SharedState, turtle::EventArg};
-use mlua::{Error, FromLua, Lua, Result as LuaResult, Value, Variadic};
+use mlua::{Error, FromLua, Lua, MultiValue, Result as LuaResult, Value, Variadic};
+use tungstenite::Message;
 
 pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> {
     macro_rules! cc_method {
@@ -7,17 +8,16 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         $table:expr,
         $name:literal,
         |$lua:pat, $args:tt : $args_ty:ty|,
-        |$state:ident| $body:block
+        |$state:ident, $shared:ident| $body:block
     ) => {{
-            let state = state.clone();
+            let shared = state.clone();
 
             $table.set(
                 $name,
-                #[allow(unused_parens)]
+                #[allow(unused)]
                 lua.create_function(move |$lua, $args: $args_ty| {
-                    // println!("\tturtle {} called {}", id, $name);
-                    #[allow(unused)]
-                    let $state = &mut *state.borrow_mut();
+                    let $shared = shared.clone();
+                    let $state = &mut *shared.borrow_mut();
                     $body
                 })?,
             )?;
@@ -28,16 +28,18 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         $table:expr,
         $name:literal,
         |$lua:pat, $args:tt : $args_ty:ty|,
-        |$turtle:ident, $state:ident| $body:block
+        |$turtle:ident, $state:ident, $shared:ident| $body:block
     ) => {{
-            let state = state.clone();
+            let shared = state.clone();
 
             $table.set(
                 $name,
                 #[allow(unused_parens)]
+                #[allow(unused)]
                 lua.create_function(move |$lua, $args: $args_ty| {
                     // println!("\tturtle {} called {}", id, $name);
-                    let $state = &mut *state.borrow_mut();
+                    let $shared = shared.clone();
+                    let $state = &mut *shared.borrow_mut();
 
                     let $turtle = $state
                         .turtles
@@ -57,7 +59,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
                 $table,
                 $name,
                 |_, _: ()|,
-                |turtle, state| {
+                |turtle, state, shared| {
                     Ok(turtle.$method())
                 }
             );
@@ -69,7 +71,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
                 $table,
                 $name,
                 |_, _: ()|,
-                |turtle, state| {
+                |turtle, state, shared| {
                     println!("\tturtle {} called {}", id, $name);
                     Ok(turtle.$method(&mut state.world))
                 }
@@ -101,7 +103,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         turtle_table,
         "select",
         |_, slot: usize|,
-        |turtle, world| {
+        |turtle, world, shared| {
             Ok(turtle.select(slot))
         }
     );
@@ -109,7 +111,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         turtle_table,
         "getItemDetail",
         |_, (slot,_): (Option<usize>,Option<bool>)|,
-        |turtle, world| {
+        |turtle, world, shared| {
             Ok(turtle.get_item_detail(slot))
         }
     );
@@ -117,7 +119,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         turtle_table,
         "getItemCount",
         |_, slot: (Option<usize>)|,
-        |turtle, world| {
+        |turtle, world, shared| {
             Ok(turtle.get_item_detail(slot).map(|slot| slot.count).unwrap_or(0))
         }
     );
@@ -125,7 +127,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         turtle_table,
         "getItemSpace",
         |_, slot: (Option<usize>)|,
-        |turtle, world| {
+        |turtle, world, shared| {
             Ok(64 - turtle.get_item_detail(slot).map(|slot| slot.count).unwrap_or(0))
         }
     );
@@ -141,10 +143,10 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
 
     let os_table = lua.create_table()?;
 
-    cc_method!(os_table,"getComputerID",|_,_:()|,|state| {Ok(id)});
-    cc_method!(os_table,"clock",|_,_:()|,|state| {Ok(state.clock)});
+    cc_method!(os_table,"getComputerID",|_,_:()|,|state,shared| {Ok(id)});
+    cc_method!(os_table,"clock",|_,_:()|,|state,shared| {Ok(state.clock)});
 
-    cc_method!(os_table,"startTimer",|_,(duration):(f32)|, |state| {
+    cc_method!(os_table,"startTimer",|_,(duration):(f32)|, |state,shared| {
         let deadline = state.clock + (duration * 1000.0).round() as u64;
         let id = state.new_timer(id, deadline);
         Ok(id)
@@ -154,7 +156,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         os_table,
         "queueEvent",
         |lua, args: Variadic<Value>|,
-        |turtle, state| {
+        |turtle, state, shared| {
             let mut args = args.into_iter().map(|arg| EventArg::from_lua(arg, lua)).collect::<Result<Vec<EventArg>,Error>>()?;
             match args.first() {
                 Some(EventArg::Str(_)) => {},
@@ -182,7 +184,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     os_table,
     "getComputerLabel",
     |_,_:()|,
-    |turtle, world| {
+    |turtle, world, shared| {
         Ok((turtle.label.clone()))
     });
 
@@ -190,7 +192,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     os_table,
     "setComputerLabel",
     |_, label: Option<String>|,
-    |turtle, world| {
+    |turtle, world, shared| {
         turtle.label = label;
         Ok(())
     });
@@ -198,10 +200,66 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     globals.set("os", os_table)?;
 
     let gps_table = lua.create_table()?;
-    turtle_method!(gps_table,"locate",|_,_:()|, |turtle,world| {
+    turtle_method!(gps_table,"locate",|_,_:()|, |turtle, state, shared| {
         Ok(turtle.position)
     });
 
     globals.set("gps", gps_table)?;
+
+    let http_table = lua.create_table()?;
+    turtle_method!(
+        http_table,
+        "websocket",
+        |lua, url: String|,
+        |turtle, state, shared| {
+            match turtle.new_websocket(url) {
+                Err(err) => Ok(MultiValue::from_vec(vec![Value::Nil,Value::String(lua.create_string(err)?)])),
+                Ok(id) => {
+                    let table = lua.create_table()?;
+                    {
+                        let state = shared.clone();
+                        table.set("send",lua.create_function(move |_,(data,is_binary):(String,bool)| {
+                            let mut state = state.borrow_mut();
+                            let turtle = state.turtles.get_mut(&id).ok_or(Error::RuntimeError("turtle not registered".to_string()))?;
+                            match turtle.websockets.get_mut(&id) {
+                                None => return Err(Error::RuntimeError("the current socket doesn't exist anymore".to_string())),
+                                Some(socket) => {
+                                    let socket_message = if is_binary {
+                                        Message::binary(data)
+                                    }else {
+                                        Message::text(data)
+                                    };
+                                    socket.send(socket_message).map_err(|err| Error::RuntimeError(format!("failed to send message : {}",err.to_string())))?;
+                                }
+                            }
+                            Ok(())
+                        })?)?;
+                    }
+
+                    {
+                        let state = shared.clone();
+                        table.set("close",lua.create_function(move |_,(data,is_binary):(String,bool)| {
+                            let mut state = state.borrow_mut();
+                            let turtle = state.turtles.get_mut(&id).ok_or(Error::RuntimeError("turtle not registered".to_string()))?;
+                            match turtle.websockets.get_mut(&id) {
+                                None => {},
+                                Some(socket) => {
+                                    socket.close(None)
+                                        .map_err(|err| {
+                                            Error::RuntimeError(format!("failed to close socket : {}", err.to_string()))
+                                        })?;
+                                }
+                            }
+                            Ok(())
+                        })?)?;
+                    }
+
+                    Ok(MultiValue::from_vec(vec![Value::Table(table)]))
+                }
+            }
+        }
+    );
+
+    globals.set("http", http_table)?;
     Ok(())
 }

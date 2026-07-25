@@ -1,8 +1,10 @@
-use std::collections::VecDeque;
-
-use mlua::{Error, FromLua, IntoLua, Lua, Result as LuaResult, Value};
-
 use crate::world::{Position, World};
+use mlua::{Error, FromLua, IntoLua, Lua, Result as LuaResult, Value};
+use std::{
+    collections::{HashMap, VecDeque},
+    net::TcpStream,
+};
+use tungstenite::{WebSocket, stream::MaybeTlsStream};
 
 const INVENTORY_SIZE: usize = 16;
 
@@ -119,6 +121,9 @@ pub struct TurtleState {
     pub equipment: [Option<Slot>; 2],
 
     pub event_queue: VecDeque<Vec<EventArg>>,
+
+    pub websockets: HashMap<usize, WebSocket<MaybeTlsStream<TcpStream>>>, // maps a
+    next_websocket_id: usize,
 }
 
 impl TurtleState {
@@ -138,6 +143,9 @@ impl TurtleState {
             equipment: Default::default(),
 
             event_queue: VecDeque::new(),
+
+            websockets: HashMap::new(),
+            next_websocket_id: 0,
         }
     }
 
@@ -340,5 +348,18 @@ impl TurtleState {
     pub fn push_event(&mut self, name: impl Into<String>, mut args: Vec<EventArg>) {
         args.insert(0, EventArg::Str(name.into()));
         self.event_queue.push_back(args);
+    }
+
+    pub fn new_websocket(&mut self, url: impl Into<String>) -> Result<usize, String> {
+        let (socket, _) = tungstenite::connect(url.into())
+            .map_err(|err| format!("failed to connect : {}", err.to_string()))?;
+        if let tungstenite::stream::MaybeTlsStream::Plain(s) = socket.get_ref() {
+            s.set_nonblocking(true).ok();
+        }
+        let id = self.next_websocket_id;
+        self.next_websocket_id += 1;
+        self.websockets.insert(id, socket);
+
+        Ok(id)
     }
 }

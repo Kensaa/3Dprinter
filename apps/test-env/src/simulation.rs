@@ -124,14 +124,21 @@ impl Simulation {
         }
 
         let _yielded: MultiValue = thread.resume(resume_args)?;
-        // println!("\tturtle {id} yielded with value: {:?}", yielded);
-        // if yielded.is_empty() {
-        //     println!("\trescheduling turtle {id} for next tick");
-        //     self.ready.insert(id);
-        // } else {
-        //     // TODO: maybe put other event things in here
-        // }
 
+        if matches!(thread.status(), ThreadStatus::Finished) {
+            self.state
+                .borrow_mut()
+                .turtles
+                .get_mut(&id)
+                .expect("unknown turtle id")
+                .websockets
+                .drain()
+                .map(|(_, mut socket)| socket.close(None))
+                .collect::<Result<Vec<()>, tungstenite::Error>>()
+                .map_err(|err| {
+                    Error::RuntimeError(format!("failed to close socket : {}", err.to_string()))
+                })?;
+        }
         Ok(())
     }
 

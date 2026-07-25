@@ -5,3 +5,4 @@ edition = "2024"
 
 [dependencies]
 mlua = { version = "0.12.0", features = ["lua52", "vendored", "macros"] }
+tungstenite = "0.30.0"
