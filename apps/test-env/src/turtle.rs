@@ -1,4 +1,4 @@
-use crate::world::{Position, World};
+use crate::world::{BlockDetail, Position, World};
 use mlua::{Error, FromLua, IntoLua, Lua, Result as LuaResult, Value};
 use std::{
     collections::{HashMap, VecDeque},
@@ -17,7 +17,7 @@ pub enum Heading {
     West,
 }
 impl Heading {
-    fn delta(self) -> (isize, isize) {
+    pub fn delta(self) -> (isize, isize) {
         match self {
             Heading::North => (0, -1),
             Heading::South => (0, 1),
@@ -25,7 +25,7 @@ impl Heading {
             Heading::West => (-1, 0),
         }
     }
-    fn turn_left(self) -> Self {
+    pub fn turn_left(self) -> Self {
         match self {
             Self::North => Self::West,
             Self::East => Self::North,
@@ -33,7 +33,7 @@ impl Heading {
             Self::West => Self::South,
         }
     }
-    fn turn_right(self) -> Self {
+    pub fn turn_right(self) -> Self {
         match self {
             Self::North => Self::East,
             Self::East => Self::South,
@@ -41,13 +41,22 @@ impl Heading {
             Self::West => Self::North,
         }
     }
-    fn opposite(self) -> Self {
+    pub fn opposite(self) -> Self {
         match self {
             Self::North => Self::South,
             Self::East => Self::West,
             Self::South => Self::North,
             Self::West => Self::East,
         }
+    }
+    pub fn string(self) -> String {
+        match self {
+            Self::North => "north",
+            Self::East => "east",
+            Self::South => "south",
+            Self::West => "west",
+        }
+        .to_string()
     }
 }
 
@@ -311,8 +320,8 @@ impl TurtleState {
         true
     }
 
-    fn inspect_at(&mut self, world: &mut World, pos: Position) -> Option<String> {
-        world.get(pos).map(|item| item.to_string())
+    fn inspect_at(&mut self, world: &mut World, pos: Position) -> Option<BlockDetail> {
+        world.get_block_detail(pos)
     }
 
     pub fn dig_front(&mut self, world: &mut World) -> bool {
@@ -335,13 +344,13 @@ impl TurtleState {
         self.place_at(world, self.down_pos())
     }
 
-    pub fn inspect_front(&mut self, world: &mut World) -> Option<String> {
+    pub fn inspect_front(&mut self, world: &mut World) -> Option<BlockDetail> {
         self.inspect_at(world, self.front_pos())
     }
-    pub fn inspect_up(&mut self, world: &mut World) -> Option<String> {
+    pub fn inspect_up(&mut self, world: &mut World) -> Option<BlockDetail> {
         self.inspect_at(world, self.up_pos())
     }
-    pub fn inspect_down(&mut self, world: &mut World) -> Option<String> {
+    pub fn inspect_down(&mut self, world: &mut World) -> Option<BlockDetail> {
         self.inspect_at(world, self.down_pos())
     }
 

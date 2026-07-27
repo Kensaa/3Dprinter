@@ -1,5 +1,5 @@
 use crate::{simulation::SharedState, turtle::EventArg};
-use mlua::{Error, FromLua, Lua, MultiValue, Result as LuaResult, Value, Variadic};
+use mlua::{Error, FromLua, IntoLua, Lua, MultiValue, Result as LuaResult, Value, Variadic};
 use tungstenite::Message;
 
 pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> {
@@ -95,15 +95,50 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     world_turtle_method!(turtle_table, "digUp", dig_up);
     world_turtle_method!(turtle_table, "digDown", dig_down);
 
-    world_turtle_method!(turtle_table, "inspect", inspect_front);
-    world_turtle_method!(turtle_table, "inspectUp", inspect_up);
-    world_turtle_method!(turtle_table, "inspectDown", inspect_down);
+    turtle_method!(
+        turtle_table,
+        "inspect",
+        |lua, _:()|,
+        |turtle, state, shared| {
+            if let Some(detail) = turtle.inspect_front(&mut state.world) {
+                return Ok(MultiValue::from_vec(vec![Value::Boolean(true),detail.into_lua(lua)?]))
+            }else {
+                return Ok(MultiValue::from_vec(vec![Value::Boolean(false)]));
+            }
+        }
+    );
+
+    turtle_method!(
+        turtle_table,
+        "inspectUp",
+        |lua, _:()|,
+        |turtle, state, shared| {
+            if let Some(detail) = turtle.inspect_up(&mut state.world) {
+                return Ok(MultiValue::from_vec(vec![Value::Boolean(true),detail.into_lua(lua)?]))
+            }else {
+                return Ok(MultiValue::from_vec(vec![Value::Boolean(false)]));
+            }
+        }
+    );
+
+    turtle_method!(
+        turtle_table,
+        "inspectDown",
+        |lua, _:()|,
+        |turtle, state, shared| {
+            if let Some(detail) = turtle.inspect_down(&mut state.world) {
+                return Ok(MultiValue::from_vec(vec![Value::Boolean(true),detail.into_lua(lua)?]))
+            }else {
+                return Ok(MultiValue::from_vec(vec![Value::Boolean(false)]));
+            }
+        }
+    );
 
     turtle_method!(
         turtle_table,
         "select",
         |_, slot: usize|,
-        |turtle, world, shared| {
+        |turtle, state, shared| {
             Ok(turtle.select(slot))
         }
     );
@@ -111,7 +146,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         turtle_table,
         "getItemDetail",
         |_, (slot,_): (Option<usize>,Option<bool>)|,
-        |turtle, world, shared| {
+        |turtle, state, shared| {
             Ok(turtle.get_item_detail(slot))
         }
     );
@@ -119,7 +154,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         turtle_table,
         "getItemCount",
         |_, slot: (Option<usize>)|,
-        |turtle, world, shared| {
+        |turtle, state, shared| {
             Ok(turtle.get_item_detail(slot).map(|slot| slot.count).unwrap_or(0))
         }
     );
@@ -127,7 +162,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         turtle_table,
         "getItemSpace",
         |_, slot: (Option<usize>)|,
-        |turtle, world, shared| {
+        |turtle, state, shared| {
             Ok(64 - turtle.get_item_detail(slot).map(|slot| slot.count).unwrap_or(0))
         }
     );

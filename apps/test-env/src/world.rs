@@ -1,3 +1,4 @@
+use mlua::{IntoLua, Lua, Value};
 use std::collections::HashMap;
 
 use crate::turtle::{Heading, TurtleState};
@@ -12,6 +13,33 @@ pub struct World {
     turtle_heading: HashMap<usize, Heading>,
 }
 
+#[derive(Clone, Default)]
+pub struct BlockState {
+    facing: Option<String>,
+}
+#[derive(Clone)]
+pub struct BlockDetail {
+    name: String,
+    state: BlockState,
+}
+impl IntoLua for BlockState {
+    fn into_lua(self, lua: &Lua) -> mlua::prelude::LuaResult<Value> {
+        let table = lua.create_table()?;
+        if let Some(facing) = self.facing {
+            table.set("facing", facing)?;
+        }
+        Ok(Value::Table(table))
+    }
+}
+impl IntoLua for BlockDetail {
+    fn into_lua(self, lua: &Lua) -> mlua::prelude::LuaResult<Value> {
+        let table = lua.create_table()?;
+        table.set("name", self.name)?;
+        table.set("state", self.state.into_lua(lua)?)?;
+        Ok(Value::Table(table))
+    }
+}
+
 impl World {
     pub fn new() -> Self {
         Self {
@@ -23,6 +51,25 @@ impl World {
 
     pub fn get(&self, pos: Position) -> Option<&str> {
         self.blocks.get(&pos).map(|s| s.as_str())
+    }
+
+    pub fn get_block_detail(&self, pos: Position) -> Option<BlockDetail> {
+        if let Some(block) = self.get(pos) {
+            return Some(BlockDetail {
+                name: block.to_string(),
+                state: BlockState::default(),
+            });
+        } else if let Some(turtle) = self.turtle_pos.get(&pos) {
+            let heading = self.turtle_heading.get(turtle).unwrap();
+            return Some(BlockDetail {
+                name: "computercraft:turtle_advanced".to_string(),
+                state: BlockState {
+                    facing: Some(heading.string()),
+                },
+            });
+        }
+
+        return None;
     }
 
     pub fn set(&mut self, pos: Position, block: impl Into<String>) {
