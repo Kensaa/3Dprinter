@@ -184,7 +184,7 @@ pub fn generate_3d_array<E>(height: usize, depth: usize, width: usize, e: E) -> 
 where
     E: Copy,
 {
-    vec![vec![vec![e; width]; depth]; height]
+    return vec![vec![vec![e; width]; depth]; height];
 }
 
 /// Rotate `arr` along the X axis (`arr` is expected to be YZX ordered)

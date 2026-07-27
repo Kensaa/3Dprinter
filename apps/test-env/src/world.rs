@@ -6,11 +6,11 @@ use crate::turtle::{Heading, TurtleState};
 pub type Position = (isize, isize, isize);
 
 pub struct World {
-    blocks: HashMap<Position, String>,
+    pub blocks: HashMap<Position, String>,
     // maps a position to the id of the turtle at that position
-    turtle_pos: HashMap<Position, usize>,
+    pub turtle_pos: HashMap<Position, usize>,
     // maps a turtle to its heading
-    turtle_heading: HashMap<usize, Heading>,
+    pub turtle_heading: HashMap<usize, Heading>,
 }
 
 #[derive(Clone, Default)]
@@ -80,8 +80,16 @@ impl World {
         self.blocks.remove(&pos)
     }
 
+    pub fn is_block(&self, pos: Position) -> bool {
+        self.get(pos).is_some()
+    }
+
+    pub fn is_turtle(&self, pos: Position) -> bool {
+        self.turtle_pos.get(&pos).is_some()
+    }
+
     pub fn is_air(&self, pos: Position) -> bool {
-        self.get(pos).is_none() && self.turtle_pos.get(&pos).is_none()
+        !self.is_block(pos) && !self.is_turtle(pos)
     }
 
     pub fn move_turtle(&mut self, turtle: &mut TurtleState, new_position: Position) {

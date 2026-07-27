@@ -2,7 +2,9 @@ use crate::world::{BlockDetail, Position, World};
 use mlua::{Error, FromLua, IntoLua, Lua, Result as LuaResult, Value};
 use std::{
     collections::{HashMap, VecDeque},
+    format,
     net::TcpStream,
+    ops::Add,
 };
 use tungstenite::{WebSocket, stream::MaybeTlsStream};
 
@@ -16,6 +18,14 @@ pub enum Heading {
     South,
     West,
 }
+impl Add<(isize, isize, isize)> for Heading {
+    type Output = (isize, isize, isize);
+    fn add(self, (x, y, z): (isize, isize, isize)) -> Self::Output {
+        let (dx, dz) = self.delta();
+        (x + dx, y, z + dz)
+    }
+}
+
 impl Heading {
     pub fn delta(self) -> (isize, isize) {
         match self {
@@ -158,24 +168,20 @@ impl TurtleState {
         }
     }
 
-    fn front_pos(&self) -> Position {
-        let (dx, dz) = self.heading.delta();
-        let (x, y, z) = self.position;
-        (x + dx, y, z + dz)
+    pub fn front_pos(&self) -> Position {
+        self.heading + self.position
     }
 
-    fn back_pos(&self) -> Position {
-        let (dx, dz) = self.heading.opposite().delta();
-        let (x, y, z) = self.position;
-        (x + dx, y, z + dz)
+    pub fn back_pos(&self) -> Position {
+        self.heading.opposite() + self.position
     }
 
-    fn up_pos(&self) -> Position {
+    pub fn up_pos(&self) -> Position {
         let (x, y, z) = self.position;
         (x, y + 1, z)
     }
 
-    fn down_pos(&self) -> Position {
+    pub fn down_pos(&self) -> Position {
         let (x, y, z) = self.position;
         (x, y - 1, z)
     }
@@ -370,5 +376,26 @@ impl TurtleState {
         self.websockets.insert(id, socket);
 
         Ok(id)
+    }
+
+    pub fn position_from_direction_string(
+        &self,
+        s: String,
+    ) -> Result<(isize, isize, isize), String> {
+        let heading = match s.to_lowercase().as_str() {
+            "north" => Ok(Heading::North),
+            "east" => Ok(Heading::East),
+            "south" => Ok(Heading::South),
+            "west" => Ok(Heading::West),
+
+            "front" => Ok(self.heading),
+            "back" => Ok(self.heading.opposite()),
+            "left" => Ok(self.heading.turn_left()),
+            "right" => Ok(self.heading.turn_right()),
+
+            _ => Err(format!("cannot convert {} into a direction", s)),
+        }?;
+
+        Ok(heading + self.position)
     }
 }

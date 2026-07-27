@@ -343,6 +343,30 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
 
     let peripheral_table = lua.create_table()?;
 
+    turtle_method!(
+        peripheral_table,
+        "call",
+        |lua, (heading, method): (String, String)| {},
+        |turtle, state, shared| {
+            let target = turtle
+                .position_from_direction_string(heading)
+                .map_err(|err| Error::RuntimeError(err))?;
+            let world = &state.world;
+            let turtle_id = if let Some(turtle_id) = world.turtle_pos.get(&target) {
+                turtle_id
+            } else {
+                return Err(Error::RuntimeError(
+                    "peripheral.call is implemented only for turtles".to_string(),
+                ));
+            };
+
+            match method.as_str() {
+                "getID" => Ok(*turtle_id),
+                _ => Err(Error::RuntimeError(format!("unknown method : {}", method))),
+            }
+        }
+    );
+
     globals.set("peripheral", peripheral_table)?;
     Ok(())
 }

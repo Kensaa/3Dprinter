@@ -1,4 +1,8 @@
-local x, y, z = gps.locate()
-print(x)
-print(y)
-print(z)
+local blockPresent, detail = turtle.inspect()
+
+print(blockPresent)
+if blockPresent then
+    print(detail.name, detail.state.facing)
+end
+
+print(peripheral.call("front", "getID"))
