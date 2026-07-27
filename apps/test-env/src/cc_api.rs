@@ -254,6 +254,9 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
                         })?)?;
                     }
 
+                    let wrap: mlua::Function = lua.globals().get("__wrapWebSocketHandle")?;
+                    let table: mlua::Table = wrap.call((table, id))?;
+
                     Ok(MultiValue::from_vec(vec![Value::Table(table)]))
                 }
             }

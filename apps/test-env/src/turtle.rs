@@ -122,7 +122,7 @@ pub struct TurtleState {
 
     pub event_queue: VecDeque<Vec<EventArg>>,
 
-    pub websockets: HashMap<usize, WebSocket<MaybeTlsStream<TcpStream>>>, // maps a
+    pub websockets: HashMap<usize, WebSocket<MaybeTlsStream<TcpStream>>>,
     next_websocket_id: usize,
 }
 

@@ -2,16 +2,18 @@ use std::{
     cell::RefCell,
     cmp::Reverse,
     collections::{BinaryHeap, HashMap, HashSet},
+    io,
     rc::Rc,
+    vec,
 };
 
 use mlua::{
-    Error, IntoLuaMulti, Lua, MultiValue, Result as LuaResult, Thread, Value, thread::ThreadStatus,
+    Error, IntoLua, Lua, MultiValue, Result as LuaResult, Thread, Value, thread::ThreadStatus,
 };
 
 use crate::{
     cc_api::register_api,
-    turtle::{Heading, TurtleState},
+    turtle::{EventArg, Heading, TurtleState},
     world::{Position, World},
 };
 
@@ -143,6 +145,64 @@ impl Simulation {
     }
 
     pub fn step(&mut self) -> LuaResult<()> {
+        // Promotes any turtle that has a websocket message pending
+        {
+            let mut state = self.state.borrow_mut();
+            for (id, turtle) in state.turtles.iter_mut() {
+                // Collect messages pending from each websocket
+                let messages = turtle
+                    .websockets
+                    .iter_mut()
+                    .map(|(ws_id, ws)| match ws.read() {
+                        Ok(msg) => {
+                            let is_binary = msg.is_binary();
+                            let msg = if is_binary {
+                                String::from_utf8(msg.into_data().into_iter().collect()).map_err(
+                                    |err| {
+                                        Error::RuntimeError(format!(
+                                            "failed to get message content : {}",
+                                            err.to_string()
+                                        ))
+                                    },
+                                )
+                            } else {
+                                msg.to_text()
+                                    .map_err(|err| {
+                                        Error::RuntimeError(format!(
+                                            "failed to get message content : {}",
+                                            err.to_string()
+                                        ))
+                                    })
+                                    .map(|str| str.to_string())
+                            }?;
+                            Ok(Some(vec![
+                                EventArg::Int(*ws_id as i64),
+                                EventArg::Str(msg),
+                                EventArg::Bool(is_binary),
+                            ]))
+                        }
+                        Err(tungstenite::Error::Io(ref e))
+                            if e.kind() == io::ErrorKind::WouldBlock =>
+                        {
+                            Ok(None)
+                        }
+                        Err(err) => {
+                            return Err(Error::RuntimeError(format!(
+                                "An error occured while polling websockets for turtle {} : {}",
+                                id,
+                                err.to_string()
+                            )));
+                        }
+                    })
+                    .collect::<Result<Vec<Option<Vec<EventArg>>>, Error>>()?
+                    .into_iter()
+                    .filter_map(|msg| msg);
+                for msg in messages {
+                    turtle.push_event("websocket_message", msg);
+                }
+            }
+        }
+
         // Check if any turtle has pending events and promote them to ready if that is the case
         {
             let state = self.state.borrow();
@@ -172,7 +232,14 @@ impl Simulation {
                     .get_mut(&id)
                     .ok_or(Error::RuntimeError("turtle not registered".to_string()))?;
                 match turtle.event_queue.pop_front() {
-                    Some(args) => args.into_lua_multi(&lua),
+                    Some(args) => {
+                        let args = args
+                            .into_iter()
+                            .map(|arg| arg.into_lua(&lua))
+                            .collect::<Result<Vec<Value>, Error>>()?;
+                        Ok::<_, Error>(MultiValue::from_vec(args))
+                    }
+
                     None => Ok(MultiValue::new()),
                 }
             }?;

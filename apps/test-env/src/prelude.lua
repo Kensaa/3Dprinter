@@ -124,3 +124,21 @@ function parallel.waitForAll(...)
         event = table.pack(os.pullEventRaw())
     end
 end
+
+function __wrapWebSocketHandle(handle, id)
+    function handle.receive(timeout)
+        local timer_id = timeout and os.startTimer(timeout) or nil
+        while true do
+            local event, a, b, c = os.pullEvent()
+            if event == "websocket_message" and a == id then
+                return b, c -- message, isBinary
+            elseif event == "websocket_closed" and a == id then
+                return nil, "Connection closed"
+            elseif timer_id and event == "timer" and a == timer_id then
+                return nil, "Timeout"
+            end
+        end
+    end
+
+    return handle
+end
