@@ -3,12 +3,13 @@ use std::{fs, time::Instant};
 use crate::{simulation::Simulation, turtle::Heading};
 
 mod cc_api;
+mod filesystem;
 mod simulation;
 mod turtle;
 mod world;
 
 fn main() {
-    let source1 = fs::read_to_string("tests/test1.lua").expect("failed to read turtle source");
+    let source1 = fs::read_to_string("tests/testfs.lua").expect("failed to read turtle source");
     // let source2 = fs::read_to_string("tests/test2.lua").expect("failed to read turtle source");
 
     let mut simulation = Simulation::new();
@@ -16,14 +17,14 @@ fn main() {
     simulation
         .add_turtle(source1.clone(), Some("turtle 1"), (0, 0, 0), Heading::North)
         .expect("failed to add turtle 1");
-    simulation
-        .add_turtle(
-            source1.clone(),
-            Some("turtle 2"),
-            (0, 0, -1),
-            Heading::South,
-        )
-        .expect("failed to add turtle 2");
+    // simulation
+    //     .add_turtle(
+    //         source1.clone(),
+    //         Some("turtle 2"),
+    //         (0, 0, -1),
+    //         Heading::South,
+    //     )
+    //     .expect("failed to add turtle 2");
 
     // let turtle2 = Turtle::new(source2, (1, 0, 0), Heading::North);
     // simulation.add_turtle(turtle2);

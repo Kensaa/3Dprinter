@@ -1,5 +1,6 @@
-use crate::{simulation::SharedState, turtle::EventArg};
-use mlua::{Error, FromLua, IntoLua, Lua, MultiValue, Result as LuaResult, Value, Variadic};
+use crate::{filesystem::Path, simulation::SharedState, turtle::EventArg};
+use mlua::{Error, FromLua, IntoLua, Lua, MultiValue, Result as LuaResult, Table, Value, Variadic};
+use std::{cell::RefCell, format, rc::Rc};
 use tungstenite::Message;
 
 pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> {
@@ -368,5 +369,264 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     );
 
     globals.set("peripheral", peripheral_table)?;
+
+    let fs_table = lua.create_table()?;
+
+    turtle_method!(
+        fs_table,
+        "list",
+        |lua, path: String| {},
+        |turtle, state, shared| {
+            let dir = turtle.fs_root.get(path.clone());
+            if let Some(dir) = dir {
+                if dir.is_dir() {
+                    return Ok(dir.list_files());
+                } else {
+                    return Err(Error::RuntimeError(format!(
+                        "\"{}\" : not a directory",
+                        path
+                    )));
+                }
+            } else {
+                return Err(Error::RuntimeError(format!("\"{}\" : no such file", path)));
+            }
+        }
+    );
+
+    turtle_method!(
+        fs_table,
+        "combine",
+        |lua, args: Variadic<Value>| {},
+        |turtle, state, shared| {
+            let path: String = args
+                .into_iter()
+                .filter_map(|val| {
+                    if let Value::String(s) = val {
+                        Some(s.to_str().unwrap().to_string().into())
+                    } else {
+                        None
+                    }
+                })
+                .fold(Path::new(), |mut acc, path| acc + path)
+                .into();
+            Ok(path)
+        }
+    );
+
+    turtle_method!(
+        fs_table,
+        "getName",
+        |lua, path: String| {},
+        |turtle, state, shared| {
+            let path: Path = path.into();
+            if let Some(filename) = path.get_filename() {
+                Ok(filename.clone())
+            } else {
+                Err(Error::RuntimeError("no filename found".to_string()))
+            }
+        }
+    );
+
+    turtle_method!(
+        fs_table,
+        "getDir",
+        |lua, path: String| {},
+        |turtle, state, shared| {
+            let mut path: Path = path.into();
+            path.pop_filename();
+            let path_string: String = path.into();
+            Ok(path_string)
+        }
+    );
+
+    turtle_method!(
+        fs_table,
+        "exists",
+        |lua, path: String| {},
+        |turtle, state, shared| { Ok(turtle.fs_root.get(path).is_some()) }
+    );
+
+    turtle_method!(
+        fs_table,
+        "isDir",
+        |lua, path: String| {},
+        |turtle, state, shared| {
+            if let Some(dir) = turtle.fs_root.get(path) {
+                Ok(dir.is_dir())
+            } else {
+                Ok(true)
+            }
+        }
+    );
+
+    turtle_method!(
+        fs_table,
+        "makeDir",
+        |lua, path: String| {},
+        |turtle, state, shared| {
+            turtle.fs_root.make_dir(path);
+            Ok(())
+        }
+    );
+
+    turtle_method!(
+        fs_table,
+        "delete",
+        |lua, path: String| {},
+        |turtle, state, shared| {
+            turtle.fs_root.remove(path);
+            Ok(())
+        }
+    );
+
+    turtle_method!(
+        fs_table,
+        "open",
+        |lua, (path, mode): (String, Option<String>)| {},
+        |turtle, state, shared| {
+            let path: Path = path.into();
+            let mode = mode.unwrap_or_else(|| "r".to_string());
+            let err = |lua: &Lua, msg: String| -> LuaResult<MultiValue> {
+                Ok(MultiValue::from_vec(vec![
+                    Value::Nil,
+                    Value::String(lua.create_string(&msg)?),
+                ]))
+            };
+
+            match mode.as_str() {
+                "r" | "rb" => match turtle.fs_root.get(path.clone()) {
+                    None => err(lua, format!("{path}: No such file")),
+                    Some(node) if node.is_dir() => err(lua, format!("{path}: Is a directory")),
+                    Some(node) => {
+                        let content = node.get_content().unwrap().clone();
+                        let handle = make_read_handle(lua, content)?;
+                        Ok(MultiValue::from_vec(vec![Value::Table(handle)]))
+                    }
+                },
+                "w" | "wb" | "a" | "ab" => {
+                    if matches!(turtle.fs_root.get(path.clone()), Some(n) if n.is_dir()) {
+                        return err(lua, format!("{path}: Is a directory"));
+                    }
+                    let initial = if mode.starts_with('a') {
+                        match turtle.fs_root.get(path.clone()) {
+                            Some(n) if n.is_file() => n.get_content().unwrap().clone(),
+                            _ => String::new(),
+                        }
+                    } else {
+                        String::new()
+                    };
+                    let handle =
+                        make_write_handle(lua, shared.clone(), turtle.id, path.clone(), initial)?;
+                    Ok(MultiValue::from_vec(vec![Value::Table(handle)]))
+                }
+                other => err(lua, format!("Unsupported mode: {other}")),
+            }
+        }
+    );
+
+    globals.set("fs", fs_table)?;
+
     Ok(())
+}
+fn make_read_handle(lua: &Lua, content: String) -> LuaResult<Table> {
+    let table = lua.create_table()?;
+    let cursor = Rc::new(RefCell::new(0usize));
+    let lines: Rc<Vec<String>> = Rc::new(content.lines().map(String::from).collect());
+
+    table.set(
+        "readAll",
+        lua.create_function({
+            let content = content.clone();
+            move |lua, ()| lua.create_string(&content).map(Value::String)
+        })?,
+    )?;
+
+    table.set(
+        "readLine",
+        lua.create_function({
+            let lines = lines.clone();
+            let cursor = cursor.clone();
+            move |lua, ()| {
+                let mut i = cursor.borrow_mut();
+                if *i >= lines.len() {
+                    return Ok(Value::Nil);
+                }
+                let line = lua.create_string(&lines[*i])?;
+                *i += 1;
+                Ok(Value::String(line))
+            }
+        })?,
+    )?;
+
+    table.set("close", lua.create_function(|_, ()| Ok(()))?)?;
+    Ok(table)
+}
+
+fn make_write_handle(
+    lua: &Lua,
+    shared: SharedState,
+    turtle_id: usize,
+    path: Path,
+    initial: String,
+) -> LuaResult<Table> {
+    let table = lua.create_table()?;
+    let buffer = Rc::new(RefCell::new(initial));
+
+    let flush = {
+        let shared = shared.clone();
+        let buffer = buffer.clone();
+        let path = path.clone();
+        move || {
+            let mut state = shared.borrow_mut();
+            if let Some(turtle) = state.turtles.get_mut(&turtle_id) {
+                turtle
+                    .fs_root
+                    .write_file(path.clone(), buffer.borrow().clone());
+            }
+        }
+    };
+
+    table.set(
+        "write",
+        lua.create_function({
+            let buffer = buffer.clone();
+            move |_, s: String| {
+                buffer.borrow_mut().push_str(&s);
+                Ok(())
+            }
+        })?,
+    )?;
+
+    table.set(
+        "writeLine",
+        lua.create_function({
+            let buffer = buffer.clone();
+            move |_, s: String| {
+                let mut b = buffer.borrow_mut();
+                b.push_str(&s);
+                b.push('\n');
+                Ok(())
+            }
+        })?,
+    )?;
+
+    table.set(
+        "flush",
+        lua.create_function({
+            let flush = flush.clone();
+            move |_, ()| {
+                flush();
+                Ok(())
+            }
+        })?,
+    )?;
+
+    table.set(
+        "close",
+        lua.create_function(move |_, ()| {
+            flush();
+            Ok(())
+        })?,
+    )?;
+    Ok(table)
 }

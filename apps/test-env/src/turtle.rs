@@ -1,4 +1,7 @@
-use crate::world::{BlockDetail, Position, World};
+use crate::{
+    filesystem::Node,
+    world::{BlockDetail, Position, World},
+};
 use mlua::{Error, FromLua, IntoLua, Lua, Result as LuaResult, Value};
 use std::{
     collections::{HashMap, VecDeque},
@@ -143,6 +146,8 @@ pub struct TurtleState {
 
     pub websockets: HashMap<usize, WebSocket<MaybeTlsStream<TcpStream>>>,
     next_websocket_id: usize,
+
+    pub fs_root: Node,
 }
 
 impl TurtleState {
@@ -165,6 +170,8 @@ impl TurtleState {
 
             websockets: HashMap::new(),
             next_websocket_id: 0,
+
+            fs_root: Node::create_root(),
         }
     }
 
