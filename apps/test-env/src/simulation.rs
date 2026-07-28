@@ -118,8 +118,8 @@ impl Simulation {
         Ok(id)
     }
 
-    fn resume_turtle(&mut self, id: usize, resume_args: MultiValue) -> LuaResult<()> {
-        let lua = self.lua_vms.get(&id).expect("unknown turtle id");
+    fn resume_turtle(&mut self, turtle_id: usize, resume_args: MultiValue) -> LuaResult<()> {
+        let lua = self.lua_vms.get(&turtle_id).expect("unknown turtle id");
         let thread: Thread = lua.named_registry_value(THREAD_KEY)?;
         if !matches!(thread.status(), ThreadStatus::Resumable) {
             return Ok(());
@@ -127,12 +127,13 @@ impl Simulation {
 
         let _yielded: MultiValue = thread.resume(resume_args)?;
 
+        // Check if the turtle is finished and close websockets still open
         if matches!(thread.status(), ThreadStatus::Finished) {
-            self.state
-                .borrow_mut()
+            let mut state = self.state.borrow_mut();
+            state
                 .turtles
-                .get_mut(&id)
-                .expect("unknown turtle id")
+                .get_mut(&turtle_id)
+                .unwrap()
                 .websockets
                 .drain()
                 .map(|(_, mut socket)| socket.close(None))
@@ -144,72 +145,66 @@ impl Simulation {
         Ok(())
     }
 
+    fn poll_socket(&self, turtle: &mut TurtleState) -> LuaResult<()> {
+        let messages = turtle
+            .websockets
+            .iter_mut()
+            .map(|(ws_id, ws)| match ws.read() {
+                Ok(msg) => {
+                    let is_binary = msg.is_binary();
+                    let msg = if is_binary {
+                        String::from_utf8(msg.into_data().into_iter().collect()).map_err(|err| {
+                            Error::RuntimeError(format!(
+                                "failed to get message content : {}",
+                                err.to_string()
+                            ))
+                        })
+                    } else {
+                        msg.to_text()
+                            .map_err(|err| {
+                                Error::RuntimeError(format!(
+                                    "failed to get message content : {}",
+                                    err.to_string()
+                                ))
+                            })
+                            .map(|str| str.to_string())
+                    }?;
+                    Ok(Some(vec![
+                        EventArg::Int(*ws_id as i64),
+                        EventArg::Str(msg),
+                        EventArg::Bool(is_binary),
+                    ]))
+                }
+                Err(tungstenite::Error::Io(ref e)) if e.kind() == io::ErrorKind::WouldBlock => {
+                    Ok(None)
+                }
+                Err(err) => {
+                    return Err(Error::RuntimeError(format!(
+                        "An error occured while polling websockets for turtle {} : {}",
+                        turtle.id,
+                        err.to_string()
+                    )));
+                }
+            })
+            .collect::<Result<Vec<Option<Vec<EventArg>>>, Error>>()?
+            .into_iter()
+            .filter_map(|msg| msg);
+        for msg in messages {
+            turtle.push_event("websocket_message", msg);
+        }
+        Ok(())
+    }
+
     pub fn step(&mut self) -> LuaResult<()> {
         // Promotes any turtle that has a websocket message pending
         {
             let mut state = self.state.borrow_mut();
             for (id, turtle) in state.turtles.iter_mut() {
                 // Collect messages pending from each websocket
-                let messages = turtle
-                    .websockets
-                    .iter_mut()
-                    .map(|(ws_id, ws)| match ws.read() {
-                        Ok(msg) => {
-                            let is_binary = msg.is_binary();
-                            let msg = if is_binary {
-                                String::from_utf8(msg.into_data().into_iter().collect()).map_err(
-                                    |err| {
-                                        Error::RuntimeError(format!(
-                                            "failed to get message content : {}",
-                                            err.to_string()
-                                        ))
-                                    },
-                                )
-                            } else {
-                                msg.to_text()
-                                    .map_err(|err| {
-                                        Error::RuntimeError(format!(
-                                            "failed to get message content : {}",
-                                            err.to_string()
-                                        ))
-                                    })
-                                    .map(|str| str.to_string())
-                            }?;
-                            Ok(Some(vec![
-                                EventArg::Int(*ws_id as i64),
-                                EventArg::Str(msg),
-                                EventArg::Bool(is_binary),
-                            ]))
-                        }
-                        Err(tungstenite::Error::Io(ref e))
-                            if e.kind() == io::ErrorKind::WouldBlock =>
-                        {
-                            Ok(None)
-                        }
-                        Err(err) => {
-                            return Err(Error::RuntimeError(format!(
-                                "An error occured while polling websockets for turtle {} : {}",
-                                id,
-                                err.to_string()
-                            )));
-                        }
-                    })
-                    .collect::<Result<Vec<Option<Vec<EventArg>>>, Error>>()?
-                    .into_iter()
-                    .filter_map(|msg| msg);
-                for msg in messages {
-                    turtle.push_event("websocket_message", msg);
-                }
-            }
-        }
+                self.poll_socket(turtle)?;
 
-        // Check if any turtle has pending events and promote them to ready if that is the case
-        {
-            let state = self.state.borrow();
-
-            for (id, t) in state.turtles.iter() {
-                if !t.event_queue.is_empty() {
-                    // println!("\tpromoting {}", id);
+                // Check if any turtle has pending events and promote them to ready if that is the case
+                if !turtle.event_queue.is_empty() {
                     self.ready.insert(*id);
                 }
             }
@@ -224,8 +219,8 @@ impl Simulation {
                 .get(&id)
                 .ok_or(Error::RuntimeError("turtle not registered".to_string()))?;
 
+            // Get the resume value (i.e: any event in the queue for this turtle)
             let resume_args = {
-                // Get the resume value (i.e: any event in the queue for this turtle)
                 let mut state = self.state.borrow_mut();
                 let turtle = state
                     .turtles
