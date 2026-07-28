@@ -142,3 +142,47 @@ function __wrapWebSocketHandle(handle, id)
 
     return handle
 end
+
+-- override require
+package = {}
+package.loaded = {}
+package.path = "?.lua;?/init.lua"
+
+function require(name)
+    print("require : " .. name)
+    if package.loaded[name] ~= nil then
+        return package.loaded[name]
+    end
+
+    local path_name = name:gsub("%.", "/")
+    local tried = {}
+    local source, resolved_path
+
+    for pattern in package.path:gmatch("[^;]+") do
+        local candidate = pattern:gsub("%?", path_name)
+        table.insert(tried, candidate)
+        local h = fs.open(candidate, "r")
+        if h then
+            source = h.readAll()
+            h.close()
+            resolved_path = candidate
+            break
+        end
+    end
+
+    if not source then
+        error("module '" .. name .. "' not found:\n\tno file '"
+            .. table.concat(tried, "'\n\tno file '") .. "'", 2)
+    end
+
+    local chunk, err = load(source, "=" .. resolved_path)
+    if not chunk then
+        error("error loading module '" .. name .. "':\n\t" .. err, 0)
+    end
+
+    package.loaded[name] = true -- guards against infinite recursion on require cycles
+    local result = chunk(name, resolved_path)
+    if result == nil then result = true end
+    package.loaded[name] = result
+    return result
+end
