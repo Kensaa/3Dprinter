@@ -88,7 +88,7 @@ function countA(a)
 end
 
 function maxA(a)
-    maxI = 0
+    maxI = nil
     for k, v in pairs(a) do
         if a[maxI] == nil then
             maxI = k
@@ -120,8 +120,7 @@ function locate()
     x = maxA(cntX)
     y = maxA(cntY)
     z = maxA(cntZ)
-    -- marchera pas en 0 0 0
-    if x == 0 and y == 0 and z == 0 then
+    if x == nil and y == nil and z == nil then
         return locate()
     end
     return x, y, z
