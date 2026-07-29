@@ -34,11 +34,19 @@ pub struct TurtleState {
     pub http_requests: Vec<HTTPRequest>,
 }
 
+#[repr(usize)]
+pub enum EquipmentSlot {
+    Left = 0,
+    Right,
+}
+
 static NEXT_TURTLE_ID: AtomicUsize = AtomicUsize::new(0);
 pub struct TurtleBuilder {
     label: Option<String>,
     position: Option<Position>,
     heading: Option<Heading>,
+    inventory: [Option<Slot>; INVENTORY_SIZE],
+    equipment: [Option<Slot>; 2],
 }
 
 impl TurtleBuilder {
@@ -47,6 +55,8 @@ impl TurtleBuilder {
             label: None,
             position: None,
             heading: None,
+            equipment: Default::default(),
+            inventory: Default::default(),
         }
     }
     pub fn build(self) -> TurtleState {
@@ -55,9 +65,9 @@ impl TurtleBuilder {
             label: self.label,
             position: self.position.unwrap_or((0, 0, 0)),
             heading: self.heading.unwrap_or(Heading::North),
-            inventory: Default::default(),
+            inventory: self.inventory,
             selected_slot: 1,
-            equipment: Default::default(),
+            equipment: self.equipment,
             event_queue: Default::default(),
             websockets: Default::default(),
             next_websocket_id: 0,
@@ -76,6 +86,16 @@ impl TurtleBuilder {
     }
     pub fn with_heading(mut self, heading: Heading) -> Self {
         self.heading = Some(heading);
+        self
+    }
+    pub fn with_item(mut self, slot: usize, item: impl Into<String>, count: u8) -> Self {
+        assert!(slot > 0);
+        assert!(slot <= 16);
+        self.inventory[slot - 1] = Some(Slot::new(item, count));
+        self
+    }
+    pub fn with_equipment(mut self, slot: EquipmentSlot, item: impl Into<String>) -> Self {
+        self.equipment[slot as usize] = Some(Slot::new(item, 1));
         self
     }
 }

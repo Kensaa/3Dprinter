@@ -1,8 +1,12 @@
 use clap::{Parser, arg};
-use std::{eprintln, format, process, time::Instant};
+use std::{process, time::Instant};
 use url::Url;
 
-use crate::{simulation::Simulation, turtle::TurtleBuilder, utils::Heading};
+use crate::{
+    simulation::Simulation,
+    turtle::{EquipmentSlot, TurtleBuilder},
+    utils::Heading,
+};
 
 mod cc_api;
 mod content_reader;
@@ -59,6 +63,13 @@ fn main() {
                     .with_label(format!("printer {i}"))
                     .with_position((i as isize, 0, 0))
                     .with_heading(Heading::North)
+                    .with_equipment(EquipmentSlot::Left, "advancedperipherals:chunk_controller")
+                    .with_equipment(
+                        EquipmentSlot::Right,
+                        "computercraft:wireless_modem_advanced",
+                    )
+                    .with_item(15, "minecraft:diamond_pickaxe", 1)
+                    .with_item(16, "enderstorage:ender_chest", 1)
                     .build(),
             )
             .unwrap();

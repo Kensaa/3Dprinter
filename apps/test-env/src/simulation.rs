@@ -16,15 +16,14 @@ use mlua::{
 use crate::{
     cc_api::register_api,
     content_reader::make_read_handle,
-    turtle::{TurtleBuilder, TurtleState},
-    utils::{EventArg, HTTPResponse, Heading},
-    world::{Position, World},
+    turtle::TurtleState,
+    utils::{EventArg, HTTPResponse},
+    world::World,
 };
 
 pub struct SimState {
     pub world: World,
     pub turtles: HashMap<usize, TurtleState>,
-    next_turtle_id: usize,
 
     pub clock: u64,
 
@@ -39,7 +38,6 @@ impl SimState {
         Self {
             world: World::new(),
             turtles: HashMap::new(),
-            next_turtle_id: 0,
             clock: 0,
             next_timer_id: 0,
             timers: BinaryHeap::new(),
