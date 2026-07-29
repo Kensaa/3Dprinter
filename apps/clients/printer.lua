@@ -18,7 +18,11 @@ websocket = require "libs/websocket"
 
 function equipPickaxe()
     turtle.select(15)
-    if turtle.getItemDetail().name ~= 'minecraft:diamond_pickaxe' then
+    local detail = turtle.getItemDetail()
+    if detail == nil then
+        error("there is no item in slot 15")
+    end
+    if detail.name ~= 'minecraft:diamond_pickaxe' then
         turtle.select(1)
         return
     end
@@ -28,7 +32,11 @@ end
 
 function equipModem()
     turtle.select(15)
-    if turtle.getItemDetail().name ~= 'computercraft:wireless_modem_advanced' then
+    local detail = turtle.getItemDetail()
+    if detail == nil then
+        error("there is no item in slot 15")
+    end
+    if detail.name ~= 'computercraft:wireless_modem_advanced' then
         turtle.select(1)
         return
     end

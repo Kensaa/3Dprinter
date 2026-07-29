@@ -149,7 +149,6 @@ package.loaded = {}
 package.path = "?.lua;?/init.lua"
 
 function require(name)
-    print("require : " .. name)
     if package.loaded[name] ~= nil then
         return package.loaded[name]
     end

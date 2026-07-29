@@ -107,7 +107,7 @@ impl Simulation {
 
         let lua = Lua::new();
         register_api(&lua, &self.state, id)?;
-        lua.load(PRELUDE).exec()?;
+        lua.load(PRELUDE).set_name("=PRELUDE").exec()?;
 
         let func = lua
             .load(&source)
