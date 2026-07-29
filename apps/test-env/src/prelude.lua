@@ -207,3 +207,52 @@ function http.post(url, body, headers, binary)
     http.request(url, body, headers, binary)
     return wait_for_response(url)
 end
+
+shell = {}
+function shell.run(cmd)
+    local args = {}
+    for arg in cmd:gmatch("%S+") do
+        -- arg = arg:gsub("^%s*(.-)%s*$", "%1")
+        table.insert(args, arg)
+    end
+    if args[1] == "wget" then
+        local function getFilename(url)
+            url = url:gsub("[#?].*", ""):gsub("/+$", "")
+            return url:match("/([^/]+)$")
+        end
+        local url = args[2]
+        local sFile = args[3] or getFilename(url) or url
+        if fs.exists(sFile) then
+            error("File already exists")
+            return
+        end
+
+        local ok, err = http.checkURL(url)
+        if not ok then
+            error(err or "Invalid URL.")
+            return
+        end
+
+
+        local response, err = http.get(url)
+        if not response then
+            error(err)
+            return
+        end
+
+        local res = response.readAll()
+        response.close()
+
+        if not res then return end
+
+        local file, err = fs.open(sFile, "wb")
+        if not file then
+            error("Cannot save file: " .. err)
+        end
+
+        file.write(res)
+        file.close()
+    else
+        error(cmd .. " unsupported")
+    end
+end
