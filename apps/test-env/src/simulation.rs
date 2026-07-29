@@ -16,7 +16,7 @@ use mlua::{
 use crate::{
     cc_api::register_api,
     content_reader::make_read_handle,
-    turtle::TurtleState,
+    turtle::{TurtleBuilder, TurtleState},
     utils::{EventArg, HTTPResponse, Heading},
     world::{Position, World},
 };
@@ -44,22 +44,6 @@ impl SimState {
             next_timer_id: 0,
             timers: BinaryHeap::new(),
         }
-    }
-
-    fn spawn_turtle(
-        &mut self,
-        label: Option<impl Into<String>>,
-        position: Position,
-        heading: Heading,
-    ) -> usize {
-        let id = self.next_turtle_id;
-        self.next_turtle_id += 1;
-
-        let turtle = TurtleState::new(id, label, position, heading);
-
-        self.world.add_turtle(&turtle);
-        self.turtles.insert(id, turtle);
-        id
     }
 
     pub fn new_timer(&mut self, turtle_id: usize, deadline: u64) -> usize {
@@ -94,24 +78,20 @@ impl Simulation {
         }
     }
 
-    pub fn add_turtle(
-        &mut self,
-        source: String,
-        label: Option<impl Into<String>>,
-        position: Position,
-        heading: Heading,
-    ) -> LuaResult<usize> {
-        let id = self
-            .state
-            .borrow_mut()
-            .spawn_turtle(label, position, heading);
+    pub fn add_turtle(&mut self, source: impl Into<String>, turtle: TurtleState) -> LuaResult<()> {
+        let id = turtle.id;
+        {
+            let mut state = self.state.borrow_mut();
+            state.world.add_turtle(&turtle);
+            state.turtles.insert(id, turtle);
+        }
 
         let lua = Lua::new();
         register_api(&lua, &self.state, id)?;
         lua.load(PRELUDE).set_name("=PRELUDE").exec()?;
 
         let func = lua
-            .load(&source)
+            .load(&source.into())
             .set_name(format!("=printer {}", id))
             .into_function()?;
         let thread = lua.create_thread(func)?;
@@ -119,7 +99,7 @@ impl Simulation {
 
         self.lua_vms.insert(id, lua);
         self.ready.insert(id);
-        Ok(id)
+        Ok(())
     }
 
     fn resume_turtle(&mut self, turtle_id: usize, resume_args: MultiValue) -> LuaResult<()> {

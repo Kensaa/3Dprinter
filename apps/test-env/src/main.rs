@@ -2,7 +2,7 @@ use clap::{Parser, arg};
 use std::{eprintln, format, process, time::Instant};
 use url::Url;
 
-use crate::{simulation::Simulation, utils::Heading};
+use crate::{simulation::Simulation, turtle::TurtleBuilder, utils::Heading};
 
 mod cc_api;
 mod content_reader;
@@ -55,9 +55,11 @@ fn main() {
         simulation
             .add_turtle(
                 source.clone(),
-                Some(format!("printer {i}")),
-                (i as isize, 0, 0),
-                Heading::North,
+                TurtleBuilder::new()
+                    .with_label(format!("printer {i}"))
+                    .with_position((i as isize, 0, 0))
+                    .with_heading(Heading::North)
+                    .build(),
             )
             .unwrap();
     }

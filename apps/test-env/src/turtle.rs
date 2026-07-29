@@ -8,7 +8,7 @@ use std::{
     collections::{HashMap, VecDeque},
     format,
     net::TcpStream,
-    sync::mpsc,
+    sync::{atomic::AtomicUsize, mpsc},
     thread, unreachable,
 };
 use tungstenite::{WebSocket, stream::MaybeTlsStream};
@@ -34,33 +34,53 @@ pub struct TurtleState {
     pub http_requests: Vec<HTTPRequest>,
 }
 
-impl TurtleState {
-    pub fn new(
-        id: usize,
-        label: Option<impl Into<String>>,
-        position: Position,
-        heading: Heading,
-    ) -> Self {
+static NEXT_TURTLE_ID: AtomicUsize = AtomicUsize::new(0);
+pub struct TurtleBuilder {
+    label: Option<String>,
+    position: Option<Position>,
+    heading: Option<Heading>,
+}
+
+impl TurtleBuilder {
+    pub fn new() -> TurtleBuilder {
         Self {
-            id,
-            label: label.map(|s| s.into()),
-            position,
-            heading,
+            label: None,
+            position: None,
+            heading: None,
+        }
+    }
+    pub fn build(self) -> TurtleState {
+        TurtleState {
+            id: NEXT_TURTLE_ID.fetch_add(1, std::sync::atomic::Ordering::Relaxed),
+            label: self.label,
+            position: self.position.unwrap_or((0, 0, 0)),
+            heading: self.heading.unwrap_or(Heading::North),
             inventory: Default::default(),
             selected_slot: 1,
             equipment: Default::default(),
-
-            event_queue: VecDeque::new(),
-
-            websockets: HashMap::new(),
+            event_queue: Default::default(),
+            websockets: Default::default(),
             next_websocket_id: 0,
-
             fs_root: Node::create_root(),
-
-            http_requests: Vec::new(),
+            http_requests: Default::default(),
         }
     }
 
+    pub fn with_label(mut self, label: String) -> Self {
+        self.label = Some(label);
+        self
+    }
+    pub fn with_position(mut self, position: Position) -> Self {
+        self.position = Some(position);
+        self
+    }
+    pub fn with_heading(mut self, heading: Heading) -> Self {
+        self.heading = Some(heading);
+        self
+    }
+}
+
+impl TurtleState {
     pub fn front_pos(&self) -> Position {
         self.heading + self.position
     }
