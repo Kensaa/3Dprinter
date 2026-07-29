@@ -1,4 +1,5 @@
 use crate::{
+    content_reader::ReadHandleContent,
     filesystem::Node,
     world::{BlockDetail, Position, World},
 };
@@ -8,11 +9,12 @@ use std::{
     format,
     net::TcpStream,
     ops::Add,
+    println,
     sync::mpsc,
     thread, unreachable,
 };
 use tungstenite::{WebSocket, stream::MaybeTlsStream};
-use ureq::http::StatusCode;
+use ureq::{Body, http::StatusCode};
 
 const INVENTORY_SIZE: usize = 16;
 
@@ -145,7 +147,7 @@ pub struct HTTPRequest {
 }
 pub struct HTTPResponse {
     pub code: StatusCode,
-    pub body: String,
+    pub body: ReadHandleContent,
     pub headers: HashMap<String, String>,
 }
 
@@ -432,6 +434,7 @@ impl TurtleState {
         method: HTTPMethod,
         body: Option<String>,
         headers: Vec<(String, String)>,
+        binary: bool,
     ) {
         let (sender, receiver) = mpsc::channel();
 
@@ -487,7 +490,14 @@ impl TurtleState {
                                 }
                             })
                             .collect();
-                        let body = res.into_body().read_to_string();
+                        let body = if binary {
+                            res.into_body().read_to_vec().map(ReadHandleContent::from)
+                            // ReadHandleContent::from(res.into_body().read_to_vec()?)
+                        } else {
+                            res.into_body()
+                                .read_to_string()
+                                .map(ReadHandleContent::from)
+                        };
                         match body {
                             Ok(body) => Ok(HTTPResponse {
                                 code: status,

@@ -5,5 +5,13 @@
 --     print(a, b, c, d, e, f)
 -- end
 
-local a, b, c, d, e = http.get("http://localhost:4321")
-print(a, b, c, d, e)
+local res, err, h = http.get("http://localhost:4321/redirect", {}, true)
+print(res.getResponseCode())
+-- print(res.readAll())
+print(res.read())
+
+-- local res, err, h = http.get("http://localhost:4321/fail")
+
+-- print(err)
+-- print(h.readAll())
+-- print(h.getResponseCode())

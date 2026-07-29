@@ -1,4 +1,5 @@
 use crate::{
+    content_reader::make_read_handle,
     filesystem::Path,
     simulation::SharedState,
     turtle::{EventArg, HTTPMethod},
@@ -400,7 +401,7 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
             let method =
                 HTTPMethod::from_string(method_str).map_err(|err| Error::RuntimeError(err))?;
 
-            turtle.new_request(url, method, body, headers);
+            turtle.new_request(url, method, body, headers, binary);
             Ok(())
         }
     );
@@ -592,39 +593,6 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
     globals.set("fs", fs_table)?;
 
     Ok(())
-}
-fn make_read_handle(lua: &Lua, content: String) -> LuaResult<Table> {
-    let table = lua.create_table()?;
-    let cursor = Rc::new(RefCell::new(0usize));
-    let lines: Rc<Vec<String>> = Rc::new(content.lines().map(String::from).collect());
-
-    table.set(
-        "readAll",
-        lua.create_function({
-            let content = content.clone();
-            move |lua, ()| lua.create_string(&content).map(Value::String)
-        })?,
-    )?;
-
-    table.set(
-        "readLine",
-        lua.create_function({
-            let lines = lines.clone();
-            let cursor = cursor.clone();
-            move |lua, ()| {
-                let mut i = cursor.borrow_mut();
-                if *i >= lines.len() {
-                    return Ok(Value::Nil);
-                }
-                let line = lua.create_string(&lines[*i])?;
-                *i += 1;
-                Ok(Value::String(line))
-            }
-        })?,
-    )?;
-
-    table.set("close", lua.create_function(|_, ()| Ok(()))?)?;
-    Ok(table)
 }
 
 fn make_write_handle(

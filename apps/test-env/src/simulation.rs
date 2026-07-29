@@ -15,6 +15,7 @@ use mlua::{
 
 use crate::{
     cc_api::register_api,
+    content_reader::make_read_handle,
     turtle::{EventArg, HTTPResponse, Heading, TurtleState},
     world::{Position, World},
 };
@@ -200,54 +201,23 @@ impl Simulation {
     fn poll_requests(&self, turtle: &mut TurtleState) -> LuaResult<()> {
         let lua = self.lua_vms.get(&turtle.id).expect("unknown turtle id");
         fn make_response_handle(lua: &Lua, response: HTTPResponse) -> LuaResult<Table> {
-            let handle = lua.create_table()?;
-            let lines: Rc<Vec<String>> = Rc::new(response.body.lines().map(String::from).collect());
-            let full_body = response.body.clone();
-            let cursor = Rc::new(RefCell::new(0usize));
-            let code = response.code;
-            let headers = response.headers.clone();
-
-            handle.set(
-                "readAll",
-                lua.create_function(move |lua, ()| {
-                    lua.create_string(&full_body).map(Value::String)
-                })?,
-            )?;
-
-            handle.set(
-                "readLine",
-                lua.create_function({
-                    let lines = lines.clone();
-                    let cursor = cursor.clone();
-                    move |lua, ()| {
-                        let mut i = cursor.borrow_mut();
-                        if *i >= lines.len() {
-                            return Ok(Value::Nil);
-                        }
-                        let line = lua.create_string(&lines[*i])?;
-                        *i += 1;
-                        Ok(Value::String(line))
-                    }
-                })?,
-            )?;
+            let handle = make_read_handle(lua, response.body)?;
 
             handle.set(
                 "getResponseCode",
-                lua.create_function(move |_, ()| Ok(code.as_u16()))?,
+                lua.create_function(move |_, ()| Ok(response.code.as_u16()))?,
             )?;
 
             handle.set(
                 "getResponseHeaders",
                 lua.create_function(move |lua, ()| {
                     let t = lua.create_table()?;
-                    for (k, v) in &headers {
+                    for (k, v) in &response.headers {
                         t.set(k.as_str(), v.as_str())?;
                     }
                     Ok(t)
                 })?,
             )?;
-
-            handle.set("close", lua.create_function(|_, ()| Ok(()))?)?;
 
             Ok(handle)
         }

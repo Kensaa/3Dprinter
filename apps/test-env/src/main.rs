@@ -3,6 +3,7 @@ use std::{fs, time::Instant};
 use crate::{simulation::Simulation, turtle::Heading};
 
 mod cc_api;
+mod content_reader;
 mod filesystem;
 mod simulation;
 mod turtle;
