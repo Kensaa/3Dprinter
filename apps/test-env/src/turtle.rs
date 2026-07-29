@@ -9,12 +9,11 @@ use std::{
     format,
     net::TcpStream,
     ops::Add,
-    println,
     sync::mpsc,
     thread, unreachable,
 };
 use tungstenite::{WebSocket, stream::MaybeTlsStream};
-use ureq::{Body, http::StatusCode};
+use ureq::http::StatusCode;
 
 const INVENTORY_SIZE: usize = 16;
 

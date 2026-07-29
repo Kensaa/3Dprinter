@@ -1,10 +1,7 @@
 local config = {
     fuel = "minecraft:coal",
-    buildBlock = "minecraft:cobblestone",
     gpsTry = 5
 }
-
-local url = "$WS_URL$"
 
 fs.delete('libs')
 fs.makeDir('libs')
@@ -923,7 +920,7 @@ function init()
         turtle.dig()
     end
     nbt = turtle.getItemDetail(16).nbt
-    websocket.connect(url, {
+    websocket.connect("$WS_URL$", {
         label = os.getComputerLabel() or "unnamed printer",
         id = os.getComputerID(),
         type =

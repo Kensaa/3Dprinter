@@ -406,6 +406,19 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         }
     );
 
+    turtle_method!(
+        http_table,
+        "checkURL",
+        |lua, url: String| {},
+        |turtle, state, shared| { Ok(url.starts_with("https://") || url.starts_with("http://")) }
+    );
+    turtle_method!(
+        http_table,
+        "checkURLAsync",
+        |lua, url: String| {},
+        |turtle, state, shared| { Ok(url.starts_with("https://") || url.starts_with("http://")) }
+    );
+
     globals.set("http", http_table)?;
 
     let peripheral_table = lua.create_table()?;
