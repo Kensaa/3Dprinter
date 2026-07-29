@@ -173,6 +173,20 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         }
     );
 
+    // TODO: true fuel handling
+    turtle_method!(
+        turtle_table,
+        "getFuelLevel",
+        |_, _: ()| {},
+        |turtle, state, shared| { Ok(999999999) }
+    );
+    turtle_method!(
+        turtle_table,
+        "refuel",
+        |_, _: ()| {},
+        |turtle, state, shared| { Ok(()) }
+    );
+
     no_arg_turtle_method!(turtle_table, "getSelectedSlot", get_selected_slot);
     no_arg_turtle_method!(turtle_table, "equipLeft", equip_left);
     no_arg_turtle_method!(turtle_table, "equipRight", equip_right);
