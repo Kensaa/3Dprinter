@@ -4,16 +4,18 @@ use std::{
     collections::{BinaryHeap, HashMap, HashSet},
     io,
     rc::Rc,
+    sync::mpsc,
     vec,
 };
 
 use mlua::{
-    Error, IntoLua, Lua, MultiValue, Result as LuaResult, Thread, Value, thread::ThreadStatus,
+    Error, IntoLua, Lua, MultiValue, Result as LuaResult, Table, Thread, Value,
+    thread::ThreadStatus,
 };
 
 use crate::{
     cc_api::register_api,
-    turtle::{EventArg, Heading, TurtleState},
+    turtle::{EventArg, HTTPResponse, Heading, TurtleState},
     world::{Position, World},
 };
 
@@ -145,7 +147,7 @@ impl Simulation {
         Ok(())
     }
 
-    fn poll_socket(&self, turtle: &mut TurtleState) -> LuaResult<()> {
+    fn poll_sockets(&self, turtle: &mut TurtleState) -> LuaResult<()> {
         let messages = turtle
             .websockets
             .iter_mut()
@@ -195,13 +197,119 @@ impl Simulation {
         Ok(())
     }
 
+    fn poll_requests(&self, turtle: &mut TurtleState) -> LuaResult<()> {
+        let lua = self.lua_vms.get(&turtle.id).expect("unknown turtle id");
+        fn make_response_handle(lua: &Lua, response: HTTPResponse) -> LuaResult<Table> {
+            let handle = lua.create_table()?;
+            let lines: Rc<Vec<String>> = Rc::new(response.body.lines().map(String::from).collect());
+            let full_body = response.body.clone();
+            let cursor = Rc::new(RefCell::new(0usize));
+            let code = response.code;
+            let headers = response.headers.clone();
+
+            handle.set(
+                "readAll",
+                lua.create_function(move |lua, ()| {
+                    lua.create_string(&full_body).map(Value::String)
+                })?,
+            )?;
+
+            handle.set(
+                "readLine",
+                lua.create_function({
+                    let lines = lines.clone();
+                    let cursor = cursor.clone();
+                    move |lua, ()| {
+                        let mut i = cursor.borrow_mut();
+                        if *i >= lines.len() {
+                            return Ok(Value::Nil);
+                        }
+                        let line = lua.create_string(&lines[*i])?;
+                        *i += 1;
+                        Ok(Value::String(line))
+                    }
+                })?,
+            )?;
+
+            handle.set(
+                "getResponseCode",
+                lua.create_function(move |_, ()| Ok(code.as_u16()))?,
+            )?;
+
+            handle.set(
+                "getResponseHeaders",
+                lua.create_function(move |lua, ()| {
+                    let t = lua.create_table()?;
+                    for (k, v) in &headers {
+                        t.set(k.as_str(), v.as_str())?;
+                    }
+                    Ok(t)
+                })?,
+            )?;
+
+            handle.set("close", lua.create_function(|_, ()| Ok(()))?)?;
+
+            Ok(handle)
+        }
+
+        let mut events = Vec::new();
+        turtle
+            .http_requests
+            .retain(|req| match req.receiver.try_recv() {
+                Ok(Ok(response)) => {
+                    let code = response.code.clone();
+                    match make_response_handle(lua, response) {
+                        Ok(handle) if code.is_success() => events.push((
+                            "http_success",
+                            vec![EventArg::Str(req.url.clone()), EventArg::Table(handle)],
+                        )),
+                        Ok(handle) => events.push((
+                            "http_failure",
+                            vec![
+                                EventArg::Str(req.url.clone()),
+                                EventArg::Str(
+                                    code.canonical_reason()
+                                        .unwrap_or("request failed")
+                                        .to_string(),
+                                ),
+                                EventArg::Table(handle),
+                            ],
+                        )),
+                        Err(e) => events.push((
+                            "http_failure",
+                            vec![
+                                EventArg::Str(req.url.clone()),
+                                EventArg::Str(format!("internal error building response: {e}")),
+                            ],
+                        )),
+                    }
+                    false
+                }
+                Ok(Err(error)) => {
+                    events.push((
+                        "http_failure",
+                        vec![EventArg::Str(req.url.clone()), EventArg::Str(error)],
+                    ));
+                    false
+                }
+                Err(mpsc::TryRecvError::Empty) => true, // still in flight
+                Err(mpsc::TryRecvError::Disconnected) => false, // thread panicked
+            });
+
+        for (name, args) in events {
+            turtle.push_event(name, args);
+        }
+        Ok(())
+    }
+
     pub fn step(&mut self) -> LuaResult<()> {
         // Promotes any turtle that has a websocket message pending
         {
             let mut state = self.state.borrow_mut();
             for (id, turtle) in state.turtles.iter_mut() {
                 // Collect messages pending from each websocket
-                self.poll_socket(turtle)?;
+                self.poll_sockets(turtle)?;
+                self.poll_requests(turtle)?;
 
                 // Check if any turtle has pending events and promote them to ready if that is the case
                 if !turtle.event_queue.is_empty() {

@@ -9,7 +9,7 @@ mod turtle;
 mod world;
 
 fn main() {
-    let source1 = fs::read_to_string("tests/testfs.lua").expect("failed to read turtle source");
+    let source1 = fs::read_to_string("tests/testhttp.lua").expect("failed to read turtle source");
     // let source2 = fs::read_to_string("tests/test2.lua").expect("failed to read turtle source");
 
     let mut simulation = Simulation::new();

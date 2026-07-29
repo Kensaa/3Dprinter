@@ -2,14 +2,17 @@ use crate::{
     filesystem::Node,
     world::{BlockDetail, Position, World},
 };
-use mlua::{Error, FromLua, IntoLua, Lua, Result as LuaResult, Value};
+use mlua::{Error, FromLua, IntoLua, Lua, Result as LuaResult, Table, Value};
 use std::{
     collections::{HashMap, VecDeque},
     format,
     net::TcpStream,
     ops::Add,
+    sync::mpsc,
+    thread, unreachable,
 };
 use tungstenite::{WebSocket, stream::MaybeTlsStream};
+use ureq::http::StatusCode;
 
 const INVENTORY_SIZE: usize = 16;
 
@@ -104,6 +107,7 @@ pub enum EventArg {
     Int(i64),
     Num(f64),
     Str(String),
+    Table(Table),
 }
 impl IntoLua for EventArg {
     fn into_lua(self, lua: &Lua) -> LuaResult<Value> {
@@ -113,6 +117,7 @@ impl IntoLua for EventArg {
             EventArg::Int(i) => Ok(Value::Integer(i)),
             EventArg::Num(n) => Ok(Value::Number(n)),
             EventArg::Str(s) => Ok(Value::String(lua.create_string(s)?)),
+            EventArg::Table(table) => Ok(Value::Table(table)),
         }
     }
 }
@@ -124,6 +129,7 @@ impl FromLua for EventArg {
             Value::Integer(i) => Ok(Self::Int(i)),
             Value::Number(n) => Ok(Self::Num(n)),
             Value::String(s) => Ok(Self::Str(s.to_string_lossy())),
+            Value::Table(table) => Ok(Self::Table(table)),
             _ => Err(Error::FromLuaConversionError {
                 from: value.type_name(),
                 to: "EventArg".to_string(),
@@ -131,6 +137,16 @@ impl FromLua for EventArg {
             }),
         }
     }
+}
+
+pub struct HTTPRequest {
+    pub url: String,
+    pub receiver: mpsc::Receiver<Result<HTTPResponse, String>>,
+}
+pub struct HTTPResponse {
+    pub code: StatusCode,
+    pub body: String,
+    pub headers: HashMap<String, String>,
 }
 
 pub struct TurtleState {
@@ -148,6 +164,8 @@ pub struct TurtleState {
     next_websocket_id: usize,
 
     pub fs_root: Node,
+
+    pub http_requests: Vec<HTTPRequest>,
 }
 
 impl TurtleState {
@@ -172,6 +190,8 @@ impl TurtleState {
             next_websocket_id: 0,
 
             fs_root: Node::create_root(),
+
+            http_requests: Vec::new(),
         }
     }
 
@@ -404,5 +424,125 @@ impl TurtleState {
         }?;
 
         Ok(heading + self.position)
+    }
+
+    pub fn new_request(
+        &mut self,
+        url: String,
+        method: HTTPMethod,
+        body: Option<String>,
+        headers: Vec<(String, String)>,
+    ) {
+        let (sender, receiver) = mpsc::channel();
+
+        thread::spawn({
+            let url = url.clone();
+            move || {
+                let res = if method.has_body() {
+                    let mut req = match method {
+                        HTTPMethod::POST => ureq::post(url),
+                        HTTPMethod::PUT => ureq::put(url),
+                        HTTPMethod::PATCH => ureq::patch(url),
+                        _ => unreachable!(),
+                    };
+                    req = req.config().http_status_as_error(false).build().into();
+                    req = headers
+                        .into_iter()
+                        .fold(req, |req, (k, v)| req.header(k, v));
+
+                    if let Some(body) = body {
+                        req.send(body)
+                    } else {
+                        req.send_empty()
+                    }
+                } else {
+                    let mut req = match method {
+                        HTTPMethod::GET => ureq::get(url),
+                        HTTPMethod::HEAD => ureq::head(url),
+                        HTTPMethod::DELETE => ureq::delete(url),
+                        HTTPMethod::OPTIONS => ureq::options(url),
+                        HTTPMethod::TRACE => ureq::trace(url),
+                        _ => unreachable!(),
+                    };
+                    req = req.config().http_status_as_error(false).build().into();
+                    req = headers
+                        .into_iter()
+                        .fold(req, |req, (k, v)| req.header(k, v));
+
+                    req.call()
+                };
+
+                let res = match res {
+                    Err(err) => Err(err.to_string()),
+                    Ok(res) => {
+                        let status = res.status();
+                        let headers: HashMap<String, String> = res
+                            .headers()
+                            .into_iter()
+                            .filter_map(|(k, v)| {
+                                if let Ok(val) = v.to_str() {
+                                    Some((k.to_string(), val.to_string()))
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect();
+                        let body = res.into_body().read_to_string();
+                        match body {
+                            Ok(body) => Ok(HTTPResponse {
+                                code: status,
+                                body,
+                                headers,
+                            }),
+                            Err(err) => Err(err.to_string()),
+                        }
+                    }
+                };
+                sender.send(res).unwrap();
+            }
+        });
+
+        self.http_requests.push(HTTPRequest { url, receiver })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum HTTPMethod {
+    GET,
+    POST,
+    HEAD,
+    OPTIONS,
+    PUT,
+    DELETE,
+    PATCH,
+    TRACE,
+}
+
+impl HTTPMethod {
+    pub fn has_body(&self) -> bool {
+        match self {
+            HTTPMethod::POST | HTTPMethod::PUT | HTTPMethod::PATCH => true,
+            HTTPMethod::GET
+            | HTTPMethod::HEAD
+            | HTTPMethod::DELETE
+            | HTTPMethod::OPTIONS
+            | HTTPMethod::TRACE => false,
+        }
+    }
+
+    pub fn from_string(method: String) -> Result<Self, String> {
+        match method.to_uppercase().as_str() {
+            "GET" => Ok(HTTPMethod::GET),
+            "POST" => Ok(HTTPMethod::POST),
+            "HEAD" => Ok(HTTPMethod::HEAD),
+            "OPTIONS" => Ok(HTTPMethod::OPTIONS),
+            "PUT" => Ok(HTTPMethod::PUT),
+            "DELETE" => Ok(HTTPMethod::DELETE),
+            "PATCH" => Ok(HTTPMethod::PATCH),
+            "TRACE" => Ok(HTTPMethod::TRACE),
+            other => {
+                return Err(format!("unsupported HTTP method: {other}"));
+            }
+        }
     }
 }

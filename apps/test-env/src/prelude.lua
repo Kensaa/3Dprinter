@@ -186,3 +186,24 @@ function require(name)
     package.loaded[name] = result
     return result
 end
+
+local function wait_for_response(expected_url)
+    while true do
+        local event, url, p1, p2 = os.pullEvent()
+        if event == "http_success" and url == expected_url then
+            return p1          -- the response handle
+        elseif event == "http_failure" and url == expected_url then
+            return nil, p1, p2 -- param here is the error string
+        end
+    end
+end
+
+function http.get(url, headers, binary)
+    http.request(url, nil, headers, binary)
+    return wait_for_response(url)
+end
+
+function http.post(url, body, headers, binary)
+    http.request(url, body, headers, binary)
+    return wait_for_response(url)
+end

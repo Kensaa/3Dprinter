@@ -1,4 +1,8 @@
-use crate::{filesystem::Path, simulation::SharedState, turtle::EventArg};
+use crate::{
+    filesystem::Path,
+    simulation::SharedState,
+    turtle::{EventArg, HTTPMethod},
+};
 use mlua::{Error, FromLua, IntoLua, Lua, MultiValue, Result as LuaResult, Table, Value, Variadic};
 use std::{cell::RefCell, format, rc::Rc};
 use tungstenite::Message;
@@ -337,6 +341,67 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
                     Ok(MultiValue::from_vec(vec![Value::Table(table)]))
                 }
             }
+        }
+    );
+
+    turtle_method!(
+        http_table,
+        "request",
+        |lua, args: Variadic<Value>| {},
+        |turtle, state, shared| {
+            // TODO: implement timeout, redirect
+            let (url, body, headers_raw, method, binary): (
+                String,
+                Option<String>,
+                Option<Table>,
+                Option<String>,
+                bool,
+            ) = match args.first() {
+                Some(Value::Table(table)) => (
+                    table.get("url")?,
+                    table.get("body")?,
+                    table.get("headers")?,
+                    table.get("method")?,
+                    table.get::<Option<bool>>("binary")?.unwrap_or(false),
+                ),
+                Some(Value::String(s)) => {
+                    let url = s.to_str()?.to_string();
+                    let body: Option<String> = args.get(1).and_then(|v| match v {
+                        Value::String(s) => s.to_str().ok().map(|s| s.to_string()),
+                        _ => None,
+                    });
+                    let headers_raw: Option<Table> = args.get(2).and_then(|v| match v {
+                        Value::Table(t) => Some(t.clone()),
+                        _ => None,
+                    });
+                    let binary = matches!(args.get(3), Some(Value::Boolean(true)));
+                    (url, body, headers_raw, None, binary)
+                }
+                _ => {
+                    return Err(mlua::Error::RuntimeError(
+                        "bad argument #1 (string or table expected)".to_string(),
+                    ));
+                }
+            };
+
+            let headers: Vec<(String, String)> = match headers_raw {
+                Some(t) => t.pairs::<String, String>().collect::<Result<_, _>>()?,
+                None => vec![],
+            };
+
+            // real CC: presence of `body` implies POST unless `method` overrides it
+            let method_str = method.unwrap_or_else(|| {
+                if body.is_some() {
+                    "POST".to_string()
+                } else {
+                    "GET".to_string()
+                }
+            });
+            let method =
+                HTTPMethod::from_string(method_str).map_err(|err| Error::RuntimeError(err))?;
+
+            turtle.new_request(url, method, body, headers);
+            Ok(())
         }
     );
 
