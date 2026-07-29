@@ -1,7 +1,7 @@
 use mlua::{IntoLua, Lua, Value};
 use std::collections::HashMap;
 
-use crate::turtle::{Heading, TurtleState};
+use crate::{turtle::TurtleState, utils::Heading};
 
 pub type Position = (isize, isize, isize);
 

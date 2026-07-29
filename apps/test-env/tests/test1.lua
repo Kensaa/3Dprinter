@@ -1,8 +1,4 @@
-local blockPresent, detail = turtle.inspect()
+-- shell.run("wget http://localhost:4321 test")
 
-print(blockPresent)
-if blockPresent then
-    print(detail.name, detail.state.facing)
-end
-
-print(peripheral.call("front", "getID"))
+-- local f = fs.open("test", "r")
+-- print(f.readAll())

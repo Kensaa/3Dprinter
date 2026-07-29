@@ -1,8 +1,6 @@
 use crate::{
-    content_reader::make_read_handle,
-    filesystem::Path,
-    simulation::SharedState,
-    turtle::{EventArg, HTTPMethod},
+    content_reader::make_read_handle, filesystem::Path, simulation::SharedState, utils::EventArg,
+    utils::HTTPMethod,
 };
 use mlua::{Error, FromLua, IntoLua, Lua, MultiValue, Result as LuaResult, Table, Value, Variadic};
 use std::{cell::RefCell, format, rc::Rc};

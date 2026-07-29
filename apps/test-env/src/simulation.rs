@@ -16,7 +16,8 @@ use mlua::{
 use crate::{
     cc_api::register_api,
     content_reader::make_read_handle,
-    turtle::{EventArg, HTTPResponse, Heading, TurtleState},
+    turtle::TurtleState,
+    utils::{EventArg, HTTPResponse, Heading},
     world::{Position, World},
 };
 

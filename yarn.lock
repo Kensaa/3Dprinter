@@ -3349,13 +3349,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globals@npm:^17.5.0":
-  version: 17.6.0
-  resolution: "globals@npm:17.6.0"
-  checksum: 10c0/cf94fb4329cc5c68cf81018fd68324f413181ee169f0235b0b33b82bc93fe7825a21beea951f83a80e8e4bbdad9c0c80515a145b5fd4b5cb52f2a80db899a93f
-  languageName: node
-  linkType: hard
-
 "glsl-noise@npm:^0.0.0":
   version: 0.0.0
   resolution: "glsl-noise@npm:0.0.0"
@@ -5431,7 +5424,6 @@ __metadata:
     eslint: "npm:^10.2.1"
     eslint-plugin-react-hooks: "npm:^7.1.1"
     eslint-plugin-react-refresh: "npm:^0.5.2"
-    globals: "npm:^17.5.0"
     lucide-react: "npm:^1.14.0"
     normalize.css: "npm:^8.0.1"
     react: "npm:^19.2.5"
