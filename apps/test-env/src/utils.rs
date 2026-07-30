@@ -3,7 +3,10 @@ use std::{collections::HashMap, ops::Add, sync::mpsc};
 use mlua::{Error, FromLua, IntoLua, Lua, Result as LuaResult, Table, Value};
 use ureq::http::StatusCode;
 
-use crate::{content_reader::ReadHandleContent, world::Position};
+use crate::{
+    content_reader::ReadHandleContent,
+    world::{ENDERCHEST_ID, Position},
+};
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,25 +69,61 @@ impl Heading {
 }
 
 #[derive(Debug, Clone)]
-pub struct Slot {
+pub struct ItemStack {
     pub name: String,
     pub count: u8,
+    pub nbt: Option<String>, // TODO: replace that by a true tree-like structure
 }
-impl IntoLua for Slot {
+impl IntoLua for ItemStack {
     fn into_lua(self, lua: &Lua) -> LuaResult<Value> {
         let table = lua.create_table()?;
         table.set("name", self.name)?;
         table.set("count", self.count)?;
         table.set("maxCount", 64)?;
+        table.set("nbt", self.nbt)?;
         Ok(Value::Table(table))
     }
 }
-impl Slot {
+impl ItemStack {
     pub fn new(name: impl Into<String>, count: u8) -> Self {
         Self {
             name: name.into(),
             count,
+            nbt: None,
         }
+    }
+    pub fn new_with_nbt(name: impl Into<String>, count: u8, nbt: impl Into<String>) -> Self {
+        Self {
+            name: name.into(),
+            count,
+            nbt: Some(nbt.into()),
+        }
+    }
+
+    /// Clone the item stack with count set to 1
+    pub fn to_block(&self) -> BlockType {
+        let mut itemstack = self.clone();
+        itemstack.count = 1;
+        if itemstack.name == ENDERCHEST_ID {
+            BlockType::Inventory(itemstack)
+        } else {
+            BlockType::Block(itemstack)
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum BlockType {
+    Block(ItemStack),
+    Inventory(ItemStack),
+}
+impl BlockType {
+    pub fn get_item(&self) -> ItemStack {
+        match self {
+            Self::Block(i) => i,
+            Self::Inventory(i) => i,
+        }
+        .clone()
     }
 }
 

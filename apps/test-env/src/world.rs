@@ -1,16 +1,24 @@
 use mlua::{IntoLua, Lua, Value};
 use std::collections::HashMap;
 
-use crate::{turtle::TurtleState, utils::Heading};
+use crate::{
+    turtle::TurtleState,
+    utils::{BlockType, Heading, ItemStack},
+};
 
 pub type Position = (isize, isize, isize);
 
+pub const ENDERCHEST_ID: &'static str = "enderstorage:ender_chest";
+const ENDERCHEST_SIZE: usize = 9 * 3;
+
 pub struct World {
-    pub blocks: HashMap<Position, String>,
+    pub blocks: HashMap<Position, BlockType>,
     // maps a position to the id of the turtle at that position
     pub turtle_pos: HashMap<Position, usize>,
     // maps a turtle to its heading
     pub turtle_heading: HashMap<usize, Heading>,
+    /// maps an enderchest nbt to its inventory
+    pub enderchests: HashMap<String, [Option<ItemStack>; ENDERCHEST_SIZE]>,
 }
 
 #[derive(Clone, Default)]
@@ -46,17 +54,18 @@ impl World {
             blocks: HashMap::new(),
             turtle_pos: HashMap::new(),
             turtle_heading: HashMap::new(),
+            enderchests: HashMap::new(),
         }
     }
 
-    pub fn get(&self, pos: Position) -> Option<&str> {
-        self.blocks.get(&pos).map(|s| s.as_str())
+    pub fn get(&self, pos: Position) -> Option<&BlockType> {
+        self.blocks.get(&pos)
     }
 
     pub fn get_block_detail(&self, pos: Position) -> Option<BlockDetail> {
         if let Some(block) = self.get(pos) {
             return Some(BlockDetail {
-                name: block.to_string(),
+                name: block.get_item().name.clone(),
                 state: BlockState::default(),
             });
         } else if let Some(turtle) = self.turtle_pos.get(&pos) {
@@ -72,11 +81,11 @@ impl World {
         return None;
     }
 
-    pub fn set(&mut self, pos: Position, block: impl Into<String>) {
-        self.blocks.insert(pos, block.into());
+    pub fn set(&mut self, pos: Position, block: BlockType) {
+        self.blocks.insert(pos, block);
     }
 
-    pub fn remove(&mut self, pos: Position) -> Option<String> {
+    pub fn remove(&mut self, pos: Position) -> Option<BlockType> {
         self.blocks.remove(&pos)
     }
 
@@ -111,5 +120,9 @@ impl World {
     pub fn add_turtle(&mut self, turtle: &TurtleState) {
         self.turtle_pos.insert(turtle.position, turtle.id);
         self.turtle_heading.insert(turtle.id, turtle.heading);
+    }
+
+    pub fn get_enderchest_inventory(&mut self, nbt: String) -> &mut [Option<ItemStack>] {
+        self.enderchests.entry(nbt).or_default()
     }
 }

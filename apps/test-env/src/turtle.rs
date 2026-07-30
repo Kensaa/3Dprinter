@@ -1,8 +1,8 @@
 use crate::{
     content_reader::ReadHandleContent,
     filesystem::Node,
-    utils::{EventArg, HTTPMethod, HTTPRequest, HTTPResponse, Heading, Slot},
-    world::{BlockDetail, Position, World},
+    utils::{BlockType, EventArg, HTTPMethod, HTTPRequest, HTTPResponse, Heading, ItemStack},
+    world::{BlockDetail, ENDERCHEST_ID, Position, World},
 };
 use std::{
     collections::{HashMap, VecDeque},
@@ -20,9 +20,9 @@ pub struct TurtleState {
     pub label: Option<String>,
     pub position: Position,
     pub heading: Heading,
-    pub inventory: [Option<Slot>; INVENTORY_SIZE],
+    pub inventory: [Option<ItemStack>; INVENTORY_SIZE],
     pub selected_slot: usize,
-    pub equipment: [Option<Slot>; 2],
+    pub equipment: [Option<ItemStack>; 2],
 
     pub event_queue: VecDeque<Vec<EventArg>>,
 
@@ -45,8 +45,8 @@ pub struct TurtleBuilder {
     label: Option<String>,
     position: Option<Position>,
     heading: Option<Heading>,
-    inventory: [Option<Slot>; INVENTORY_SIZE],
-    equipment: [Option<Slot>; 2],
+    inventory: [Option<ItemStack>; INVENTORY_SIZE],
+    equipment: [Option<ItemStack>; 2],
 }
 
 impl TurtleBuilder {
@@ -88,14 +88,15 @@ impl TurtleBuilder {
         self.heading = Some(heading);
         self
     }
-    pub fn with_item(mut self, slot: usize, item: impl Into<String>, count: u8) -> Self {
+    // pub fn with_item(mut self, slot: usize, item: impl Into<String>, count: u8) -> Self {
+    pub fn with_item(mut self, slot: usize, itemstack: ItemStack) -> Self {
         assert!(slot > 0);
         assert!(slot <= 16);
-        self.inventory[slot - 1] = Some(Slot::new(item, count));
+        self.inventory[slot - 1] = Some(itemstack);
         self
     }
     pub fn with_equipment(mut self, slot: EquipmentSlot, item: impl Into<String>) -> Self {
-        self.equipment[slot as usize] = Some(Slot::new(item, 1));
+        self.equipment[slot as usize] = Some(ItemStack::new(item, 1));
         self
     }
 }
@@ -166,7 +167,7 @@ impl TurtleState {
         self.selected_slot
     }
 
-    pub fn get_item_detail(&self, slot: Option<usize>) -> Option<Slot> {
+    pub fn get_item_detail(&self, slot: Option<usize>) -> Option<ItemStack> {
         let slot = slot.unwrap_or(self.selected_slot);
         self.inventory[slot - 1].clone()
     }
@@ -193,11 +194,11 @@ impl TurtleState {
         self.equip(1)
     }
 
-    pub fn get_equipped_left(&mut self) -> Option<Slot> {
+    pub fn get_equipped_left(&mut self) -> Option<ItemStack> {
         return self.equipment[0].clone();
     }
 
-    pub fn get_equipped_right(&mut self) -> Option<Slot> {
+    pub fn get_equipped_right(&mut self) -> Option<ItemStack> {
         return self.equipment[1].clone();
     }
 
@@ -213,7 +214,8 @@ impl TurtleState {
             }
             Some(slot) => slot,
         };
-        world.set(pos, item.name.clone());
+
+        world.set(pos, item.to_block());
         item.count -= 1;
         if item.count == 0 {
             *slot = None;
@@ -227,40 +229,59 @@ impl TurtleState {
             return false;
         }
 
-        let item = match world.remove(pos) {
+        let digged_block = match world.remove(pos) {
             Some(item) => item,
             None => return false, // TODO: this means that the current turtle tried to dig another turtle, implement better error handling here
-        };
-
-        let first_match = self.inventory[self.selected_slot - 1..]
-            .iter_mut()
-            .find_map(|slot| {
-                if let Some(content) = slot {
-                    if content.name == item && content.count < 64 {
-                        return Some(slot);
-                    } else {
-                        return None;
-                    }
-                } else {
-                    return Some(slot);
-                }
-            });
-
-        match first_match {
-            None => {} // Inventory is full,drop item on ground i.e. void it
-            Some(Some(content)) => {
-                content.count += 1;
-            }
-            Some(slot) => {
-                slot.replace(Slot::new(item, 1));
-            }
         }
+        .get_item();
+
+        move_itemstack_to_inventory(&mut self.inventory[self.selected_slot - 1..], digged_block);
 
         true
     }
 
     fn inspect_at(&mut self, world: &mut World, pos: Position) -> Option<BlockDetail> {
         world.get_block_detail(pos)
+    }
+
+    fn drop_at(&mut self, world: &mut World, pos: Position, count: Option<u8>) -> bool {
+        let count = count.unwrap_or(64);
+        let slot = &mut self.inventory[self.selected_slot - 1];
+
+        let item = match slot {
+            None => {
+                return false;
+            }
+            Some(item) => item,
+        };
+        let target_block = world.get(pos).cloned();
+        match target_block {
+            Some(BlockType::Inventory(itemstack)) => {
+                // Not useful but here in case I want to add other inventories that aren't enderchests
+                if itemstack.name == ENDERCHEST_ID {
+                    if let Some(nbt) = &itemstack.nbt {
+                        let inventory = world.get_enderchest_inventory(nbt.clone());
+                        let mut item_copy = item.clone();
+                        item_copy.count = item_copy.count.min(count);
+                        let moved_items = move_itemstack_to_inventory(inventory, item_copy);
+                        if moved_items == 0 {
+                            return false;
+                        }
+                        item.count -= moved_items;
+                        if item.count == 0 {
+                            *slot = None;
+                        }
+                    }
+                }
+            }
+            _ => {
+                item.count -= count.min(item.count);
+                if item.count == 0 {
+                    *slot = None;
+                }
+            }
+        }
+        true
     }
 
     pub fn dig_front(&mut self, world: &mut World) -> bool {
@@ -291,6 +312,16 @@ impl TurtleState {
     }
     pub fn inspect_down(&mut self, world: &mut World) -> Option<BlockDetail> {
         self.inspect_at(world, self.down_pos())
+    }
+
+    pub fn drop_front(&mut self, world: &mut World, count: Option<u8>) -> bool {
+        self.drop_at(world, self.front_pos(), count)
+    }
+    pub fn drop_up(&mut self, world: &mut World, count: Option<u8>) -> bool {
+        self.drop_at(world, self.up_pos(), count)
+    }
+    pub fn drop_down(&mut self, world: &mut World, count: Option<u8>) -> bool {
+        self.drop_at(world, self.down_pos(), count)
     }
 
     pub fn push_event(&mut self, name: impl Into<String>, mut args: Vec<EventArg>) {
@@ -418,4 +449,25 @@ impl TurtleState {
 
         self.http_requests.push(HTTPRequest { url, receiver })
     }
+}
+
+fn move_itemstack_to_inventory(inventory: &mut [Option<ItemStack>], mut item: ItemStack) -> u8 {
+    let start_count = item.count;
+    let mut inv_iter = inventory.iter_mut();
+
+    while let Some(slot) = inv_iter.next()
+        && item.count != 0
+    {
+        if let Some(content) = slot {
+            if content.name == item.name && content.nbt == item.nbt && content.count < 64 {
+                let to_move = (64 - content.count).min(item.count);
+                content.count += to_move;
+                item.count -= to_move;
+            }
+        } else {
+            slot.replace(item.clone());
+            item.count = 0;
+        };
+    }
+    return start_count - item.count;
 }

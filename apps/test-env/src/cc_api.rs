@@ -91,6 +91,25 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
 
     turtle_method!(
         turtle_table,
+        "drop",
+        |lua, count: Option<u8>| {},
+        |turtle, state, shared| { Ok(turtle.drop_front(&mut state.world, count)) }
+    );
+    turtle_method!(
+        turtle_table,
+        "dropUp",
+        |lua, count: Option<u8>| {},
+        |turtle, state, shared| { Ok(turtle.drop_up(&mut state.world, count)) }
+    );
+    turtle_method!(
+        turtle_table,
+        "dropDown",
+        |lua, count: Option<u8>| {},
+        |turtle, state, shared| { Ok(turtle.drop_down(&mut state.world, count)) }
+    );
+
+    turtle_method!(
+        turtle_table,
         "inspect",
         |lua, _: ()| {},
         |turtle, state, shared| {
