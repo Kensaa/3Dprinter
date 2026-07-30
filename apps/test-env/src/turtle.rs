@@ -256,21 +256,20 @@ impl TurtleState {
         };
         let target_block = world.get(pos).cloned();
         match target_block {
-            Some(BlockType::Inventory(itemstack)) => {
+            Some(BlockType::Inventory(itemstack)) if itemstack.is_enderchest() => {
                 // Not useful but here in case I want to add other inventories that aren't enderchests
-                if itemstack.name == ENDERCHEST_ID {
-                    if let Some(nbt) = &itemstack.nbt {
-                        let inventory = world.get_enderchest_inventory(nbt.clone());
-                        let mut item_copy = item.clone();
-                        item_copy.count = item_copy.count.min(count);
-                        let moved_items = move_itemstack_to_inventory(inventory, item_copy);
-                        if moved_items == 0 {
-                            return false;
-                        }
-                        item.count -= moved_items;
-                        if item.count == 0 {
-                            *slot = None;
-                        }
+
+                if let Some(nbt) = &itemstack.nbt {
+                    let inventory = world.get_enderchest_inventory(nbt.clone());
+                    let mut item_copy = item.clone();
+                    item_copy.count = item_copy.count.min(count);
+                    let moved_items = move_itemstack_to_inventory(inventory, item_copy);
+                    if moved_items == 0 {
+                        return false;
+                    }
+                    item.count -= moved_items;
+                    if item.count == 0 {
+                        *slot = None;
                     }
                 }
             }
@@ -282,6 +281,37 @@ impl TurtleState {
             }
         }
         true
+    }
+
+    fn suck_at(&mut self, world: &mut World, pos: Position, count: Option<u8>) -> bool {
+        let count = count.unwrap_or(64);
+        match world.get(pos).cloned() {
+            Some(BlockType::Inventory(block_itemstack)) if block_itemstack.is_enderchest() => {
+                if let Some(nbt) = &block_itemstack.nbt {
+                    let enderchest_inv = world.get_enderchest_inventory(nbt.clone());
+                    if let Some(slot) = enderchest_inv.iter_mut().find(|slot| slot.is_some()) {
+                        let item = slot.as_mut().unwrap();
+                        let mut item_copy = item.clone();
+                        item_copy.count = item.count.min(count);
+
+                        let moved = move_itemstack_to_inventory(&mut self.inventory, item_copy);
+                        if moved == 0 {
+                            return false;
+                        } else {
+                            item.count -= moved;
+                            if item.count == 0 {
+                                *slot = None;
+                            }
+                            return true;
+                        }
+                    }
+                    true
+                } else {
+                    false
+                }
+            }
+            _ => false,
+        }
     }
 
     pub fn dig_front(&mut self, world: &mut World) -> bool {
@@ -322,6 +352,16 @@ impl TurtleState {
     }
     pub fn drop_down(&mut self, world: &mut World, count: Option<u8>) -> bool {
         self.drop_at(world, self.down_pos(), count)
+    }
+
+    pub fn suck_front(&mut self, world: &mut World, count: Option<u8>) -> bool {
+        self.suck_at(world, self.front_pos(), count)
+    }
+    pub fn suck_up(&mut self, world: &mut World, count: Option<u8>) -> bool {
+        self.suck_at(world, self.up_pos(), count)
+    }
+    pub fn suck_down(&mut self, world: &mut World, count: Option<u8>) -> bool {
+        self.suck_at(world, self.down_pos(), count)
     }
 
     pub fn push_event(&mut self, name: impl Into<String>, mut args: Vec<EventArg>) {

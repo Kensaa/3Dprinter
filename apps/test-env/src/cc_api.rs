@@ -110,6 +110,25 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
 
     turtle_method!(
         turtle_table,
+        "suck",
+        |lua, count: Option<u8>| {},
+        |turtle, state, shared| { Ok(turtle.suck_front(&mut state.world, count)) }
+    );
+    turtle_method!(
+        turtle_table,
+        "suckUp",
+        |lua, count: Option<u8>| {},
+        |turtle, state, shared| { Ok(turtle.suck_up(&mut state.world, count)) }
+    );
+    turtle_method!(
+        turtle_table,
+        "suckDown",
+        |lua, count: Option<u8>| {},
+        |turtle, state, shared| { Ok(turtle.suck_down(&mut state.world, count)) }
+    );
+
+    turtle_method!(
+        turtle_table,
         "inspect",
         |lua, _: ()| {},
         |turtle, state, shared| {

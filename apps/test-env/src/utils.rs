@@ -110,6 +110,10 @@ impl ItemStack {
             BlockType::Block(itemstack)
         }
     }
+
+    pub fn is_enderchest(&self) -> bool {
+        return self.name == ENDERCHEST_ID;
+    }
 }
 
 #[derive(Debug, Clone)]
