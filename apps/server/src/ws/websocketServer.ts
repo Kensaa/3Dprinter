@@ -190,7 +190,7 @@ export class WebsocketServer {
 async function getClientMiddleware(request: WsRequest, next: () => void) {
     const clientID = request.instances.clientMapping.get(request.websocket)
 
-    if (clientID) {
+    if (clientID !== undefined) {
         const client = await request.instances.database
             .select()
             .from(clientsTable)
@@ -209,6 +209,5 @@ export async function logMiddleware(request: WsRequest, next: () => void) {
 
     console.log(logMsg)
     request.instances.logs.push(logMsg)
-    if (request.instances.logs.length > 400) request.instances.logs.shift()
     next()
 }

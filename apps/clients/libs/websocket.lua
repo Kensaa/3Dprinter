@@ -4,7 +4,7 @@ local MAX_RETRIES = 5
 
 function module.connect(connect_url, register_body, retry)
     retry = retry or 0
-    ws, err = http.websocket(connect_url)
+    local ws, err = http.websocket(connect_url)
     if not ws then
         print('Unable to connect to server, error : ')
         print(err)
@@ -28,26 +28,23 @@ function module.send(body)
         print('Not connected, unable to send message to server')
         return false
     end
-    success = pcall(function() module.ws.send(json.encode(body)) end)
+    local success = pcall(function() module.ws.send(json.encode(body)) end)
     if not success then
         print('Unable to send message to server')
     end
     return success
 end
 
-function receive()
-    local _, _, response, isBinary = os.pullEvent("websocket_message")
-    if not isBinary then
-        return json.decode(response)
-    end
-    return {}
-end
-
--- Function meant to be ran in the background listening for message
 function module.receiveLoop()
     while true do
-        rec = receive()
-        table.insert(module.receivedMessages, rec)
+        local _, _, response, isBinary = os.pullEvent("websocket_message")
+        if not isBinary then
+            local ok, decoded = pcall(json.decode, response)
+            if ok then
+                table.insert(module.receivedMessages, decoded)
+                os.queueEvent("ws_message_available") -- just a wake-up nudge, no payload
+            end
+        end
     end
 end
 
@@ -92,43 +89,50 @@ function matchTable(t1, t2)
     return true
 end
 
--- block until a message matching the given pattern is found in the recieved message queue, or after a timeout
-function module.waitForMessage(pattern, timeout)
-    timeout = timeout or -1
-    local waited = 0
-    local waitTime = 0.2
-
-    local found = nil
-    while found == nil do
-        for _, receivedMessage in pairs(module.receivedMessages) do
-            if matchTable(pattern, receivedMessage) then
-                found = receivedMessage
-                break
+-- Is t1 a "subtable" of t2?
+function matchTable(t1, t2)
+    if type(t1) ~= 'table' or type(t2) ~= 'table' then
+        return false
+    end
+    for k, v in pairs(t1) do
+        if type(v) == 'table' then
+            if not matchTable(v, t2[k]) then
+                return false
+            end
+        else
+            if t2[k] ~= v then
+                return false
             end
         end
-        sleep(waitTime)
-        waited = waited + waitTime
-        if timeout > 0 and waited >= timeout then
+    end
+    return true
+end
+
+function module.waitForMessage(pattern, timeout)
+    local timer_id = nil
+    if timeout and timeout > 0 then
+        timer_id = os.startTimer(timeout)
+    end
+
+    while true do
+        for i, msg in ipairs(module.receivedMessages) do
+            if matchTable(pattern, msg) then
+                table.remove(module.receivedMessages, i)
+                return msg
+            end
+        end
+
+        local event, a = os.pullEvent()
+        if timer_id and event == "timer" and a == timer_id then
             return nil
         end
     end
-    -- we remove the fonud message from the list
-    local newMessages = {}
-    for _, v in pairs(module.receivedMessages) do
-        if v ~= found then
-            table.insert(newMessages, v)
-        end
-    end
-    module.receivedMessages = newMessages
-    return found
 end
 
--- Send a the request of type `request` with body `body`
 function module.sendRequest(request, body)
     return module.send({ type = "request", body = { request = request, body = body or {} } })
 end
 
--- Send a response for the request `request`, with response `response` if `error` is nil, or send `error` if it is not null
 function module.sendResponse(request, response, error)
     if error ~= nil then
         return module.send({ type = "response", body = { request = request, success = false, error = error } })
@@ -137,7 +141,6 @@ function module.sendResponse(request, response, error)
     end
 end
 
--- Send a the request of type `request` with body `body` and return the response for the server
 function module.sendRequestAndWaitForResponse(request, body, timeout)
     local sendSuccess = module.sendRequest(request, body)
     if not sendSuccess then

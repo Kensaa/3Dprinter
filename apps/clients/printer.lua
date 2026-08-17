@@ -59,6 +59,7 @@ function place(block)
 end
 
 function log(message)
+    print("log: " .. message)
     websocket.sendRequest('log', { message = message })
 end
 
@@ -127,6 +128,10 @@ function locate()
 end
 
 function getHeading()
+    while turtle.inspect() do
+        print('turtle is blocked in front, turning')
+        turtle.turnLeft()
+    end
     local before = { locate() }
     turtle.forward()
     local after = { locate() }
@@ -144,7 +149,7 @@ function getHeading()
         -- z-
         return 4
     else
-        return -1
+        error("failed to get heading")
     end
 end
 
