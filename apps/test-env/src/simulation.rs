@@ -5,6 +5,7 @@ use std::{
     io,
     rc::Rc,
     sync::mpsc,
+    time::Instant,
     vec,
 };
 
@@ -47,10 +48,6 @@ impl SimState {
     pub fn new_timer(&mut self, turtle_id: usize, deadline: u64) -> usize {
         let id = self.next_timer_id;
         self.next_timer_id += 1;
-        // println!(
-        //     "\tnew timer for turtle {}, deadline: {}",
-        //     turtle_id, deadline
-        // );
 
         self.timers.push(Reverse((deadline, id, turtle_id)));
         id
@@ -251,14 +248,26 @@ impl Simulation {
         Ok(())
     }
 
+    fn poll_real_timers(&self, turtle: &mut TurtleState) -> LuaResult<()> {
+        let now = Instant::now();
+        while let Some(Reverse((deadline, _))) = turtle.realtime_timers.peek()
+            && *deadline <= now
+        {
+            let (_, timer_id) = turtle.realtime_timers.pop().unwrap().0;
+            turtle.push_event("timer", vec![EventArg::Int(timer_id as i64)]);
+        }
+        Ok(())
+    }
+
     pub fn step(&mut self) -> LuaResult<()> {
-        // Promotes any turtle that has a websocket message pending
+        // Promotes any turtle that has a websocket message or http request pending
         {
             let mut state = self.state.borrow_mut();
             for (id, turtle) in state.turtles.iter_mut() {
                 // Collect messages pending from each websocket
                 self.poll_sockets(turtle)?;
                 self.poll_requests(turtle)?;
+                self.poll_real_timers(turtle)?;
 
                 // Check if any turtle has pending events and promote them to ready if that is the case
                 if !turtle.event_queue.is_empty() {

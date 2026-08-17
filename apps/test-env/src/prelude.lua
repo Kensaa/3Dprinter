@@ -30,6 +30,14 @@ function sleep(t)
     end
 end
 
+function realSleep(t)
+    local id = os.startRealTimer(t or 0)
+    while true do
+        local _, tid = os.pullEvent("timer")
+        if tid == id then return end
+    end
+end
+
 parallel = {}
 
 local function expect_fn(i, fn)

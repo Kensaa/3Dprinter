@@ -2,14 +2,17 @@ use crate::{
     content_reader::ReadHandleContent,
     filesystem::Node,
     utils::{BlockType, EventArg, HTTPMethod, HTTPRequest, HTTPResponse, Heading, ItemStack},
-    world::{BlockDetail, ENDERCHEST_ID, Position, World},
+    world::{BlockDetail, Position, World},
 };
 use std::{
-    collections::{HashMap, VecDeque},
+    cmp::Reverse,
+    collections::{BinaryHeap, HashMap, VecDeque},
     format,
     net::TcpStream,
     sync::{atomic::AtomicUsize, mpsc},
-    thread, unreachable,
+    thread,
+    time::Instant,
+    unreachable,
 };
 use tungstenite::{WebSocket, stream::MaybeTlsStream};
 
@@ -32,6 +35,9 @@ pub struct TurtleState {
     pub fs_root: Node,
 
     pub http_requests: Vec<HTTPRequest>,
+
+    pub realtime_timers: BinaryHeap<Reverse<(Instant, usize)>>, // (deadline, timer id)
+    pub next_timer_id: usize,
 }
 
 #[repr(usize)]
@@ -73,6 +79,8 @@ impl TurtleBuilder {
             next_websocket_id: 0,
             fs_root: Node::create_root(),
             http_requests: Default::default(),
+            realtime_timers: BinaryHeap::new(),
+            next_timer_id: 0,
         }
     }
 
@@ -488,6 +496,14 @@ impl TurtleState {
         });
 
         self.http_requests.push(HTTPRequest { url, receiver })
+    }
+
+    pub fn new_realtime_timer(&mut self, deadline: Instant) -> usize {
+        let id = self.next_timer_id;
+        self.next_timer_id += 1;
+
+        self.realtime_timers.push(Reverse((deadline, id)));
+        id
     }
 }
 

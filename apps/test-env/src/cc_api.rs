@@ -3,7 +3,12 @@ use crate::{
     utils::HTTPMethod,
 };
 use mlua::{Error, FromLua, IntoLua, Lua, MultiValue, Result as LuaResult, Table, Value, Variadic};
-use std::{cell::RefCell, format, rc::Rc};
+use std::{
+    cell::RefCell,
+    format,
+    rc::Rc,
+    time::{Duration, Instant},
+};
 use tungstenite::Message;
 
 pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> {
@@ -250,6 +255,19 @@ pub fn register_api(lua: &Lua, state: &SharedState, id: usize) -> LuaResult<()> 
         |state, shared| {
             let deadline = state.clock + (duration * 1000.0).round() as u64;
             let id = state.new_timer(id, deadline);
+            Ok(id)
+        }
+    );
+
+    turtle_method!(
+        os_table,
+        "startRealTimer",
+        |_, (duration): (f32)| {},
+        |turtle, state, shared| {
+            let now = Instant::now();
+            let duration = Duration::from_millis((duration * 1000.0).round() as u64);
+            let deadline = now + duration;
+            let id = turtle.new_realtime_timer(deadline);
             Ok(id)
         }
     );
